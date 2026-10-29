@@ -10,7 +10,6 @@ import { ModeToggle } from "@/components/toggle";
 import { AppSidebar } from "@/components/app-sidebar";
 import Bread from "@/components/bread";
 import ClientOnly from "@/components/ClientOnly";
-import NotificationBell from "@/components/notification-bell";
 import LanguageToggle from "@/components/language-toggle";
 
 export default function RootLayout({
@@ -24,7 +23,7 @@ export default function RootLayout({
         <ClientOnly>
           <AppSidebar />
         </ClientOnly>
-        <SidebarInset>
+        <SidebarInset id="main-content" tabIndex={-1} className="focus:outline-none">
           <header className="flex relative h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
@@ -38,7 +37,6 @@ export default function RootLayout({
             </div>
             <div className="absolute top-4 right-4" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <LanguageToggle />
-              <NotificationBell />
               <ModeToggle />
             </div>
           </header>

@@ -163,10 +163,12 @@ export default function EnhancedChatbot() {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  useEffect(() => {
+  const [welcomeLang, setWelcomeLang] = useState<string | null>(null);
+  if (welcomeLang !== lang) {
+    setWelcomeLang(lang);
     setMessages([getWelcome()]);
     setUnreadCount(0);
-  }, [lang, getWelcome]);
+  }
 
   const resetChat = useCallback(() => {
     setMessages([getWelcome()]);
@@ -265,7 +267,7 @@ export default function EnhancedChatbot() {
             background: `linear-gradient(135deg, ${brand}, #8a0f44)`,
             border: "none",
           }}
-          className="group text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 focus:outline-none relative"
+          className="group text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 relative"
           aria-label={lang === "es" ? "Abrir chat" : "Open chat"}
         >
           <MessageCircle size={28} className="transition-transform group-hover:scale-110" />
@@ -284,6 +286,8 @@ export default function EnhancedChatbot() {
       {/* Chat window */}
       {isOpen && (
         <div
+          role="dialog"
+          aria-label={lang === "es" ? "Chat con el asistente de IA" : "AI assistant chat"}
           className="rounded-2xl shadow-2xl w-80 sm:w-96 flex flex-col border animate-in slide-in-from-bottom-4 fade-in duration-200"
           style={{ height: "min(640px, calc(100vh - 6rem))", borderColor: "var(--ec-hairline)", background: "var(--ec-bg)" }}
         >
@@ -305,14 +309,15 @@ export default function EnhancedChatbot() {
             </div>
             <button
               onClick={resetChat}
+              aria-label={lang === "es" ? "Nueva conversación" : "New chat"}
               title={lang === "es" ? "Nueva conversación" : "New chat"}
-              className="p-1.5 rounded-lg hover:bg-white/20 transition-colors focus:outline-none"
+              className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
             >
               <RotateCcw size={15} />
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-white/20 transition-colors focus:outline-none"
+              className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
               aria-label={lang === "es" ? "Cerrar" : "Close"}
             >
               <X size={18} />
@@ -320,7 +325,12 @@ export default function EnhancedChatbot() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3 min-h-0" style={{ background: "var(--ec-surface-1)" }}>
+          <div
+            role="log"
+            aria-label={lang === "es" ? "Conversación" : "Conversation"}
+            className="flex-1 overflow-y-auto px-3 py-4 space-y-3 min-h-0"
+            style={{ background: "var(--ec-surface-1)" }}
+          >
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -392,7 +402,7 @@ export default function EnhancedChatbot() {
                   key={i}
                   onClick={() => handleSend(opt.text)}
                   disabled={isTyping}
-                  className="text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-left truncate focus:outline-none"
+                  className="text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-left truncate"
                   style={{
                     borderColor: "var(--ec-hairline)",
                     background: "var(--ec-surface-2)",
@@ -425,7 +435,7 @@ export default function EnhancedChatbot() {
                 placeholder={lang === "es" ? "Escribe tu mensaje..." : "Type your message..."}
                 disabled={isTyping}
                 maxLength={500}
-                className="flex-1 text-sm rounded-xl px-3 py-2 focus:outline-none disabled:opacity-50 placeholder-gray-400"
+                className="flex-1 text-sm rounded-xl px-3 py-2 disabled:opacity-50 placeholder-gray-400"
                 style={{
                   border: "1px solid var(--ec-hairline)",
                   background: "var(--ec-surface-2)",
@@ -437,7 +447,7 @@ export default function EnhancedChatbot() {
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || isTyping}
-                className="p-2 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus:outline-none text-white active:scale-95"
+                className="p-2 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 text-white active:scale-95"
                 style={{ background: brand }}
                 onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.1)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; }}
@@ -446,7 +456,15 @@ export default function EnhancedChatbot() {
                 <Send size={16} />
               </button>
             </div>
-            <p className="text-center text-[10px] mt-1.5" style={{ color: "var(--ec-text-dim)" }}>
+            <p className="text-center text-[11px] mt-1.5" style={{ color: "var(--ec-text-muted)" }}>
+              {lang === "es"
+                ? "Las respuestas las genera un proveedor externo de IA. No escribas datos sensibles."
+                : "Replies are generated by an external AI provider. Please do not type sensitive data."}{" "}
+              <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--ec-text)", textDecoration: "underline" }}>
+                {lang === "es" ? "Aviso de privacidad" : "Privacy notice"}
+              </a>
+            </p>
+            <p className="text-center text-[10px] mt-1" style={{ color: "var(--ec-text-dim)" }}>
               {lang === "es" ? "Desarrollado por" : "Powered by"}{" "}
               <span style={{ color: brand, fontWeight: 500 }}>E-commetrics</span>
             </p>

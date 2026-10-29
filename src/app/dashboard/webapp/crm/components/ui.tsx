@@ -215,7 +215,7 @@ export function TextAreaField({
   );
 }
 
-export type SelectOption = { value: string; label: string };
+export type SelectOption = { value: string; label: string; disabled?: boolean };
 
 /**
  * Select sobre el wrapper de Radix del dashboard. Todo el CRM pasa por aqui, de
@@ -252,9 +252,11 @@ export function SelectField({
         <SelectTrigger className="ec-field-input" style={{ width: "100%", cursor: disabled ? "not-allowed" : "pointer" }}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent>
+        {/* z-[60]: el Modal usa z-index 50/51 y el SelectContent base 50; sin esto la
+            lista se abre detras del modal (Template en "Send message" sale vacio). */}
+        <SelectContent className="z-[60]">
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
               {option.label}
             </SelectItem>
           ))}

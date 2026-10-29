@@ -26,6 +26,8 @@ export interface Lead {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  /** null = activo. Archivar solo oculta: no borra etapa, notas ni tareas. */
+  archivedAt: string | null;
 }
 
 export interface Stage {
@@ -102,6 +104,29 @@ export interface SyncState {
   tokenValid: boolean | null;
   tokenCheckedAt: string | null;
   tokenCheckError: string | null;
+  /** Correos separados por coma que reciben el aviso de lead nuevo. */
+  notifyEmails: string | null;
+}
+
+/** Cita del calendario del sitio (tabla `citas`), cruzada con los leads. */
+export interface Appointment {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  /** YYYY-MM-DD */
+  date: string;
+  /** HH:MM */
+  time: string;
+  firstVisit: boolean;
+  service: string;
+  insurance: string;
+  origin: string;
+  createdAt: string | null;
+  /** Lead del CRM con el mismo telefono o correo; null si la persona no esta en el CRM. */
+  leadId: string | null;
+  leadName: string | null;
+  leadArchived: boolean;
 }
 
 export interface CrmUser {

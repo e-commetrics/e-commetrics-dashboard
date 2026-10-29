@@ -61,7 +61,7 @@ export default function UpdateProject() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`, { credentials: "include" });
       if (!res.ok) throw new Error("Error cargando usuarios");
       const data = await res.json();
       setUsers(data);

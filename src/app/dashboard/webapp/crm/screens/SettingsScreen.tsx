@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, RefreshCw, Send, Upload, Zap } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Send, Upload, X, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
   apiCapiTest,
@@ -9,12 +9,14 @@ import {
   apiImportCsv,
   apiListLeads,
   apiMessagingTest,
+  apiSaveNotifyEmails,
   apiSettings,
   apiSync,
   apiToggleRule,
   statusOf,
 } from "../lib/api";
 import { useMutation, useResource } from "../lib/hooks";
+import { isChannelDisabled } from "../lib/channels";
 import { CHANNEL_LABEL, formatDateTime } from "../lib/format";
 import type { Lead, MessageChannel, MessageTemplate, SettingsPayload } from "../lib/types";
 import { TemplateEditor } from "../components/TemplateEditor";
@@ -60,6 +62,10 @@ export function SettingsScreen() {
 
       <Section title="Integration status">
         <IntegrationStatus data={data} />
+      </Section>
+
+      <Section title="New lead notifications">
+        <NotifyEmails initial={data.syncState.notifyEmails ?? ""} />
       </Section>
 
       <Section title="Automation rules">
@@ -134,8 +140,16 @@ function IntegrationStatus({ data }: { data: SettingsPayload }) {
         <ConfiguredChip ok={configured.facebookCapi} label="Facebook CAPI" />
         {configured.facebookCapiTestMode ? <Badge tone="warning">CAPI test mode ON</Badge> : null}
         <ConfiguredChip ok={configured.email} label="Email (SMTP)" />
-        <ConfiguredChip ok={configured.sms} label="SMS (Twilio)" />
-        <ConfiguredChip ok={configured.whatsapp} label="WhatsApp (Meta)" />
+        {isChannelDisabled("sms") ? (
+          <Badge tone="neutral">SMS (Twilio): disabled</Badge>
+        ) : (
+          <ConfiguredChip ok={configured.sms} label="SMS (Twilio)" />
+        )}
+        {isChannelDisabled("whatsapp") ? (
+          <Badge tone="neutral">WhatsApp (Meta): disabled</Badge>
+        ) : (
+          <ConfiguredChip ok={configured.whatsapp} label="WhatsApp (Meta)" />
+        )}
       </div>
 
       <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 4 }}>
@@ -184,6 +198,102 @@ function IntegrationStatus({ data }: { data: SettingsPayload }) {
 
 function ConfiguredChip({ ok, label }: { ok: boolean; label: string }) {
   return <Badge tone={ok ? "success" : "neutral"}>{label}: {ok ? "configured" : "not configured"}</Badge>;
+}
+
+// ─── Avisos de lead nuevo ───────────────────────────────────────────────────
+
+const splitEmails = (value: string | null) => (value ?? "").split(",").map((e) => e.trim()).filter(Boolean);
+
+function NotifyEmails({ initial }: { initial: string }) {
+  const [emails, setEmails] = useState(() => splitEmails(initial));
+  const [draft, setDraft] = useState("");
+  const [result, setResult] = useState<{ tone: Tone; text: string } | null>(null);
+
+  // Cada alta o baja se guarda al momento; la lista mostrada es la que devolvio el backend.
+  const save = useMutation((next: string[]) => apiSaveNotifyEmails(next.join(", ")), {
+    onSuccess: (saved) => {
+      setEmails(splitEmails(saved));
+      setDraft("");
+      setResult({ tone: "ok", text: saved ? "Saved." : "Saved. Notifications are off." });
+    },
+    onError: (message) => setResult({ tone: "error", text: message }),
+  });
+
+  const add = () => {
+    const email = draft.trim();
+    if (!email) return;
+    if (emails.some((e) => e.toLowerCase() === email.toLowerCase())) {
+      setResult({ tone: "error", text: `${email} is already in the list.` });
+      return;
+    }
+    setResult(null);
+    void save.run([...emails, email]);
+  };
+
+  return (
+    <>
+      <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 10 }}>
+        Each new Facebook lead sends an email to these addresses. Manual and CSV leads do not. With no addresses,
+        notifications are off.
+      </p>
+
+      {emails.length === 0 ? (
+        <p style={{ fontSize: 13, color: "var(--ec-text-dim)", marginBottom: 12 }}>No addresses yet.</p>
+      ) : (
+        <ul style={{ listStyle: "none", margin: "0 0 12px", padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+          {emails.map((email) => (
+            <li
+              key={email}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                border: "1px solid var(--ec-hairline-strong)",
+                borderRadius: 10,
+                padding: "8px 12px",
+                background: "var(--ec-surface-1)",
+                fontSize: 13.5,
+              }}
+            >
+              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{email}</span>
+              <button
+                type="button"
+                className="ec-btn-secondary"
+                style={{ padding: "6px 10px", fontSize: 12 }}
+                disabled={save.loading}
+                aria-label={`Remove ${email}`}
+                onClick={() => {
+                  setResult(null);
+                  void save.run(emails.filter((e) => e !== email));
+                }}
+              >
+                <X size={13} />
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form
+        style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          add();
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <TextField label="Add an email" type="email" value={draft} onChange={setDraft} placeholder="frontdesk@example.com" />
+        </div>
+        <button type="submit" className="ec-btn-primary" style={{ padding: "10px 18px" }} disabled={save.loading || !draft.trim()}>
+          {save.loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          Add
+        </button>
+      </form>
+      {result ? <InlineResult tone={result.tone}>{result.text}</InlineResult> : null}
+    </>
+  );
 }
 
 // ─── Reglas ──────────────────────────────────────────────────────────────────
@@ -313,7 +423,10 @@ function MessagingTest() {
           label="Channel"
           value={channel}
           onChange={(next) => setChannel(next as MessageChannel)}
-          options={TEST_CHANNELS.map((option) => ({ value: option, label: CHANNEL_LABEL[option] }))}
+          options={TEST_CHANNELS.map((option) => {
+            const off = isChannelDisabled(option);
+            return { value: option, label: off ? `${CHANNEL_LABEL[option]} (disabled)` : CHANNEL_LABEL[option], disabled: off };
+          })}
           width={150}
         />
         <div style={{ flex: 1, minWidth: 220 }}>
@@ -328,7 +441,7 @@ function MessagingTest() {
           type="button"
           className="ec-btn-primary"
           style={{ padding: "10px 18px" }}
-          disabled={send.loading || !to.trim()}
+          disabled={send.loading || !to.trim() || isChannelDisabled(channel)}
           onClick={() => {
             setResult(null);
             void send.run({ channel, to: to.trim() });

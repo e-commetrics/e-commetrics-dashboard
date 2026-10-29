@@ -6,6 +6,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { useLang } from "@/app/context/LangContext";
 import { useTheme } from "next-themes";
 import { ArrowRight, ArrowLeft, Eye, EyeOff, Sun, Moon, AtSign, Lock } from "lucide-react";
+import { setCookie } from "@/lib/cookies";
 
 const translations = {
   en: {
@@ -14,6 +15,8 @@ const translations = {
     sub: "Sign in to your workspace",
     email: "Email address",
     password: "Password",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     btn: "Sign in",
     back: "Back to home",
     divider: "or go back",
@@ -36,6 +39,8 @@ const translations = {
     sub: "Inicia sesión en tu espacio de trabajo",
     email: "Correo electrónico",
     password: "Contraseña",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
     btn: "Iniciar sesión",
     back: "Volver a la página principal",
     divider: "o vuelve",
@@ -174,19 +179,20 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
           <div className="entry-toggle-pill">
             <button
               className={lang === "es" ? "active" : ""}
-              onClick={() => { changeLang("es"); document.cookie = "lang=es; path=/; max-age=31536000"; }}
+              onClick={() => { changeLang("es"); setCookie("lang", "es", 31536000); }}
             >
               ES
             </button>
             <button
               className={lang === "en" ? "active" : ""}
-              onClick={() => { changeLang("en"); document.cookie = "lang=en; path=/; max-age=31536000"; }}
+              onClick={() => { changeLang("en"); setCookie("lang", "en", 31536000); }}
             >
               EN
             </button>
           </div>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={lang === "es" ? "Cambiar tema claro u oscuro" : "Switch between light and dark theme"}
             style={{
               width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center",
               justifyContent: "center", background: "var(--ec-surface-2)",
@@ -202,7 +208,7 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
           <form onSubmit={handleLogin} className="fade-in-up" style={{ width: "100%", maxWidth: 380 }}>
             {/* Eyebrow */}
-            <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ec-brand)", marginBottom: 14 }}>
+            <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ec-brand-glow)", marginBottom: 14 }}>
               ⎯⎯&nbsp;&nbsp;{t.eyebrow}
             </div>
 
@@ -218,12 +224,14 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Email */}
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "JetBrains Mono, monospace", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ec-text-muted)", marginBottom: 6 }}>
-                  <AtSign size={11} /> {t.email}
+                <label htmlFor="login-email" style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "JetBrains Mono, monospace", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ec-text-muted)", marginBottom: 6 }}>
+                  <AtSign size={11} aria-hidden /> {t.email}
                 </label>
                 <input
+                  id="login-email"
                   className="ec-field-input"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@correo.com"
@@ -233,13 +241,15 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
 
               {/* Password */}
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "JetBrains Mono, monospace", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ec-text-muted)", marginBottom: 6 }}>
-                  <Lock size={11} /> {t.password}
+                <label htmlFor="login-password" style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "JetBrains Mono, monospace", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ec-text-muted)", marginBottom: 6 }}>
+                  <Lock size={11} aria-hidden /> {t.password}
                 </label>
                 <div style={{ position: "relative" }}>
                   <input
+                    id="login-password"
                     className="ec-field-input"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -249,6 +259,8 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? t.hidePassword : t.showPassword}
+                    aria-pressed={showPassword}
                     style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--ec-text-muted)", padding: 0, display: "flex" }}
                   >
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -309,6 +321,14 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
         {/* Footer */}
         <div style={{ padding: "16px 24px", fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--ec-text-muted)", letterSpacing: "0.15em", textTransform: "uppercase", display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--ec-hairline)" }}>
           <span>{t.rights}</span>
+          <span style={{ display: "flex", gap: 14 }}>
+            <a href="/legal/privacy-policy" style={{ color: "inherit", textDecoration: "underline" }}>
+              {lang === "es" ? "Privacidad" : "Privacy"}
+            </a>
+            <a href="/accessibility" style={{ color: "inherit", textDecoration: "underline" }}>
+              {lang === "es" ? "Accesibilidad" : "Accessibility"}
+            </a>
+          </span>
           <span>E-COMMETRICS</span>
         </div>
       </div>

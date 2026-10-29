@@ -215,7 +215,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
   useEffect(() => {
     if (!currentProject?.id_user) return;
     axios
-      .get(`${process.env.NEXT_PUBLIC_URL}/api/users`)
+      .get(`${process.env.NEXT_PUBLIC_URL}/api/users`, { withCredentials: true })
       .then((res) => {
         const users = Array.isArray(res.data) ? res.data : [];
         const owner = users.find((u: any) => Number(u.id) === Number(currentProject.id_user));

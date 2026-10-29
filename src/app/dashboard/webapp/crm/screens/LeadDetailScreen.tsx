@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Loader2, Plus, Save } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { apiCompleteTask, apiGetLead, apiPatchLead, apiSettings } from "../lib/api";
+import { apiCompleteTask, apiCreateTask, apiGetLead, apiPatchLead, apiSetLeadArchived, apiSettings } from "../lib/api";
 import { useMutation, useResource } from "../lib/hooks";
 import {
   ACTIVITY_LABEL,
@@ -24,6 +24,7 @@ import {
   Section,
   SelectField,
   TextAreaField,
+  TextField,
 } from "../components/ui";
 
 /** Ficha del lead: cabecera, respuestas del formulario, tareas, notas y actividad. */
@@ -45,6 +46,11 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
   });
 
   const completeTask = useMutation((id: string) => apiCompleteTask(id), {
+    onError: (message) => toast.error(message),
+  });
+
+  const setArchived = useMutation((archived: boolean) => apiSetLeadArchived(leadId, archived), {
+    onSuccess: (updated) => toast.success(updated.archivedAt ? "Lead archived." : "Lead restored."),
     onError: (message) => toast.error(message),
   });
 
@@ -122,6 +128,7 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
             <p style={{ fontSize: 13.5, color: "var(--ec-text-faint)", marginTop: 8 }}>No contact details on file</p>
           )}
           <div style={{ display: "flex", gap: 7, marginTop: 10, flexWrap: "wrap" }}>
+            {lead.archivedAt ? <Badge tone="warning">Archived {formatDateTime(lead.archivedAt)}</Badge> : null}
             <Badge>source: {SOURCE_LABEL[lead.source]}</Badge>
             {lead.campaignName ? <Badge tone="brand">{lead.campaignName}</Badge> : null}
             {lead.adName ? <Badge>{lead.adName}</Badge> : null}
@@ -143,6 +150,27 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
             templates={settings.data?.templates ?? []}
             onSent={detail.reload}
           />
+          <button
+            type="button"
+            className="ec-btn-secondary"
+            style={{ padding: "8px 14px", fontSize: 13 }}
+            disabled={setArchived.loading}
+            onClick={() => void setArchived.run(!lead.archivedAt)}
+          >
+            {setArchived.loading ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : lead.archivedAt ? (
+              <ArchiveRestore size={13} />
+            ) : (
+              <Archive size={13} />
+            )}
+            {lead.archivedAt ? "Restore" : "Archive"}
+          </button>
+          {lead.archivedAt ? null : (
+            <p style={{ fontSize: 11, color: "var(--ec-text-dim)", margin: 0 }}>
+              Archiving hides the lead from the pipeline, tasks and dashboard. Nothing is deleted.
+            </p>
+          )}
         </div>
       </header>
 
@@ -164,7 +192,7 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
       <Section title="Tasks">
         {(detail.data?.tasks ?? []).length === 0 ? (
           <p style={{ fontSize: 13.5, color: "var(--ec-text-muted)" }}>
-            No tasks yet. Tasks come from the automation rules in Settings.
+            No tasks yet. Add one below, or let the automation rules in Settings create them.
           </p>
         ) : (
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 9 }}>
@@ -204,6 +232,7 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
             })}
           </ul>
         )}
+        <AddTaskForm leadId={lead.id} />
       </Section>
 
       <Section title="Notes">
@@ -257,5 +286,57 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
         )}
       </Section>
     </div>
+  );
+}
+
+/** "YYYY-MM-DDTHH:mm" en hora local, el formato de <input type="datetime-local">. Por defecto: mañana a las 10. */
+function tomorrowAtTen(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  date.setHours(10, 0, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function AddTaskForm({ leadId }: { leadId: string }) {
+  const [description, setDescription] = useState("");
+  const [dueAt, setDueAt] = useState(tomorrowAtTen);
+
+  const create = useMutation(
+    () => apiCreateTask({ leadId, description: description.trim(), dueAt: new Date(dueAt).toISOString() }),
+    {
+      onSuccess: () => {
+        setDescription("");
+        setDueAt(tomorrowAtTen());
+        toast.success("Task added.");
+      },
+      onError: (message) => toast.error(message),
+    }
+  );
+
+  return (
+    <form
+      style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap", marginTop: 14 }}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (description.trim() && dueAt) void create.run();
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <TextField label="New task" value={description} onChange={setDescription} placeholder="e.g. Send the implant quote" />
+      </div>
+      <div style={{ width: 210 }}>
+        <TextField label="Due" type="datetime-local" value={dueAt} onChange={setDueAt} required />
+      </div>
+      <button
+        type="submit"
+        className="ec-btn-primary"
+        style={{ padding: "10px 16px", fontSize: 13 }}
+        disabled={create.loading || !description.trim() || !dueAt}
+      >
+        {create.loading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+        Add task
+      </button>
+    </form>
   );
 }

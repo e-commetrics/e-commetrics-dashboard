@@ -5,6 +5,7 @@ import { Loader2, Mail, MessageCircle, Send } from "lucide-react";
 import { apiSendMessage, statusOf } from "../lib/api";
 import { useMutation } from "../lib/hooks";
 import { CHANNEL_LABEL } from "../lib/format";
+import { isChannelDisabled } from "../lib/channels";
 import type { Lead, MessageChannel, MessageTemplate } from "../lib/types";
 import { Badge, InlineResult, Modal, SelectField } from "./ui";
 
@@ -71,7 +72,7 @@ export function SendMessageModal({
   }
 
   async function submit() {
-    if (!templateKey) return;
+    if (!templateKey || isChannelDisabled(channel)) return;
     const result = await send.run({ channel, templateKey });
     if (result?.ok) {
       setOpen(false);
@@ -104,7 +105,7 @@ export function SendMessageModal({
             <button
               type="button"
               className="ec-btn-primary"
-              disabled={!templateKey || missingContact || send.loading}
+              disabled={!templateKey || missingContact || send.loading || isChannelDisabled(channel)}
               onClick={() => void submit()}
             >
               {send.loading ? <Loader2 size={14} className="animate-spin" /> : null}
@@ -114,18 +115,29 @@ export function SendMessageModal({
         }
       >
         <div className="ec-segmented" style={{ alignSelf: "flex-start" }}>
-          {CHANNELS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={channel === option ? "active" : ""}
-              onClick={() => changeChannel(option)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              {CHANNEL_ICON[option]}
-              {CHANNEL_LABEL[option]}
-            </button>
-          ))}
+          {CHANNELS.map((option) => {
+            const off = isChannelDisabled(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                className={channel === option ? "active" : ""}
+                onClick={() => changeChannel(option)}
+                disabled={off}
+                title={off ? `${CHANNEL_LABEL[option]} is currently disabled` : undefined}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  ...(off ? { opacity: 0.5, cursor: "not-allowed" } : {}),
+                }}
+              >
+                {CHANNEL_ICON[option]}
+                {CHANNEL_LABEL[option]}
+                {off ? <Badge tone="neutral">Disabled</Badge> : null}
+              </button>
+            );
+          })}
         </div>
 
         {missingContact ? (

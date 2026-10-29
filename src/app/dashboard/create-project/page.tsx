@@ -35,7 +35,7 @@ export default function CreateProject() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`)
+    fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch(() => toast.error("Error cargando usuarios"));

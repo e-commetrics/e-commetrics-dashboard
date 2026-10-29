@@ -5,6 +5,8 @@ import { AuthProvider } from "@/app/context/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LangProvider } from "@/app/context/LangContext";
 import { RegionProvider } from "@/app/context/RegionContext";
+import { MotionProvider } from "@/components/motion-provider";
+import SkipLink from "@/components/skip-link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -81,7 +83,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetBrainsMono.variable} antialiased`}
       >
@@ -92,8 +94,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LangProvider>
+            <SkipLink />
             <RegionProvider>
-              <AuthProvider>{children}</AuthProvider>
+              <AuthProvider>
+                <MotionProvider>{children}</MotionProvider>
+              </AuthProvider>
             </RegionProvider>
           </LangProvider>
         </ThemeProvider>

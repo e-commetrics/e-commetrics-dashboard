@@ -44,7 +44,7 @@ export default function CreateProjectContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`)
+    fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`, { credentials: "include" })
       .then((res) => res.json())
       .then(setUsers)
       .catch(() => toast.error("Error cargando usuarios"));

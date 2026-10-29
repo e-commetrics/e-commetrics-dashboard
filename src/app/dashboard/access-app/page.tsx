@@ -85,7 +85,7 @@ function Page() {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`, { credentials: "include" });
       if (!res.ok) throw new Error("Error al cargar usuarios");
       const data = await res.json();
       const clients = data.filter((user: User) => user.role === "client");
@@ -135,6 +135,7 @@ function Page() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users/${userId}/apps`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(permissions[userId]),
       });

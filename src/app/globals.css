@@ -635,6 +635,20 @@
   border-color: var(--ec-brand);
   box-shadow: 0 0 0 3px rgba(189,21,92,0.12);
 }
+.ec-field-input:focus-visible {
+  outline: 2px solid var(--ec-brand-glow);
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 2px solid var(--ec-brand-glow);
+  outline-offset: 2px;
+}
+/* El sidebar ya trae su propio anillo de foco (focus-visible:ring-2). Sin esto el
+   outline global, que va fuera de @layer y le gana a las utilidades, se suma y
+   deja un borde pegado en el ultimo boton enfocado. */
+[data-sidebar="sidebar"] :focus-visible {
+  outline: none;
+}
 .ec-field-input::placeholder { color: var(--ec-text-muted); opacity: 0.7; }
 .ec-field-input option { background: var(--ec-surface-1); color: var(--ec-text); }
 
@@ -667,4 +681,15 @@
   background: rgba(189,21,92,0.15); color: var(--ec-brand);
   font-family: var(--font-inter), var(--font-sans);
   flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

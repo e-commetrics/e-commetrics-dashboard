@@ -10,7 +10,53 @@ import type { Stage } from "../lib/types";
 import { AddLeadModal } from "../components/AddLeadModal";
 import { LeadCard } from "../components/LeadCard";
 import { TasksPanel } from "../components/TasksPanel";
-import { EmptyState, ErrorNotice, Loading, PageHeader } from "../components/ui";
+import { WebBookings } from "../components/WebBookings";
+import { EmptyState, ErrorNotice, Loading, PageHeader, Switch } from "../components/ui";
+
+type PipelineTab = "crm" | "web";
+
+const TABS: { id: PipelineTab; label: string }[] = [
+  { id: "crm", label: "CRM" },
+  { id: "web", label: "Web" },
+];
+
+/** Pipeline con dos pestanas: el tablero de leads (CRM) y las citas del sitio (Web). */
+export function PipelineScreen({ onOpenLead }: { onOpenLead: (id: string) => void }) {
+  const [tab, setTab] = useState<PipelineTab>("crm");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+      <div role="tablist" aria-label="Pipeline views" style={{ display: "flex", gap: 6, padding: "16px 28px 0" }}>
+        {TABS.map((item) => {
+          const active = tab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              id={`pipeline-tab-${item.id}`}
+              aria-selected={active}
+              aria-controls={`pipeline-panel-${item.id}`}
+              className={active ? "ec-btn-primary" : "ec-btn-secondary"}
+              style={{ padding: "6px 16px", fontSize: 13 }}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+      <div
+        role="tabpanel"
+        id={`pipeline-panel-${tab}`}
+        aria-labelledby={`pipeline-tab-${tab}`}
+        style={{ flex: 1, minHeight: 0 }}
+      >
+        {tab === "crm" ? <LeadBoard onOpenLead={onOpenLead} /> : <WebBookings onOpenLead={onOpenLead} />}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Tablero kanban del pipeline.
@@ -19,12 +65,13 @@ import { EmptyState, ErrorNotice, Loading, PageHeader } from "../components/ui";
  * y funciona bien con pocas tarjetas por columna. Con cientos de leads un
  * backend de arrastre casero empieza a fallar, y ahi si tocaria mirar dnd-kit.
  */
-export function PipelineScreen({ onOpenLead }: { onOpenLead: (id: string) => void }) {
+function LeadBoard({ onOpenLead }: { onOpenLead: (id: string) => void }) {
   const [search, setSearch] = useState("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggingOverStage, setDraggingOverStage] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
-  const leads = useResource("leads", apiListLeads);
+  const leads = useResource(showArchived ? "leads:all" : "leads", () => apiListLeads(showArchived));
   // Los stages vienen piggybacked en /settings, que es de donde los sacaba el
   // original tambien. Se piden en paralelo porque son independientes.
   const settings = useResource("settings", apiSettings);
@@ -80,6 +127,10 @@ export function PipelineScreen({ onOpenLead }: { onOpenLead: (id: string) => voi
             }
             actions={
               <>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--ec-text-muted)" }}>
+                  <Switch checked={showArchived} onChange={setShowArchived} label="Show archived leads" />
+                  Show archived
+                </span>
                 <button
                   type="button"
                   className="ec-btn-secondary"

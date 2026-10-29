@@ -6,6 +6,7 @@ import Login from "@/components/login";
 import { useLang } from "@/app/context/LangContext";
 import { useTheme } from "next-themes";
 import { ArrowRight, Layout, Compass, Sun, Moon } from "lucide-react";
+import { setCookie } from "@/lib/cookies";
 
 const LazyLanding = lazy(() => import("@/components/landing"));
 
@@ -60,7 +61,7 @@ export default function Page() {
     )?.[1] as Lang | undefined;
 
     if (!existingLang) {
-      document.cookie = "lang=es; path=/; max-age=31536000";
+      setCookie("lang", "es", 31536000);
       changeLang("es");
     } else {
       changeLang(existingLang);
@@ -70,7 +71,7 @@ export default function Page() {
   const t = translations[lang];
 
   return (
-    <div className="overflow-x-hidden min-h-screen">
+    <main id="main-content" tabIndex={-1} className="overflow-x-hidden min-h-screen focus:outline-none">
       <AnimatePresence>
         {selectedOption === null && (
           <motion.div
@@ -102,13 +103,13 @@ export default function Page() {
               <div className="entry-toggle-pill">
                 <button
                   className={lang === "es" ? "active" : ""}
-                  onClick={() => { changeLang("es"); document.cookie = "lang=es; path=/; max-age=31536000"; }}
+                  onClick={() => { changeLang("es"); setCookie("lang", "es", 31536000); }}
                 >
                   ES
                 </button>
                 <button
                   className={lang === "en" ? "active" : ""}
-                  onClick={() => { changeLang("en"); document.cookie = "lang=en; path=/; max-age=31536000"; }}
+                  onClick={() => { changeLang("en"); setCookie("lang", "en", 31536000); }}
                 >
                   EN
                 </button>
@@ -116,6 +117,7 @@ export default function Page() {
               <button
                 className="entry-icon-btn"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                aria-label={lang === "es" ? "Cambiar tema claro u oscuro" : "Switch between light and dark theme"}
               >
                 {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
               </button>
@@ -288,6 +290,6 @@ export default function Page() {
           </motion.div>
         </Suspense>
       )}
-    </div>
+    </main>
   );
 }

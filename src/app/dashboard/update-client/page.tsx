@@ -26,7 +26,7 @@ export default function UserManager() {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`, { credentials: "include" });
       if (!res.ok) throw new Error("Error al cargar usuarios");
       const data = await res.json();
       setUsers(data);
@@ -53,6 +53,7 @@ export default function UserManager() {
       setLoadingUpdate(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users/${selectedUser.id}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
@@ -74,7 +75,7 @@ export default function UserManager() {
   const handleDelete = async (id: number) => {
     try {
       setDeleting(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users/${id}`, { method: "DELETE", credentials: "include" });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Error al eliminar usuario");

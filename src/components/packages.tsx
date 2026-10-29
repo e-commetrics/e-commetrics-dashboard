@@ -29,6 +29,7 @@ const Packages = ({ locale }: { locale: Locale }) => {
   const [sent,         setSent]         = useState(false);
   const [sendError,    setSendError]    = useState<string | null>(null);
   const [email,        setEmail]        = useState("");
+  const [consent,      setConsent]      = useState(false);
 
   const pkg      = selectedId ? plans.find((p) => p.id === selectedId) ?? null : null;
   const isCustom = selectedId === customPlan.id;
@@ -62,6 +63,7 @@ const Packages = ({ locale }: { locale: Locale }) => {
       });
       setSent(true);
       setEmail("");
+      setConsent(false);
     } catch {
       setSendError(locale === "es" ? "Error al enviar. Intenta de nuevo." : "Error sending. Please try again.");
     }
@@ -525,6 +527,8 @@ const Packages = ({ locale }: { locale: Locale }) => {
                 exit={{ scale: 0.94, opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.2, 0.7, 0.2, 1] }}
                 onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-label={title}
                 style={{
                   background: "var(--ec-surface-1)",
                   border: `1px solid ${tier.accent}40`,
@@ -548,6 +552,7 @@ const Packages = ({ locale }: { locale: Locale }) => {
                   </div>
                   <button
                     onClick={() => { setShowModal(false); setSent(false); setSendError(null); }}
+                    aria-label={locale === "es" ? "Cerrar" : "Close"}
                     style={{ width: 30, height: 30, borderRadius: 8, background: "var(--ec-surface-2)", border: "1px solid var(--ec-hairline-strong)", color: "var(--ec-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                   >
                     <X size={14} />
@@ -556,17 +561,51 @@ const Packages = ({ locale }: { locale: Locale }) => {
 
                 <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 18 }}>
                   <div>
-                    <label className="ec-field-label">
+                    <label className="ec-field-label" htmlFor="package-email">
                       {locale === "es" ? "Tu correo electrónico" : "Your email address"}
                     </label>
                     <input
+                      id="package-email"
                       type="email"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={locale === "es" ? "ejemplo@correo.com" : "your@email.com"}
                       className="ec-field-input"
                       disabled={sending || sent}
                     />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <p id="package-privacy-notice" style={{ margin: 0, fontSize: 12.5, color: "var(--ec-text-muted)" }}>
+                      {locale === "es"
+                        ? "E-commetrics usa tu correo solo para enviarte este resumen del paquete."
+                        : "E-commetrics uses your email only to send you this package summary."}
+                    </p>
+                    <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 12.5, color: "var(--ec-text)", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={consent}
+                        onChange={(e) => setConsent(e.target.checked)}
+                        disabled={sending || sent}
+                        aria-describedby="package-privacy-notice"
+                        style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: tier.accent }}
+                      />
+                      <span>
+                        {locale === "es" ? "He leído el " : "I have read the "}
+                        <a
+                          href="/legal/privacy-policy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "var(--ec-text)", textDecoration: "underline" }}
+                        >
+                          {locale === "es" ? "aviso de privacidad" : "privacy notice"}
+                        </a>
+                        {locale === "es"
+                          ? " y acepto que se use mi correo para enviarme este resumen."
+                          : " and agree to my email being used to send me this summary."}
+                      </span>
+                    </label>
                   </div>
 
                   <div
@@ -584,13 +623,13 @@ const Packages = ({ locale }: { locale: Locale }) => {
                   {!sent ? (
                     <button
                       onClick={handleSend}
-                      disabled={sending || !email.includes("@")}
+                      disabled={sending || !email.includes("@") || !consent}
                       style={{
                         width: "100%", padding: "13px 0", borderRadius: 11,
                         background: tier.accent, color: "#fff", border: "none",
                         fontSize: 14, fontWeight: 600,
-                        cursor: sending || !email.includes("@") ? "not-allowed" : "pointer",
-                        opacity: sending || !email.includes("@") ? 0.55 : 1,
+                        cursor: sending || !email.includes("@") || !consent ? "not-allowed" : "pointer",
+                        opacity: sending || !email.includes("@") || !consent ? 0.55 : 1,
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                         transition: "opacity 160ms",
                       }}

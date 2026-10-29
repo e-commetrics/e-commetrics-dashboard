@@ -2,8 +2,8 @@
 
 import React, {
   createContext,
-  useState,
   useEffect,
+  useSyncExternalStore,
   ReactNode,
   useContext,
 } from "react";
@@ -21,22 +21,37 @@ const LangContext = createContext<LangContextProps>({
   changeLang: () => {},
 });
 
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function readLang(): LangType {
+  return Cookies.get("lang") === "en" ? "en" : "es";
+}
+
+function readServerLang(): LangType {
+  return "es";
+}
+
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<LangType>("es");
+  const lang = useSyncExternalStore(subscribe, readLang, readServerLang);
 
   useEffect(() => {
-    const cookieLang = Cookies.get("lang") as LangType | undefined;
-    if (cookieLang) {
-      setLang(cookieLang);
-    } else {
-      Cookies.set("lang", "es", { expires: 365 });
-      setLang("es");
-    }
+    if (!Cookies.get("lang")) Cookies.set("lang", "es", { expires: 365, sameSite: "lax", secure: window.location.protocol === "https:" });
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const changeLang = (newLang: LangType) => {
-    Cookies.set("lang", newLang, { expires: 365 });
-    setLang(newLang);
+    Cookies.set("lang", newLang, { expires: 365, sameSite: "lax", secure: window.location.protocol === "https:" });
+    listeners.forEach((listener) => listener());
   };
 
   return (

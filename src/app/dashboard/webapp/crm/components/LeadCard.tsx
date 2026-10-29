@@ -45,6 +45,7 @@ export function LeadCard({ lead, onDragStart, onOpen }: {
         background: "var(--ec-surface-1)",
         padding: 12,
         transition: "box-shadow 150ms, transform 150ms",
+        opacity: lead.archivedAt ? 0.6 : 1,
       }}
       onMouseEnter={(event) => {
         event.currentTarget.style.boxShadow = "var(--ec-shadow-md)";
@@ -62,9 +63,10 @@ export function LeadCard({ lead, onDragStart, onOpen }: {
         </span>
       </div>
 
-      {lead.campaignName ? (
-        <div style={{ marginTop: 7 }}>
-          <Badge tone="brand">{lead.campaignName}</Badge>
+      {lead.campaignName || lead.archivedAt ? (
+        <div style={{ marginTop: 7, display: "flex", gap: 5, flexWrap: "wrap" }}>
+          {lead.archivedAt ? <Badge tone="warning">Archived</Badge> : null}
+          {lead.campaignName ? <Badge tone="brand">{lead.campaignName}</Badge> : null}
         </div>
       ) : null}
 

@@ -7,6 +7,7 @@ import Packages from "@/components/packages";
 import { useLang } from "@/app/context/LangContext";
 import { ArrowRight, ArrowLeft, Mail, X, Sun, Moon, Phone, ExternalLink, Code2, Megaphone, Search, Server } from "lucide-react";
 import { useTheme } from "next-themes";
+import { setCookie } from "@/lib/cookies";
 
 type Locale = "en" | "es";
 
@@ -281,7 +282,7 @@ const Skills = ({ locale }: { locale: Locale }) => {
       };
       tick();
     } else {
-      setPercentages([0, 0, 0, 0]);
+      animRef.current = requestAnimationFrame(() => setPercentages([0, 0, 0, 0]));
     }
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
   }, [hoveredSkill]);
@@ -1052,6 +1053,15 @@ const Footer = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }
         © {new Date().getFullYear()} E-Commetrics · {locale === "en" ? "All rights reserved" : "Todos los derechos reservados"}
       </span>
 
+      <nav aria-label="Legal" style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <a href="/legal/privacy-policy" style={{ fontSize: 12, color: "var(--ec-text-muted)", textDecoration: "underline" }}>
+          {locale === "en" ? "Privacy notice" : "Aviso de privacidad"}
+        </a>
+        <a href="/accessibility" style={{ fontSize: 12, color: "var(--ec-text-muted)", textDecoration: "underline" }}>
+          {locale === "en" ? "Accessibility" : "Accesibilidad"}
+        </a>
+      </nav>
+
       <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
         <span className="font-mono-ec" style={{ fontSize: 10, color: "var(--ec-text-faint)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
           SECURE · ENCRYPTED · MX
@@ -1083,7 +1093,7 @@ export default function Landing({ goToLogin }: { goToLogin: () => void }) {
   const toggleLocale = () => {
     const next: Locale = lang === "en" ? "es" : "en";
     changeLang(next);
-    document.cookie = `lang=${next}; path=/; max-age=31536000`;
+    setCookie("lang", next, 31536000);
   };
 
   return (
@@ -1114,11 +1124,12 @@ export default function Landing({ goToLogin }: { goToLogin: () => void }) {
             cursor: "pointer", boxShadow: "var(--ec-shadow-sm)", transition: "all 140ms",
           }}
           title={lang === "en" ? "Cambiar a Español" : "Switch to English"}
+          aria-label={lang === "en" ? "Cambiar a Español" : "Switch to English"}
         >
           {lang === "en" ? (
-            <Image src="/MX.svg" width={22} height={22} alt="MX" />
+            <Image src="/MX.svg" width={22} height={22} alt="" />
           ) : (
-            <Image src="/USA.svg" width={22} height={22} alt="EN" />
+            <Image src="/USA.svg" width={22} height={22} alt="" />
           )}
         </button>
       </div>

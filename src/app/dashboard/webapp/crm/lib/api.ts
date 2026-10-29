@@ -4,6 +4,7 @@ import axios from "axios";
 import { getToken, notifyUnauthorized } from "./token-store";
 import type {
   ActionResult,
+  Appointment,
   AutomationRule,
   CrmUser,
   DashboardPayload,
@@ -94,9 +95,18 @@ export async function apiLogout(): Promise<void> {
 
 // ─── Leads ───────────────────────────────────────────────────────────────────
 
-export async function apiListLeads(): Promise<Lead[]> {
-  const { data } = await http.get<{ leads: Lead[] }>("/leads");
+/** Sin `includeArchived` el backend omite los archivados. */
+export async function apiListLeads(includeArchived = false): Promise<Lead[]> {
+  const { data } = await http.get<{ leads: Lead[] }>("/leads", {
+    params: includeArchived ? { includeArchived: "1" } : undefined,
+  });
   return data.leads ?? [];
+}
+
+export async function apiSetLeadArchived(id: string, archived: boolean): Promise<Lead> {
+  const action = archived ? "archive" : "restore";
+  const { data } = await http.post<{ lead: Lead }>(`/leads/${encodeURIComponent(id)}/${action}`);
+  return data.lead;
 }
 
 export async function apiCreateLead(input: {
@@ -111,6 +121,19 @@ export async function apiCreateLead(input: {
 
 export async function apiGetLead(id: string): Promise<LeadDetailPayload> {
   const { data } = await http.get<LeadDetailPayload>(`/leads/${encodeURIComponent(id)}`);
+  return data;
+}
+
+// ─── Citas del sitio ────────────────────────────────────────────────────────
+
+export async function apiListAppointments(): Promise<Appointment[]> {
+  const { data } = await http.get<{ appointments: Appointment[] }>("/appointments");
+  return data.appointments ?? [];
+}
+
+/** Si la persona ya esta en el CRM devuelve ese lead con `created: false`. */
+export async function apiAddAppointmentToCrm(id: number): Promise<{ lead: Lead; created: boolean }> {
+  const { data } = await http.post<{ lead: Lead; created: boolean }>(`/appointments/${id}/lead`);
   return data;
 }
 
@@ -153,6 +176,12 @@ export async function apiListTasks(): Promise<Task[]> {
   return data.tasks ?? [];
 }
 
+/** `dueAt` en ISO. */
+export async function apiCreateTask(input: { leadId: string; description: string; dueAt: string }): Promise<Task> {
+  const { data } = await http.post<{ task: Task }>("/tasks", input);
+  return data.task;
+}
+
 export async function apiCompleteTask(id: string): Promise<Task> {
   const { data } = await http.patch<{ task: Task }>(`/tasks/${encodeURIComponent(id)}`);
   return data.task;
@@ -190,6 +219,12 @@ export async function apiSaveTemplate(input: {
 }): Promise<MessageTemplate> {
   const { data } = await http.patch<{ template: MessageTemplate }>("/settings/templates", input);
   return data.template;
+}
+
+/** Cadena vacia = sin aviso. El backend valida y normaliza la lista. */
+export async function apiSaveNotifyEmails(notifyEmails: string): Promise<string | null> {
+  const { data } = await http.patch<{ notifyEmails: string | null }>("/settings/notify", { notifyEmails });
+  return data.notifyEmails;
 }
 
 // ─── Herramientas ───────────────────────────────────────────────────────────
