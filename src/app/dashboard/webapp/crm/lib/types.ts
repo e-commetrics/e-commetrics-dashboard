@@ -127,6 +127,8 @@ export interface Appointment {
   leadId: string | null;
   leadName: string | null;
   leadArchived: boolean;
+  /** true si el lead se creo desde esta misma cita, no por coincidencia de datos. */
+  leadIsOwn: boolean;
 }
 
 export interface CrmUser {

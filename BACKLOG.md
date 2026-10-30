@@ -44,6 +44,9 @@ Pendiente para darlo por cerrado:
       el correo está validado. Se reactivan quitando el canal de `DISABLED_CHANNELS` en
       `webapp/crm/lib/channels.ts` cuando el usuario lo indique. Solo frontend: falta build, subida
       y commit; el backend sigue aceptando envíos directos. Ver `crm_validacion_2026-10-20.md` §11.
+- **Actualización (2026-10-29):** WhatsApp quedó habilitado en el código del frontend; falta build
+  y subida. SMS permanece desactivado. El backend sigue aceptando envíos y WhatsApp apunta al número
+  de pruebas; validar configuración y plantillas antes de enviar a pacientes.
 - [ ] **Monitor externo** a `/health` con palabra clave `warnings` (un `warnings` llega con código 200).
       Candidato: Better Stack; confirmar que su plan gratis incluye palabra clave.
 - [x] **Comprobación de 48 h de "Follow up again" y `touchLead`: OK (2026-10-21).** Una sola tarea nueva
@@ -302,11 +305,19 @@ la migración a Vercel y conviene hacerlos pronto.
 - [~] (2026-10-21, **desplegado, verificado con 401 sin sesión y probado en el navegador como admin y cliente (2026-10-21)**: `requireAdmin` en `PUT`, `DELETE`, `POST /api/register` y `POST /api/users/:id/apps`; el frontend ya manda la cookie) `PUT /api/users/:id` **sin autenticación** y acepta `password`: cualquiera puede
       cambiar la contraseña de cualquier usuario, admin incluido. Es el más grave.
 - [~] (2026-10-21, **desplegado**: solo admin y sin el hash de contraseña) `GET /api/users` sin auth y con `SELECT *`: expone los hashes de contraseña.
-- [ ] `POST /api/register`, `DELETE /api/users/:id`, `POST /api/users/:id/apps`,
-      `PUT /api/update-profile` sin auth. `PUT /api/change-password` toma el `id` del cuerpo.
+- [x] (2026-10-29, confirmado por el usuario y leído en `backend-actual.js`, la copia de producción en la
+      raíz del repo, en `.gitignore`) `POST /api/register`, `DELETE /api/users/:id` y
+      `POST /api/users/:id/apps` llevan `requireAdmin` en producción.
+- [ ] `PUT /api/update-profile` sin auth. `PUT /api/change-password` toma el `id` del cuerpo y
+      tampoco pide sesión.
+- [ ] Siguen sin auth en producción (2026-10-29): `GET /api/users/:id/apps`, todas las rutas de
+      proyectos y contenidos (`GET`, `POST`, `PUT`, `DELETE`), `POST /api/invoice` y
+      `POST /send-package-email`. `PUT /api/projects/:id` y `DELETE /api/projects/:id` están
+      definidas dos veces (gana la primera).
 - [ ] Contraseña SMTP de facturación escrita en el código: pasarla a variable de entorno.
 - [ ] `/api/register` envía la contraseña en texto plano por correo.
-- [ ] Middleware `requireAuth` y `requireAdmin` para las rutas de listado y escritura.
+- [~] (2026-10-29: los middleware ya existen en producción y protegen las rutas de usuarios; falta
+      aplicarlos al resto) Middleware `requireAuth` y `requireAdmin` para las rutas de listado y escritura.
 - [ ] Añadir `"CRM"` a `allComponents` (si no se hizo ya en el punto 1).
 - [ ] Rutas de subida (`/api/upload-profile-image`, `/api/projects/content`,
       `PUT /api/project_content/:id`): exigir sesión, y limitar tamaño y tipo de archivo en

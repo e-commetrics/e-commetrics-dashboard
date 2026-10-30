@@ -70,16 +70,15 @@ manda un evento a Meta.
 ## 2. No: hoy no se puede
 
 ### Bloqueado por terceros
-- [ ] **WhatsApp:** desactivado en la interfaz. Falta el número real de la clínica, un token permanente y
-      plantillas aprobadas por Meta. `/health` dice `whatsapp: true` solo porque hay variables definidas
-      (apuntan al número de pruebas).
+- [ ] **WhatsApp:** desactivado en la interfaz. Número nuevo y token listos (2026-10-29); faltan método
+      de pago, plantilla aprobada por Meta y el campo de plantilla en el CRM. Lista completa en §12.
 - [ ] **SMS:** no configurado. Faltan las credenciales de Twilio, el paquete `twilio` y, si aplica, el
       registro A2P 10DLC.
 - [ ] **Envíos automáticos:** las dos reglas de mensaje están apagadas a propósito. Todo correo es manual.
 
 ### No programado todavía (se puede hacer en el CRM, no depende de Meta)
-- [ ] **Editar un lead** (nombre, correo, teléfono).
-- [x] ~~**Borrar un lead.**~~ Hecho el 2026-10-28 como **archivar y restaurar** (§9).
+- [x] ~~**Editar un lead** (nombre, correo, teléfono).~~ Hecho el 2026-10-30 (§14).
+- [x] ~~**Borrar un lead.**~~ Hecho el 2026-10-28 como **archivar y restaurar** (§9); borrado definitivo el 2026-10-30 (§14).
 - [x] ~~**Crear tareas a mano.**~~ Hecho el 2026-10-28 (§10).
 - [ ] **Detectar duplicados por correo o teléfono.** Recomendado: avisar, no fusionar solo. Diseño y
       archivos en §10 ("Siguiente: duplicados"); se pospuso hasta que haya volumen de leads.
@@ -123,7 +122,7 @@ Ordenadas de más a menos viable.
 |---|---|---|---|---|
 | 1 | ~~**Calendario del sitio → CRM**~~ | Ver las citas del sitio en el CRM y agregarlas como lead | — | **Hecho el 2026-10-28** como pestaña Web con alta manual (§7). Pendiente opcional: mover solo a Scheduled los leads que ya existen |
 | 2 | ~~**Aviso de lead nuevo** al equipo por correo~~ | Cumplir "Call within 1 hour" | — | **Hecho el 2026-10-28** (§6) |
-| 3 | **Resultados de campañas en el CRM** | Gasto, leads, costo por lead y costo por paciente real (Won) por campaña | Permiso `ads_read` de la cuenta publicitaria; el token actual no alcanza | Alta |
+| 3 | **Resultados de campañas en el CRM** | Gasto, leads, costo por lead y costo por paciente real (Won) por campaña | Permiso `ads_read`: el token del usuario del sistema "Claude-agent" ya lo tiene (2026-10-29); falta ver si el CRM puede usar ese token (§12) | **Baja (2026-10-29):** viable, pero el usuario no quiere variables nuevas en cPanel por ahora. Requisitos en §12 |
 | 4 | **Funciones de leads de §2** (editar, archivar, tareas manuales, aviso de duplicados) | Uso diario más cómodo | Nada | Alta |
 | 5 | **WhatsApp** | El canal que más contesta en México | Número, token y plantillas de Meta | Media (bloqueada) |
 | 6 | **Recordatorio automático de cita** | Menos inasistencias | El punto 1, y WhatsApp para que sea útil | Media |
@@ -170,7 +169,7 @@ Los leads manuales y de CSV no avisan. Sin direcciones, no se manda nada.
 - [ ] **Ver llegar el aviso con el siguiente lead real de Meta** (revisar spam la primera vez). En espera
       al 2026-10-29: no ha entrado ningún lead nuevo. Con ese mismo lead se hace la prueba de punta a
       punta de §3.
-- [ ] Commits por archivo en ambos repos (no hechos).
+- [x] Commits en ambos repos (2026-10-29: dashboard `dd1ec91`, Reforma `d620a53`).
 
 **Archivos:**
 - `ReformaDental2025/server/`: `crm/services/automation.js`, `crm/routes/settings.js`,
@@ -216,7 +215,7 @@ una cita falsa no se vuelva lead.
 - [x] Backend con el filtro de CAPI en producción (confirmado por el usuario el 2026-10-29).
 - [x] Pestaña Web revisada en producción (2026-10-29).
 - [x] "Add to CRM" probado con una cita real (2026-10-29).
-- [ ] Commits en `e-commetrics-dashboard`: al 2026-10-29 los cambios siguen sin commitear.
+- [x] Commits en ambos repos (2026-10-29: dashboard `dd1ec91`, Reforma `d620a53`).
 
 **Archivos:**
 - `ReformaDental2025/server/crm/`: nuevos `services/repo/appointments.js`, `services/appointments.js` y
@@ -305,7 +304,7 @@ Facebook y no crea nada.
 - [x] **Probado en producción:** se archivaron los 3 leads de prueba (`Kevin Okhuysen`,
       `<test lead: dummy data for full_name>` y `Reforma Dental Test`) y, tras "Sync now", siguen archivados
       y aparecen una sola vez con "Show archived".
-- [ ] Commits por archivo en ambos repos (no hechos).
+- [x] Commits en ambos repos (2026-10-29: dashboard `dd1ec91`, Reforma `d620a53`).
 
 **Archivos:**
 - `ReformaDental2025/server/`: `crm/services/repo/leads.js`, `crm/routes/leads.js`,
@@ -344,7 +343,7 @@ futuro que el panel muestra y marca en rojo al vencer.
 - [x] Backend (`out/server.js` del 2026-10-28 16:56) y frontend desplegados.
 - [x] **Probado en producción** con un lead de prueba (restaurado y vuelto a archivar, sin tocar leads
       reales): la tarea sale en la ficha y en el panel con la hora correcta, y la actividad la registra.
-- [ ] Commits por archivo en ambos repos (no hechos).
+- [x] Commits en ambos repos (2026-10-29: dashboard `dd1ec91`, Reforma `d620a53`).
 
 **Archivos:**
 - `ReformaDental2025/server/crm/routes/dashboard.js` (ruta `POST /tasks`).
@@ -415,3 +414,126 @@ modelo de IA, y quién atiende urgencias y escalamientos.
 ### Recomendación
 No programar todavía. Primero, la decisión A/B/C y las respuestas del dueño (sección 2). Si elige B, el
 primer paso técnico es cerrar las rutas de citas (`BACKLOG.md` §3.1), que conviene de todos modos.
+
+---
+
+## 12. WhatsApp y pendientes del 2026-10-29
+
+**Estado:** en pausa; el usuario se movió a otro proyecto. Retomar desde aquí.
+
+### WhatsApp: qué hay
+- [x] Número nuevo de la clínica: su ID ya está en `CRM_WHATSAPP_PHONE_NUMBER_ID` (cPanel).
+- [x] Token: el usuario del sistema **"Claude-agent"** (app "E-commetrics - RD Leads") tiene un token
+      **permanente y válido**, con `whatsapp_business_messaging` y `whatsapp_business_management`
+      "para todos los objetos". Revisado en el depurador de tokens de Meta. No hace falta otro.
+- [x] El backend ya manda plantillas de Meta: si la plantilla del CRM tiene `whatsapp_template_name`,
+      usa `sendWhatsappTemplate`; si no, manda texto libre, que solo llega dentro de las 24 h
+      (`crm/services/messaging/index.js:75`).
+
+### WhatsApp: qué falta, en orden
+1. [ ] **Método de pago** en la WABA del número de Reforma. Meta avisa que 4 WABAs no tienen; solo
+       hace falta en la del número. Decidir antes **quién paga** (e-commetrics o la clínica). Desde el
+       1 de octubre de 2026 Meta cobra también los mensajes de servicio, con 1,000 gratis al mes por
+       número; sin tarjeta deja de entregar al acabarse.
+2. [ ] Confirmar que la **WABA del número nuevo está asignada** al usuario "Claude-agent"
+       (Configuración del negocio › Usuarios del sistema › activos). Si no, asignarla; no hace falta
+       generar otro token.
+3. [ ] Confirmar que `CRM_WHATSAPP_ACCESS_TOKEN` en cPanel tiene ese token y **reiniciar** la app.
+4. [ ] **Plantilla en WhatsApp Manager** (fuera del CRM): categoría Utilidad, nombre por ejemplo
+       `confirmacion_lead`, idioma `es_MX`, **una sola variable** `{{1}}` (el CRM solo manda el
+       nombre). Esperar la aprobación.
+5. [ ] **CRM (código, frontend):** agregar al editor de plantillas los campos "Meta template name" e
+       idioma, solo para el canal WhatsApp (el backend ya los acepta en `PATCH /settings/templates`), y
+       quitar `"whatsapp"` de `DISABLED_CHANNELS` en `lib/channels.ts`. Hoy ninguna plantilla del seed
+       trae `whatsapp_template_name`. Si no se quiere tocar el editor, la alternativa es un `UPDATE`
+       directo en `crm_templates`.
+6. [ ] **Prueba** a un lead de prueba con el celular del usuario, antes de usarlo con leads reales.
+- **Fuera del alcance:** recibir las respuestas del paciente en el CRM. Necesita el webhook de Meta,
+  que es parte del asistente (§11).
+- **Revisar:** si el número quedó en la API de Cloud, quizá ya no funcione en la app de WhatsApp
+  Business del teléfono, salvo que se haya registrado con "coexistencia".
+
+### Otros pendientes
+- [ ] **Token con menos permisos** (no urgente): el de "Claude-agent" también puede administrar
+      anuncios y publicar en páginas e Instagram. Generar uno aparte solo con los dos permisos de
+      WhatsApp para `CRM_WHATSAPP_ACCESS_TOKEN`.
+- [ ] **Resultados de campañas (§4, punto 3): prioridad baja** (2026-10-29, el usuario no quiere
+      variables nuevas en cPanel por ahora). Revisado: es viable. El sync usa `CRM_FB_PAGE_ACCESS_TOKEN`
+      (token de página, no lee gasto). Haría falta: variable nueva con el token de "Claude-agent"
+      (`ads_read`), el ID `act_...` de la cuenta publicitaria, y asignar esa cuenta a "Claude-agent" en
+      Usuarios del sistema. Código: ruta que llama a `/act_<id>/insights?level=campaign` y cruza con
+      `crm_leads.campaign_name` (por nombre: si renombran la campaña, se pierde el cruce); tabla en
+      `DashboardScreen`. Prueba previa en Graph API Explorer:
+      `act_<id>/insights?level=campaign&fields=campaign_name,spend&date_preset=last_30d`.
+- [ ] **Asistente con IA:** modelo decidido, **Claude Haiku 5.5** (`crm_asistente_capa_modelos.md`
+      §3). **API key de Anthropic en espera** (platform.claude.com, workspace propio con límite de
+      gasto; aparte de la suscripción Claude Pro). Siguen pendientes la decisión A, B o C y las
+      respuestas del dueño (§11).
+- [ ] **Rutas de citas sin autenticación** (`BACKLOG.md` §3.1). Confirmado en el código el
+      2026-10-29: las cuatro rutas de `server.src.js` (líneas 369 a 431) no piden sesión. Requisito
+      del asistente; recomendado como siguiente tarea de código.
+- [ ] **Backend del dashboard** (`BACKLOG.md` §3, actualizado el 2026-10-29): las rutas de usuarios
+      ya están protegidas en producción; siguen abiertas `update-profile`, `change-password`, proyectos,
+      contenidos, `invoice` y `send-package-email`.
+- [ ] En espera de un lead real de Meta: ver llegar el aviso por correo (§6) y la prueba de punta a
+      punta (§3).
+- [ ] Revisión del código de los cambios del 28-oct: quedó a medias. Hasta donde llegó no había
+      errores en el CRM; falta revisar el sidebar y `LangContext`.
+- [ ] Pendientes de código sin bloqueo: Lead → cita (§8, opción 2) y editar un lead (§2).
+
+
+---
+
+## 13. Pendiente de revisar, después de WhatsApp (2026-10-29)
+
+**Estado:** en espera. No se toca nada de esta lista hasta que WhatsApp quede funcionando (§12). Al
+retomar, revisar cada punto contra el código antes de empezar, porque esta lista sale de las notas.
+
+### Integraciones
+- [ ] **Resultados de campañas:** prioridad baja; requisitos y prueba en §12 ("Otros pendientes").
+- [ ] **Lead → cita:** diseñado, sin implementar (§8, opción 2 recomendada).
+- [ ] **Recordatorio automático de cita:** depende de WhatsApp; las reglas de mensaje siguen apagadas a
+      propósito (los `appointment-reminder` del 2026-10-29 fueron manuales).
+- [ ] **Otros orígenes de leads** (Instagram, Google Ads, TikTok): solo si hay inversión en esos canales.
+- [ ] **Asistente con IA:** falta la API key, la decisión A/B/C y las respuestas del dueño (§11).
+- [ ] **Sistema dental** (expedientes, pagos): viabilidad baja por datos de salud.
+
+### Funciones del CRM (no dependen de terceros)
+- [x] Editar un lead (nombre, correo, teléfono). Hecho el 2026-10-30 (§14).
+- [ ] Aviso de duplicados por correo o teléfono (§10, pospuesto hasta que haya volumen).
+- [ ] Segundo usuario del CRM.
+- [x] Sync de Facebook: `sync.js` usa `fetchAllPages` para formularios y leads (revisado en el código el
+      2026-10-30).
+- [ ] Importar CSV no deduplica y parte los nombres con coma ("Pérez, Ana").
+
+### Requisitos de seguridad (antes del asistente y del recordatorio)
+**Decisión del 2026-10-30:** el usuario las deja como están por ahora.
+- [ ] Rutas de citas sin autenticación (`BACKLOG.md` §3.1).
+- [ ] Rutas abiertas del backend del dashboard (`BACKLOG.md` §3).
+
+---
+
+## 14. Cambios del 2026-10-30
+
+Todo desplegado. El usuario confirmó en producción el diseño de correo (mensaje de prueba) y Delete; **Edit lead
+no tiene confirmación explícita**. **Sin commit en ningún repo.**
+
+- **Diseño de correo:** todos los correos del CRM salen con el diseño de la confirmación de citas, con el
+  asunto como título y el texto escapado (`messaging/emailLayout.js`). Incluye el aviso "New lead". El diseño
+  está copiado de `server.src.js`: un cambio de dirección o teléfono va en los dos. Falta probar
+  Outlook/Hotmail.
+- **Editar un lead:** botón Edit lead en la ficha (`PATCH /leads/:id` acepta `name`, `email`, `phone`).
+  Activity guarda el valor anterior. No manda nada a Meta y reinicia el contador de 48 h.
+- **Cruce de citas (corrige §4 y §7):** el correo solo cuenta si a alguno de los dos le falta teléfono. Mismo
+  correo y teléfono distinto ya no se toma como la misma persona. Mismo teléfono sí, aunque cambie el nombre.
+- **"Add as new lead" en la pestaña Web:** crea un lead aparte aunque coincida correo o teléfono. La fila
+  muestra el nombre del lead vinculado. Los leads nuevos guardan `appointment_id` en `fieldDataRaw`, así que
+  una cita no crea dos leads; los anteriores no lo tienen y sí podrían duplicarse.
+- **Delete en la ficha:** borrado definitivo con confirmación, solo manuales, CSV y citas. Facebook responde
+  409 porque el sync lo recrearía. Sin registro de quién borró. Probado por el usuario en producción.
+
+**Riesgo abierto:** el build del frontend desplegado lleva WhatsApp habilitado y Meta sigue sin método de
+pago, así que el CRM puede decir "Message sent" sin entregar.
+
+**Hallazgo sin corregir:** `confirmationHtml` en `server.src.js` inserta el nombre del formulario público sin
+escapar en el correo de confirmación.

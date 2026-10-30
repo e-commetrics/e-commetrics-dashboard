@@ -15,6 +15,8 @@ import {
   formatFieldValue,
   isOverdue,
 } from "../lib/format";
+import { DeleteLeadModal } from "../components/DeleteLeadModal";
+import { EditLeadModal } from "../components/EditLeadModal";
 import { SendMessageModal } from "../components/SendMessageModal";
 import {
   Badge,
@@ -150,6 +152,7 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
             templates={settings.data?.templates ?? []}
             onSent={detail.reload}
           />
+          <EditLeadModal lead={lead} />
           <button
             type="button"
             className="ec-btn-secondary"
@@ -166,6 +169,7 @@ export function LeadDetailScreen({ leadId, onBack }: { leadId: string; onBack: (
             )}
             {lead.archivedAt ? "Restore" : "Archive"}
           </button>
+          <DeleteLeadModal lead={lead} onDeleted={onBack} />
           {lead.archivedAt ? null : (
             <p style={{ fontSize: 11, color: "var(--ec-text-dim)", margin: 0 }}>
               Archiving hides the lead from the pipeline, tasks and dashboard. Nothing is deleted.

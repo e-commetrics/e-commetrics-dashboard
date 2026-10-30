@@ -109,6 +109,11 @@ export async function apiSetLeadArchived(id: string, archived: boolean): Promise
   return data.lead;
 }
 
+/** El backend rechaza los leads de Facebook con 409. */
+export async function apiDeleteLead(id: string): Promise<void> {
+  await http.delete(`/leads/${encodeURIComponent(id)}`);
+}
+
 export async function apiCreateLead(input: {
   name: string;
   email?: string | null;
@@ -131,16 +136,19 @@ export async function apiListAppointments(): Promise<Appointment[]> {
   return data.appointments ?? [];
 }
 
-/** Si la persona ya esta en el CRM devuelve ese lead con `created: false`. */
-export async function apiAddAppointmentToCrm(id: number): Promise<{ lead: Lead; created: boolean }> {
-  const { data } = await http.post<{ lead: Lead; created: boolean }>(`/appointments/${id}/lead`);
+/**
+ * Si la persona ya esta en el CRM devuelve ese lead con `created: false`, salvo
+ * con `asNew`, que crea otro lead aunque comparta correo o telefono.
+ */
+export async function apiAddAppointmentToCrm(id: number, asNew = false): Promise<{ lead: Lead; created: boolean }> {
+  const { data } = await http.post<{ lead: Lead; created: boolean }>(`/appointments/${id}/lead`, { asNew });
   return data;
 }
 
-/** Solo admite `stage` y `notes`. Cualquier otra cosa se ignora en el backend. */
+/** Solo admite estos campos. Cualquier otra cosa se ignora en el backend. */
 export async function apiPatchLead(
   id: string,
-  patch: { stage?: string; notes?: string }
+  patch: { stage?: string; notes?: string; name?: string; email?: string | null; phone?: string | null }
 ): Promise<Lead> {
   const { data } = await http.patch<{ lead: Lead }>(`/leads/${encodeURIComponent(id)}`, patch);
   return data.lead;

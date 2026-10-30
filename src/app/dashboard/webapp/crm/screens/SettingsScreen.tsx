@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, Plus, RefreshCw, Send, Upload, X, Zap } from "lucide-react";
+import { Info, Loader2, Plus, RefreshCw, Send, Upload, X, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
   apiCapiTest,
@@ -25,6 +25,7 @@ import {
   ErrorNotice,
   InlineResult,
   Loading,
+  Modal,
   PageHeader,
   Section,
   SelectField,
@@ -80,6 +81,10 @@ export function SettingsScreen() {
         </p>
       </Section>
 
+      <Section title="Automatic stage changes">
+        <ScheduledGuide />
+      </Section>
+
       <Section title="Message templates">
         <Templates templates={data.templates} />
       </Section>
@@ -96,6 +101,94 @@ export function SettingsScreen() {
         <CsvImport />
       </Section>
     </div>
+  );
+}
+
+// ─── Guia de Scheduled ───────────────────────────────────────────────────────
+
+const SCHEDULED_OUTCOMES = [
+  { situation: "Appointment today or later, lead in New or Contacted", result: "Moves to Scheduled" },
+  { situation: "Lead already in Scheduled, Consultation, Won or Lost", result: "Stage stays the same; the appointment is noted" },
+  { situation: "Appointment date already passed", result: "Stage stays the same; the appointment is noted" },
+  { situation: "Several active leads share the phone or email", result: "None moves; move the right one by hand" },
+  { situation: "Only an archived lead matches", result: "Stays archived; the appointment is noted" },
+  { situation: "No lead matches", result: "Nothing changes; it waits in Pipeline › Web" },
+];
+
+/** Explica al equipo por que un lead cambia solo a Scheduled. Debe coincidir con planAppointment del backend. */
+function ScheduledGuide() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <p style={{ fontSize: 13.5, color: "var(--ec-text-muted)", margin: "0 0 12px" }}>
+        Leads can move to Scheduled on their own when an appointment is booked for them.
+      </p>
+      <button
+        type="button"
+        className="ec-btn-secondary"
+        style={{ padding: "8px 14px", fontSize: 13 }}
+        onClick={() => setOpen(true)}
+      >
+        <Info size={13} />
+        How leads move to Scheduled
+      </button>
+
+      <Modal open={open} onOpenChange={setOpen} title="How leads move to Scheduled" width={640}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, fontSize: 13.5 }}>
+          <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
+            <li>An appointment is booked on the website or in the dashboard calendar.</li>
+            <li>Within about 5 minutes, the CRM checks new appointments.</li>
+            <li>
+              It looks for a lead with the same phone. It uses the email only when the appointment or the lead has no
+              usable phone. Names are not compared.
+            </li>
+            <li>It applies the result below and writes &quot;Appointment booked&quot; in the lead&apos;s Activity.</li>
+          </ol>
+
+          <div style={{ overflowX: "auto", border: "1px solid var(--ec-hairline-strong)", borderRadius: 12 }}>
+            <table className="ec-table">
+              <thead>
+                <tr>
+                  <th scope="col">Situation</th>
+                  <th scope="col">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SCHEDULED_OUTCOMES.map((outcome) => (
+                  <tr key={outcome.situation}>
+                    <td>{outcome.situation}</td>
+                    <td>{outcome.result}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <div className="ec-field-label" style={{ marginBottom: 6 }}>
+              From Pipeline › Web
+            </div>
+            <p style={{ margin: 0 }}>
+              &quot;Add to CRM&quot; and &quot;Add as new lead&quot; create a lead in Scheduled when the appointment is
+              today or later, and in New when its date has passed.
+            </p>
+          </div>
+
+          <div>
+            <div className="ec-field-label" style={{ marginBottom: 6 }}>
+              Good to know
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
+              <li>A moved lead gets an &quot;Appointment reminder&quot; task, due one day before the appointment.</li>
+              <li>Facebook leads that move also send a real &quot;Scheduled&quot; event to Meta.</li>
+              <li>Deleting or editing an appointment does not move the lead back. Change the stage by hand if needed.</li>
+              <li>A family sharing one phone can move the wrong lead. Check Activity if a move looks wrong.</li>
+            </ul>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
 

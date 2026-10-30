@@ -28,7 +28,7 @@ export const SOURCE_LABEL: Record<LeadSource, string> = {
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?$/;
 
 /** "platform" e "is_organic" son ruido interno de Meta; el resto son respuestas del formulario. */
-export const HIDDEN_FIELD_KEYS = new Set(["platform", "is_organic"]);
+export const HIDDEN_FIELD_KEYS = new Set(["platform", "is_organic", "appointment_id"]);
 
 /** "fecha_de_contacto?" -> "Fecha de contacto?" */
 export function formatFieldLabel(key: string): string {

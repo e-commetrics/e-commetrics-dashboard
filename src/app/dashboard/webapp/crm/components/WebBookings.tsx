@@ -61,7 +61,7 @@ export function WebBookings({ onOpenLead }: { onOpenLead: (id: string) => void }
 }
 
 function BookingRow({ appointment, onOpenLead }: { appointment: Appointment; onOpenLead: (id: string) => void }) {
-  const add = useMutation(() => apiAddAppointmentToCrm(appointment.id), {
+  const add = useMutation((asNew: boolean) => apiAddAppointmentToCrm(appointment.id, asNew), {
     onSuccess: (result) =>
       toast.success(result.created ? `${result.lead.name} added to the CRM.` : `${result.lead.name} was already in the CRM.`),
     onError: (message) => toast.error(message),
@@ -87,23 +87,39 @@ function BookingRow({ appointment, onOpenLead }: { appointment: Appointment; onO
       </td>
       <td style={{ whiteSpace: "nowrap" }}>
         {appointment.leadId ? (
-          <button
-            type="button"
-            className="ec-btn-secondary"
-            style={{ padding: "6px 12px", fontSize: 12 }}
-            onClick={() => onOpenLead(appointment.leadId as string)}
-            aria-label={`Open lead ${appointment.leadName ?? appointment.name}`}
-          >
-            <ExternalLink size={13} />
-            {appointment.leadArchived ? "In CRM (archived)" : "In CRM"}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+            <button
+              type="button"
+              className="ec-btn-secondary"
+              style={{ padding: "6px 12px", fontSize: 12 }}
+              onClick={() => onOpenLead(appointment.leadId as string)}
+              aria-label={`Open lead ${appointment.leadName ?? appointment.name}`}
+            >
+              <ExternalLink size={13} />
+              {appointment.leadArchived ? "In CRM (archived)" : "In CRM"}
+            </button>
+            <span style={{ fontSize: 11.5, color: "var(--ec-text-muted)" }}>Lead: {appointment.leadName}</span>
+            {appointment.leadIsOwn ? null : (
+              <button
+                type="button"
+                className="ec-btn-secondary"
+                style={{ padding: "6px 12px", fontSize: 12 }}
+                disabled={add.loading}
+                onClick={() => void add.run(true)}
+                aria-label={`Add ${appointment.name} as a new lead`}
+              >
+                {add.loading ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />}
+                Add as new lead
+              </button>
+            )}
+          </div>
         ) : (
           <button
             type="button"
             className="ec-btn-primary"
             style={{ padding: "6px 12px", fontSize: 12 }}
             disabled={add.loading}
-            onClick={() => void add.run()}
+            onClick={() => void add.run(false)}
             aria-label={`Add ${appointment.name} to the CRM`}
           >
             {add.loading ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />}

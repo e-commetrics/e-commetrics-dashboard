@@ -5,9 +5,10 @@ documentos de validación del 16, 19 y 20 de octubre. Los puntos de cumplimiento
 backlog **sin comprobarlos contra el código**: parte ya existe en el árbol sin commit (`src/app/legal/`,
 `src/app/accessibility/`), así que ese bloque puede estar desactualizado.
 
-Estado de referencia: el CRM funciona solo con correo. WhatsApp y SMS están desactivados en la
-interfaz. El asistente con IA está en diseño, sin código. CAPI está en modo real: no cambiar etapas de
-leads reales ni activar reglas de mensaje.
+Estado de referencia original: el CRM funcionaba solo con correo; WhatsApp y SMS estaban desactivados
+en la interfaz. **Actualizado 2026-10-29:** WhatsApp quedó habilitado en el código del frontend; falta
+build y subida. SMS sigue desactivado. El asistente con IA está en diseño, sin código. CAPI está en
+modo real: no cambiar etapas de leads reales ni activar reglas de mensaje.
 
 ## 1. Hoy y esta semana (CRM solo con correo)
 
@@ -34,20 +35,22 @@ leads reales ni activar reglas de mensaje.
 - [ ] **Commits por archivo,** sin `git add .`, en este repo (`compliance`) y en `ReformaDental2025`
       (`feature/crm-module`). Cuidado con `server/dashboard.js` (secretos) y `server/backup.js` (no lo creó
       este trabajo). `server/crm/services/tick.js` está sin trackear.
-- [ ] **Subir a producción** el build con SMS y WhatsApp desactivados en la interfaz (compila; falta verlo
-      en el navegador).
+- [ ] **Subir a producción** el build con WhatsApp habilitado y SMS desactivado en la interfaz.
 - [ ] **Probar** correo a Outlook/Hotmail y el permiso `CRM` con un cliente real.
 
 ## 2. WhatsApp (Meta)
 
 Hoy apunta al **número de pruebas**; `/health` dice `whatsapp: true` solo porque hay variables definidas.
+El botón quedó habilitado en el frontend el 2026-10-29; no enviar a pacientes hasta configurar y validar
+el número real y las plantillas aprobadas.
 
 - [ ] Registrar y verificar el número real de la clínica en WhatsApp Business.
 - [ ] Cambiar `CRM_WHATSAPP_PHONE_NUMBER_ID` al del número real.
 - [ ] Token permanente (usuario del sistema), no el temporal de 24 h.
 - [ ] Plantillas aprobadas por Meta; anotar `whatsapp_template_name` y el idioma en la plantilla del CRM.
 - [ ] Reiniciar la app y probar con "Send a test message" a un número propio.
-- [ ] Quitar `whatsapp` de `DISABLED_CHANNELS` en `webapp/crm/lib/channels.ts`, build y subida.
+- [x] Quitar `whatsapp` de `DISABLED_CHANNELS` en `webapp/crm/lib/channels.ts` (2026-10-29).
+- [ ] Hacer build y subir el frontend con WhatsApp habilitado.
 - [ ] Confirmar que las reglas de mensaje sigan deshabilitadas: el backend aún acepta envíos directos.
 
 ## 3. SMS (Twilio)

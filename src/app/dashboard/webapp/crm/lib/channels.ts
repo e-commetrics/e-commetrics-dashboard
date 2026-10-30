@@ -1,9 +1,8 @@
 import type { MessageChannel } from "./types";
 
-// Canales apagados a proposito mientras no se validen en produccion. Para
-// reactivar uno, quitarlo de esta lista. El backend sigue aceptando el envio:
-// esto solo bloquea la interfaz.
-export const DISABLED_CHANNELS: readonly MessageChannel[] = ["sms", "whatsapp"];
+// SMS sigue apagado hasta validarlo en produccion. El backend acepta el envio;
+// esta lista solo bloquea la interfaz.
+export const DISABLED_CHANNELS: readonly MessageChannel[] = ["sms"];
 
 export function isChannelDisabled(channel: MessageChannel): boolean {
   return DISABLED_CHANNELS.includes(channel);
