@@ -7,7 +7,7 @@ import { apiSaveTemplate } from "../lib/api";
 import { useMutation } from "../lib/hooks";
 import { CHANNEL_LABEL } from "../lib/format";
 import type { MessageChannel, MessageTemplate } from "../lib/types";
-import { TextAreaField, TextField } from "./ui";
+import { Badge, TextAreaField, TextField } from "./ui";
 
 /** Borrador local de una plantilla. El backend solo guarda lo que se pulsa Save. */
 type Draft = { subject: string; text: string };
@@ -37,15 +37,11 @@ export function TemplateEditor({ template }: { template: MessageTemplate }) {
   const dirty = draft.text !== template.body || draft.subject !== (template.subject ?? "");
 
   return (
-    <div
-      style={{
-        border: "1px solid var(--ec-hairline-strong)",
-        borderRadius: 12,
-        padding: 14,
-        background: "var(--ec-surface-1)",
-      }}
-    >
-      <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 10 }}>{template.label}</div>
+    <div className="crm-row" style={{ display: "block", padding: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+        <span className="crm-row-title">{template.label}</span>
+        <Badge>{CHANNEL_LABEL[template.channel]}</Badge>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {template.channel === "email" ? (
@@ -64,7 +60,7 @@ export function TemplateEditor({ template }: { template: MessageTemplate }) {
         />
 
         {template.channel === "whatsapp" && template.whatsappTemplateName ? (
-          <p style={{ fontSize: 11.5, color: "var(--ec-warning)" }}>
+          <p style={{ fontSize: 12, color: "var(--ec-warning)", margin: 0 }}>
             Sends as Meta template <strong>{template.whatsappTemplateName}</strong>. The text above is
             only a preview — Meta ignores it and uses its own approved copy.
           </p>
@@ -73,8 +69,7 @@ export function TemplateEditor({ template }: { template: MessageTemplate }) {
         <div>
           <button
             type="button"
-            className="ec-btn-primary"
-            style={{ padding: "7px 14px", fontSize: 12.5 }}
+            className="ec-btn-primary crm-btn-sm"
             disabled={!dirty || save.loading}
             onClick={() =>
               void save.run({

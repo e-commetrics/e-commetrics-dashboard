@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Info, Loader2, Plus, RefreshCw, Send, Upload, X, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
@@ -17,8 +17,10 @@ import {
 } from "../lib/api";
 import { useMutation, useResource } from "../lib/hooks";
 import { isChannelDisabled } from "../lib/channels";
-import { CHANNEL_LABEL, formatDateTime } from "../lib/format";
-import type { Lead, MessageChannel, MessageTemplate, SettingsPayload } from "../lib/types";
+import { CHANNEL_LABEL, formatDateTime, formatFieldLabel } from "../lib/format";
+import type { AutomationRule, Lead, MessageChannel, MessageTemplate, SettingsPayload } from "../lib/types";
+import { useCrmSession } from "../lib/session";
+import { TeamSettings } from "../components/TeamSettings";
 import { TemplateEditor } from "../components/TemplateEditor";
 import {
   Badge,
@@ -40,6 +42,7 @@ type Tone = "ok" | "error" | "muted";
 export function SettingsScreen() {
   const settings = useResource("settings", apiSettings);
   const leads = useResource("leads", apiListLeads);
+  const { user } = useCrmSession();
 
   if (settings.loading && !settings.data) return <Loading label="Loading settings…" />;
   if (settings.error && !settings.data) {
@@ -54,53 +57,105 @@ export function SettingsScreen() {
   if (!data) return <Loading />;
 
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", padding: 28 }}>
-      <PageHeader
-        eyebrow="⎯⎯⎯  CONFIGURATION"
-        title="Settings"
-        subtitle="Integration status, automation rules and the operational tools."
+    <div className="crm-page crm-page-narrow">
+      <PageHeader eyebrow="Configuration" title="Settings" />
+      <SettingsTabs
+        tabs={[
+          {
+            label: "Automation",
+            content: (
+              <>
+                <Section title="Automation rules" hint="Turn each rule on or off. Changing what a rule does requires a developer.">
+                  <ul className="crm-row-list">
+                    {data.automationRules.map((rule) => (
+                      <RuleRow key={rule.key} ruleKey={rule.key} label={rule.label} action={rule.action} enabled={rule.enabled} />
+                    ))}
+                  </ul>
+                </Section>
+                <Section title="Automatic stage changes">
+                  <ScheduledGuide />
+                </Section>
+                <Section title="New lead notifications">
+                  <NotifyEmails initial={data.syncState.notifyEmails ?? ""} />
+                </Section>
+              </>
+            ),
+          },
+          {
+            label: "Templates",
+            content: (
+              <Section title="Message templates" hint={<>Use <code>{"{{name}}"}</code> to insert the lead&apos;s name.</>}>
+                <Templates templates={data.templates} />
+              </Section>
+            ),
+          },
+          {
+            label: "Integrations",
+            content: (
+              <>
+                <Section title="Integration status">
+                  <IntegrationStatus data={data} />
+                </Section>
+                <Section title="Send a test message">
+                  <MessagingTest />
+                </Section>
+                <Section title="Send a test Facebook event" hint="Sends a real event to Meta for the lead you choose.">
+                  <CapiTest leads={leads.data ?? []} />
+                </Section>
+              </>
+            ),
+          },
+          {
+            label: "Import",
+            content: (
+              <Section title="Import leads from CSV">
+                <CsvImport />
+              </Section>
+            ),
+          },
+          ...(user?.role === "admin"
+            ? [{ label: "Team", content: <TeamSettings currentUserId={user.id} /> }]
+            : []),
+        ]}
       />
-
-      <Section title="Integration status">
-        <IntegrationStatus data={data} />
-      </Section>
-
-      <Section title="New lead notifications">
-        <NotifyEmails initial={data.syncState.notifyEmails ?? ""} />
-      </Section>
-
-      <Section title="Automation rules">
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-          {data.automationRules.map((rule) => (
-            <RuleRow key={rule.key} ruleKey={rule.key} label={rule.label} detail={`trigger: ${rule.trigger} · action: ${rule.action}`} enabled={rule.enabled} />
-          ))}
-        </ul>
-        <p style={{ fontSize: 11.5, color: "var(--ec-text-dim)", marginTop: 10 }}>
-          Rules can be switched on and off. Their configuration is not editable from here — change it in
-          <code> server/crm/db/seed.js</code> and re-run the seed.
-        </p>
-      </Section>
-
-      <Section title="Automatic stage changes">
-        <ScheduledGuide />
-      </Section>
-
-      <Section title="Message templates">
-        <Templates templates={data.templates} />
-      </Section>
-
-      <Section title="Send a test message">
-        <MessagingTest />
-      </Section>
-
-      <Section title="Send a test Facebook CAPI event">
-        <CapiTest leads={leads.data ?? []} />
-      </Section>
-
-      <Section title="Import leads from CSV">
-        <CsvImport />
-      </Section>
     </div>
+  );
+}
+
+function SettingsTabs({ tabs }: { tabs: { label: string; content: React.ReactNode }[] }) {
+  const [active, setActive] = useState(0);
+  const baseId = useId();
+
+  return (
+    <>
+      <div role="tablist" aria-label="Settings sections" className="ec-segmented" style={{ marginBottom: 16, flexWrap: "wrap" }}>
+        {tabs.map((tab, index) => (
+          <button
+            key={tab.label}
+            type="button"
+            role="tab"
+            id={`${baseId}-tab-${index}`}
+            aria-selected={active === index}
+            aria-controls={`${baseId}-panel-${index}`}
+            className={active === index ? "active" : ""}
+            onClick={() => setActive(index)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {tabs.map((tab, index) => (
+        <div
+          key={tab.label}
+          role="tabpanel"
+          id={`${baseId}-panel-${index}`}
+          aria-labelledby={`${baseId}-tab-${index}`}
+          hidden={active !== index}
+        >
+          {tab.content}
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -113,6 +168,7 @@ const SCHEDULED_OUTCOMES = [
   { situation: "Several active leads share the phone or email", result: "None moves; move the right one by hand" },
   { situation: "Only an archived lead matches", result: "Stays archived; the appointment is noted" },
   { situation: "No lead matches", result: "Nothing changes; it waits in Pipeline › Web" },
+  { situation: "A new lead arrives and already has an upcoming appointment", result: "Moves to Scheduled" },
 ];
 
 /** Explica al equipo por que un lead cambia solo a Scheduled. Debe coincidir con planAppointment del backend. */
@@ -121,13 +177,12 @@ function ScheduledGuide() {
 
   return (
     <>
-      <p style={{ fontSize: 13.5, color: "var(--ec-text-muted)", margin: "0 0 12px" }}>
+      <p className="crm-muted" style={{ margin: "0 0 12px" }}>
         Leads can move to Scheduled on their own when an appointment is booked for them.
       </p>
       <button
         type="button"
         className="ec-btn-secondary"
-        style={{ padding: "8px 14px", fontSize: 13 }}
         onClick={() => setOpen(true)}
       >
         <Info size={13} />
@@ -135,7 +190,7 @@ function ScheduledGuide() {
       </button>
 
       <Modal open={open} onOpenChange={setOpen} title="How leads move to Scheduled" width={640}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18, fontSize: 13.5 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, fontSize: 14 }}>
           <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
             <li>An appointment is booked on the website or in the dashboard calendar.</li>
             <li>Within about 5 minutes, the CRM checks new appointments.</li>
@@ -146,7 +201,7 @@ function ScheduledGuide() {
             <li>It applies the result below and writes &quot;Appointment booked&quot; in the lead&apos;s Activity.</li>
           </ol>
 
-          <div style={{ overflowX: "auto", border: "1px solid var(--ec-hairline-strong)", borderRadius: 12 }}>
+          <div className="crm-table-wrap">
             <table className="ec-table">
               <thead>
                 <tr>
@@ -180,7 +235,10 @@ function ScheduledGuide() {
               Good to know
             </div>
             <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
-              <li>A moved lead gets an &quot;Appointment reminder&quot; task, due one day before the appointment.</li>
+              <li>
+                A moved lead gets an &quot;Appointment reminder&quot; task, due one day before the appointment. If you move
+                it by hand and no upcoming appointment matches, the task is due right away.
+              </li>
               <li>Facebook leads that move also send a real &quot;Scheduled&quot; event to Meta.</li>
               <li>Deleting or editing an appointment does not move the lead back. Change the stage by hand if needed.</li>
               <li>A family sharing one phone can move the wrong lead. Check Activity if a move looks wrong.</li>
@@ -245,26 +303,28 @@ function IntegrationStatus({ data }: { data: SettingsPayload }) {
         )}
       </div>
 
-      <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 4 }}>
-        Last sync: {formatDateTime(syncState.lastSyncAt)}
-        {syncState.lastError ? <span style={{ color: "var(--ec-danger)" }}> — error: {syncState.lastError}</span> : null}
-      </p>
-      <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 4 }}>
-        Last CAPI event: {formatDateTime(syncState.lastCapiAt)}
-        {syncState.lastCapiError ? <span style={{ color: "var(--ec-danger)" }}> — error: {syncState.lastCapiError}</span> : null}
-      </p>
-      <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 14 }}>
-        Last token check: {formatDateTime(syncState.tokenCheckedAt)}
-        {syncState.tokenCheckError ? (
-          <span style={{ color: "var(--ec-danger)" }}> — error: {syncState.tokenCheckError}</span>
-        ) : null}
-      </p>
+      <dl className="crm-dl" style={{ marginBottom: 14 }}>
+        <dt>Last sync</dt>
+        <dd>
+          {formatDateTime(syncState.lastSyncAt)}
+          {syncState.lastError ? <span className="crm-error-text"> — error: {syncState.lastError}</span> : null}
+        </dd>
+        <dt>Last Facebook event</dt>
+        <dd>
+          {formatDateTime(syncState.lastCapiAt)}
+          {syncState.lastCapiError ? <span className="crm-error-text"> — error: {syncState.lastCapiError}</span> : null}
+        </dd>
+        <dt>Last token check</dt>
+        <dd>
+          {formatDateTime(syncState.tokenCheckedAt)}
+          {syncState.tokenCheckError ? <span className="crm-error-text"> — error: {syncState.tokenCheckError}</span> : null}
+        </dd>
+      </dl>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button
           type="button"
           className="ec-btn-secondary"
-          style={{ padding: "8px 16px", fontSize: 13 }}
           disabled={sync.loading}
           onClick={() => void sync.run()}
         >
@@ -274,7 +334,6 @@ function IntegrationStatus({ data }: { data: SettingsPayload }) {
         <button
           type="button"
           className="ec-btn-secondary"
-          style={{ padding: "8px 16px", fontSize: 13 }}
           disabled={checkToken.loading}
           onClick={() => void checkToken.run()}
         >
@@ -325,35 +384,21 @@ function NotifyEmails({ initial }: { initial: string }) {
 
   return (
     <>
-      <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 10 }}>
+      <p className="crm-muted" style={{ margin: "0 0 12px" }}>
         Each new Facebook lead sends an email to these addresses. Manual and CSV leads do not. With no addresses,
         notifications are off.
       </p>
 
       {emails.length === 0 ? (
-        <p style={{ fontSize: 13, color: "var(--ec-text-dim)", marginBottom: 12 }}>No addresses yet.</p>
+        <p className="crm-small" style={{ margin: "0 0 12px" }}>No addresses yet.</p>
       ) : (
-        <ul style={{ listStyle: "none", margin: "0 0 12px", padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        <ul className="crm-row-list" style={{ marginBottom: 12 }}>
           {emails.map((email) => (
-            <li
-              key={email}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                border: "1px solid var(--ec-hairline-strong)",
-                borderRadius: 10,
-                padding: "8px 12px",
-                background: "var(--ec-surface-1)",
-                fontSize: 13.5,
-              }}
-            >
+            <li key={email} className="crm-row" style={{ fontSize: 14 }}>
               <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{email}</span>
               <button
                 type="button"
-                className="ec-btn-secondary"
-                style={{ padding: "6px 10px", fontSize: 12 }}
+                className="ec-btn-secondary crm-btn-sm"
                 disabled={save.loading}
                 aria-label={`Remove ${email}`}
                 onClick={() => {
@@ -370,16 +415,16 @@ function NotifyEmails({ initial }: { initial: string }) {
       )}
 
       <form
-        style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}
+        className="crm-form-row"
         onSubmit={(event) => {
           event.preventDefault();
           add();
         }}
       >
-        <div style={{ flex: 1, minWidth: 260 }}>
+        <div className="crm-form-row-grow">
           <TextField label="Add an email" type="email" value={draft} onChange={setDraft} placeholder="frontdesk@example.com" />
         </div>
-        <button type="submit" className="ec-btn-primary" style={{ padding: "10px 18px" }} disabled={save.loading || !draft.trim()}>
+        <button type="submit" className="ec-btn-primary" disabled={save.loading || !draft.trim()}>
           {save.loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
           Add
         </button>
@@ -394,12 +439,12 @@ function NotifyEmails({ initial }: { initial: string }) {
 function RuleRow({
   ruleKey,
   label,
-  detail,
+  action,
   enabled,
 }: {
   ruleKey: string;
   label: string;
-  detail: string;
+  action: AutomationRule["action"];
   enabled: boolean;
 }) {
   const [local, setLocal] = useState(enabled);
@@ -412,23 +457,11 @@ function RuleRow({
   });
 
   return (
-    <li
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 16,
-        border: "1px solid var(--ec-hairline-strong)",
-        borderRadius: 12,
-        padding: 14,
-        background: "var(--ec-surface-1)",
-      }}
-    >
+    <li className="crm-row">
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{label}</div>
-        <div style={{ fontSize: 11.5, color: "var(--ec-text-dim)", marginTop: 2 }}>{detail}</div>
-        <div className="font-mono-ec" style={{ fontSize: 10, color: "var(--ec-text-faint)", marginTop: 4 }}>
-          {ruleKey}
+        <div className="crm-row-title">{label}</div>
+        <div className="crm-small" style={{ marginTop: 2 }}>
+          {action === "send_message" ? "Sends a message" : "Creates a task"} · {local ? "On" : "Off"}
         </div>
       </div>
       <Switch
@@ -461,7 +494,7 @@ function Templates({ templates }: { templates: MessageTemplate[] }) {
 
   if (groups.length === 0) {
     return (
-      <p style={{ fontSize: 13.5, color: "var(--ec-text-muted)" }}>
+      <p className="crm-muted" style={{ margin: 0 }}>
         No templates. Run <code>crm/seed.js</code> on the server.
       </p>
     );
@@ -471,9 +504,9 @@ function Templates({ templates }: { templates: MessageTemplate[] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       {groups.map(([key, list]) => (
         <div key={key}>
-          <div className="font-mono-ec" style={{ fontSize: 10.5, color: "var(--ec-text-dim)", marginBottom: 9 }}>
-            {key}
-          </div>
+          <h3 className="crm-tasks-group-title" style={{ marginBottom: 8 }}>
+            {formatFieldLabel(key.replace(/-/g, " "))}
+          </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {list.map((template) => (
               <TemplateEditor key={`${template.key}-${template.channel}`} template={template} />
@@ -511,7 +544,7 @@ function MessagingTest() {
 
   return (
     <>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+      <div className="crm-form-row">
         <SelectField
           label="Channel"
           value={channel}
@@ -522,7 +555,7 @@ function MessagingTest() {
           })}
           width={150}
         />
-        <div style={{ flex: 1, minWidth: 220 }}>
+        <div className="crm-form-row-grow">
           <TextField
             label="To"
             value={to}
@@ -533,7 +566,6 @@ function MessagingTest() {
         <button
           type="button"
           className="ec-btn-primary"
-          style={{ padding: "10px 18px" }}
           disabled={send.loading || !to.trim() || isChannelDisabled(channel)}
           onClick={() => {
             setResult(null);
@@ -571,7 +603,7 @@ function CapiTest({ leads }: { leads: Pick<Lead, "id" | "name">[] }) {
 
   return (
     <>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+      <div className="crm-form-row">
         <SelectField
           label="Lead"
           value={leadId}
@@ -584,7 +616,6 @@ function CapiTest({ leads }: { leads: Pick<Lead, "id" | "name">[] }) {
         <button
           type="button"
           className="ec-btn-primary"
-          style={{ padding: "10px 18px" }}
           disabled={send.loading || !leadId}
           onClick={() => {
             setResult(null);
@@ -610,7 +641,14 @@ function CsvImport() {
 
   const importCsv = useMutation((text: string) => apiImportCsv(text), {
     onSuccess: (res) => {
-      setResult({ tone: "ok", text: `Imported ${res.created} leads.` });
+      const skipped = [
+        res.duplicates ? `${res.duplicates} already in the CRM` : "",
+        res.invalid ? `${res.invalid} with invalid data` : "",
+      ].filter(Boolean);
+      setResult({
+        tone: res.created > 0 || skipped.length === 0 ? "ok" : "error",
+        text: `Imported ${res.created} ${res.created === 1 ? "lead" : "leads"}.${skipped.length ? ` Skipped ${skipped.join(" and ")}.` : ""}`,
+      });
       setCsv("");
     },
     onError: (message) => setResult({ tone: "error", text: message }),
@@ -618,21 +656,23 @@ function CsvImport() {
 
   return (
     <>
-      <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 10 }}>
-        Paste CSV with a header row. Only <code>name</code> is required; the rest are optional.
+      <p className="crm-muted" style={{ margin: "0 0 12px" }}>
+        Paste CSV with a header row. Only <code>name</code> is required; the rest are optional. Put quotes around a
+        value with a comma, like <code>&quot;Pérez, Ana&quot;</code>. Rows whose phone or email is already in the CRM
+        are skipped.
       </p>
       <TextAreaField value={csv} onChange={setCsv} placeholder={CSV_PLACEHOLDER} rows={5} mono />
       <button
         type="button"
         className="ec-btn-primary"
-        style={{ marginTop: 12, padding: "8px 16px", fontSize: 13 }}
+        style={{ marginTop: 12 }}
         disabled={importCsv.loading || !csv.trim()}
         onClick={() => {
           setResult(null);
           void importCsv.run(csv);
         }}
       >
-        {importCsv.loading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+        {importCsv.loading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={14} />}
         Import
       </button>
       {result ? <InlineResult tone={result.tone}>{result.text}</InlineResult> : null}

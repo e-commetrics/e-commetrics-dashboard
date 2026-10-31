@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     "e-commerce solutions",
     "marketing analytics",
   ],
-  authors: [{ name: "E-commetrics Team", url: "https://e-commetris.com" }],
+  authors: [{ name: "E-commetrics Team", url: "https://e-commetrics.com" }],
   creator: "E-commetrics",
   publisher: "E-commetrics",
   robots: {

@@ -6,15 +6,19 @@ import type {
   ActionResult,
   Appointment,
   AutomationRule,
+  CrmRole,
   CrmUser,
+  CsvImportResult,
   DashboardPayload,
   Lead,
   LeadDetailPayload,
+  LeadDuplicate,
   LeadSource,
   MessageChannel,
   MessageTemplate,
   SettingsPayload,
   Task,
+  TeamUser,
 } from "./types";
 
 // El dashboard corre en e-commetrics.com y la API vive en reformadental.com, asi
@@ -124,6 +128,13 @@ export async function apiCreateLead(input: {
   return data.lead;
 }
 
+export async function apiFindDuplicates(contact: { phone?: string | null; email?: string | null }): Promise<LeadDuplicate[]> {
+  const { data } = await http.get<{ duplicates: LeadDuplicate[] }>("/leads/duplicates", {
+    params: { phone: contact.phone || undefined, email: contact.email || undefined },
+  });
+  return data.duplicates ?? [];
+}
+
 export async function apiGetLead(id: string): Promise<LeadDetailPayload> {
   const { data } = await http.get<LeadDetailPayload>(`/leads/${encodeURIComponent(id)}`);
   return data;
@@ -177,8 +188,6 @@ export async function apiExportCsv(): Promise<string> {
 }
 
 // ─── Tareas ──────────────────────────────────────────────────────────────────
-// No hay POST /tasks: las tareas las crean las reglas de automatizacion.
-
 export async function apiListTasks(): Promise<Task[]> {
   const { data } = await http.get<{ tasks: Task[] }>("/tasks");
   return data.tasks ?? [];
@@ -193,6 +202,37 @@ export async function apiCreateTask(input: { leadId: string; description: string
 export async function apiCompleteTask(id: string): Promise<Task> {
   const { data } = await http.patch<{ task: Task }>(`/tasks/${encodeURIComponent(id)}`);
   return data.task;
+}
+
+/** `dueAt` en ISO. */
+export async function apiUpdateTask(id: string, changes: { description: string; dueAt: string }): Promise<Task> {
+  const { data } = await http.patch<{ task: Task }>(`/tasks/${encodeURIComponent(id)}`, changes);
+  return data.task;
+}
+
+export async function apiDeleteTask(id: string): Promise<void> {
+  await http.delete(`/tasks/${encodeURIComponent(id)}`);
+}
+
+// ─── Equipo (solo admin) ─────────────────────────────────────────────────────
+
+export async function apiListUsers(): Promise<TeamUser[]> {
+  const { data } = await http.get<{ users: TeamUser[] }>("/users");
+  return data.users ?? [];
+}
+
+export async function apiCreateUser(input: { email: string; name: string; role: CrmRole; password: string }): Promise<TeamUser> {
+  const { data } = await http.post<{ user: TeamUser }>("/users", input);
+  return data.user;
+}
+
+export async function apiUpdateUser(id: string, changes: { role?: CrmRole; password?: string }): Promise<TeamUser> {
+  const { data } = await http.patch<{ user: TeamUser }>(`/users/${encodeURIComponent(id)}`, changes);
+  return data.user;
+}
+
+export async function apiDeleteUser(id: string): Promise<void> {
+  await http.delete(`/users/${encodeURIComponent(id)}`);
 }
 
 // ─── Dashboard y ajustes ─────────────────────────────────────────────────────
@@ -268,7 +308,7 @@ export async function apiMessagingTest(channel: MessageChannel, to: string): Pro
   return data;
 }
 
-export async function apiImportCsv(csv: string): Promise<{ created: number }> {
-  const { data } = await http.post<{ created: number }>("/import-csv", { csv });
+export async function apiImportCsv(csv: string): Promise<CsvImportResult> {
+  const { data } = await http.post<CsvImportResult>("/import-csv", { csv });
   return data;
 }

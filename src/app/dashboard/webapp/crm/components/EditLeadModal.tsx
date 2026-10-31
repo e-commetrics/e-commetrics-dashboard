@@ -47,8 +47,7 @@ export function EditLeadModal({ lead }: { lead: Lead }) {
     <>
       <button
         type="button"
-        className="ec-btn-secondary"
-        style={{ padding: "8px 14px", fontSize: 13 }}
+        className="ec-btn-secondary crm-btn-sm"
         onClick={openModal}
       >
         <Pencil size={13} />

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const content: Record<"es" | "en", LegalContent> = {
   es: {
     title: "Declaración de accesibilidad",
-    updated: "Última actualización: 13 de octubre de 2026",
+    updated: "Última actualización: 30 de octubre de 2026",
     intro: [
       "Queremos que e-commetrics.com se pueda usar con teclado, con lector de pantalla y en pantallas de distintos tamaños. Tomamos como referencia las pautas WCAG 2.1 nivel AA.",
       "Esta declaración describe el estado actual del sitio. No afirma que cumpla todas las pautas: las limitaciones conocidas están más abajo.",
@@ -38,7 +38,6 @@ const content: Record<"es" | "en", LegalContent> = {
         bullets: [
           "Aún no hemos probado con la herramienta automática las pantallas que requieren iniciar sesión (el panel y el CRM).",
           "Aún no hemos hecho pruebas manuales con lectores de pantalla (NVDA y VoiceOver).",
-          "Algunas animaciones no respetan la preferencia del sistema de reducir el movimiento.",
           "El chat no se ha probado con lectores de pantalla.",
         ],
       },
@@ -58,7 +57,7 @@ const content: Record<"es" | "en", LegalContent> = {
   },
   en: {
     title: "Accessibility statement",
-    updated: "Last updated: October 13, 2026",
+    updated: "Last updated: October 30, 2026",
     intro: [
       "We want e-commetrics.com to be usable with a keyboard, with a screen reader and on screens of different sizes. We use the WCAG 2.1 Level AA guidelines as our reference.",
       "This statement describes the current state of the site. It does not claim that the site meets every guideline: the known limitations are listed below.",
@@ -85,7 +84,6 @@ const content: Record<"es" | "en", LegalContent> = {
         bullets: [
           "We have not yet tested the screens that require signing in (the dashboard and the CRM) with the automated tool.",
           "We have not yet done manual testing with screen readers (NVDA and VoiceOver).",
-          "Some animations do not respect the system preference for reduced motion.",
           "The chat has not been tested with screen readers.",
         ],
       },

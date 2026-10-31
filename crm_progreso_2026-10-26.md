@@ -515,8 +515,11 @@ retomar, revisar cada punto contra el código antes de empezar, porque esta list
 
 ## 14. Cambios del 2026-10-30
 
-Todo desplegado. El usuario confirmó en producción el diseño de correo (mensaje de prueba) y Delete; **Edit lead
-no tiene confirmación explícita**. **Sin commit en ningún repo.**
+**Estado (2026-10-30, tarde):** el backend subido ya tiene estos cambios, según el usuario. El frontend se revisa en
+modo dev (localhost), conectado a la API real; el frontend público de e-commetrics.com sigue con archivos del
+29-oct: Edit lead, Delete, Add as new lead, rediseño y campana aún no están publicados. Al publicar, revisar la
+carpeta: `/out/` redirige a la raíz, así que el sitio parece servirse desde `public_html/out`. **Sin commit en
+ningún repo.**
 
 - **Diseño de correo:** todos los correos del CRM salen con el diseño de la confirmación de citas, con el
   asunto como título y el texto escapado (`messaging/emailLayout.js`). Incluye el aviso "New lead". El diseño
@@ -537,3 +540,56 @@ pago, así que el CRM puede decir "Message sent" sin entregar.
 
 **Hallazgo sin corregir:** `confirmationHtml` en `server.src.js` inserta el nombre del formulario público sin
 escapar en el correo de confirmación.
+
+**Lead → cita (mismo día):** desplegado y con la primera corrida confirmada (`last_cita_id` = 26). Falta ver un
+movimiento real con un lead manual de prueba. Diseño final: el cron cruza citas nuevas; no mueve si hay varios
+leads activos o si la cita ya pasó; el recordatorio vence un día antes de la cita. "Add to CRM" entra en
+Scheduled si la cita es de hoy en adelante.
+
+**Rediseño del CRM (mismo día, solo frontend):** estilos en `webapp/crm/crm.css`, limitados a `.crm-app`.
+Tarjetas con antigüedad, próxima tarea, contacto pulsable y menú para mover sin arrastrar; ficha con lo urgente
+primero y Delete apartado; Dashboard con lo que requiere atención arriba; Settings en pestañas. Probado en local
+con API simulada antes de subir. Publicado el mismo día.
+
+**Seis pendientes implementados (mismo día, desplegados):**
+- Aviso de duplicados en la ficha y en "Add lead" (`services/matching.js`, `GET /leads/duplicates`): avisa, no bloquea.
+- Importar CSV con comillas; omite duplicados y marca inválidas las filas con columnas de más (`services/csvImport.js`).
+- Al mover a Scheduled a mano, el recordatorio vence un día antes de la próxima cita, si hay una que coincida.
+- Campana en el CRM (`NotificationBell.tsx`): tareas, leads nuevos y citas futuras sin pasar al CRM.
+- CAPI: `event_id` estable por lead y etapa, y `52` en teléfonos de 10 dígitos. **Cambia el evento real: revisar
+  Events Manager tras subir.** Un número de EE. UU. sin lada queda mal.
+- Sitio: corregido `e-commetrics.com` en metadatos, quitada la limitación de movimiento reducido y los textos
+  "SECURE · ENCRYPTED · MX" y "ALL SYSTEMS ONLINE". Traducir el CRM se descartó.
+
+**Segunda tanda (mismo día, desplegada, con SQL):**
+- Autor en Activity (`crm_activities.actor`, por contexto de la petición) y constancia de leads borrados
+  (`crm_lead_deletions`, sin nombre ni contacto). Delete solo para admin.
+- Pestaña Team en Settings (`routes/users.js`): crear, cambiar rol o contraseña y quitar usuarios. El rol y la
+  existencia del usuario se leen de la base en cada petición. Cambiar la contraseña no cierra sesiones abiertas.
+- Efectos de cambio de etapa recuperables tras un reinicio (`pending_stage_from`, `pending_stage_at`).
+- Lead nuevo (últimas 2 h) con cita futura ya creada pasa a Scheduled en el cron.
+- Editar y borrar tareas desde la ficha.
+- `emailLayout.js` es ahora el único diseño de correo; la confirmación de citas salió idéntica byte a byte.
+
+**Despliegue (2026-10-30, tarde):** backend, SQL y frontend publicados; WhatsApp va habilitado en ese build. Faltaban
+las columnas `pending_stage_*`: el cron y los cambios de etapa fallaron cerca de 30 min hasta aplicarlas. Tras
+corregirlo, `POST /crm/cron/tick` responde `ok: true`. El detalle de un fallo del cron sale de esa misma ruta.
+El cron automático confirmó `ok: true` a las 00:10 UTC del 31-oct.
+
+### Al cerrar el día
+**Sin commit en ningún repo; producción va por delante de git.** Casi todo se probó con base y API simuladas: falta
+confirmarlo con uso real.
+
+- [ ] Probar un cambio de etapa real y Lead → cita con un lead manual de prueba.
+- [ ] Revisar las citas creadas durante la falla y mover a mano los leads que hayan quedado sin mover.
+- [ ] Revisar el rol del segundo usuario: los creados por SQL son Admin.
+- [ ] Probar correo a Outlook/Hotmail.
+- [ ] Revisar Events Manager tras el siguiente evento real (`event_id` y lada 52).
+- [ ] Hacer los commits en ambos repos, sin `git add .`.
+- [ ] WhatsApp está activo en la interfaz, pero Meta sigue sin método de pago y puede no entregar. No usar con pacientes.
+
+**Descartado el 2026-10-30:** traducir el CRM al español, que cada usuario cambie su propia contraseña y limitar los
+permisos de Staff. Staff conserva acceso a reglas, plantillas y eventos de prueba reales a Meta.
+
+**Opcional, sin fecha:** cerrar sesiones al cambiar la contraseña, ver los leads borrados en pantalla y editar el
+nombre de un usuario. Los 5 errores de lint de `hooks.tsx` y `session.tsx` siguen sin corregir.

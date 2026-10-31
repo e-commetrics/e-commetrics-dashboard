@@ -9,6 +9,7 @@
 // El Select si se reusa del dashboard: ya envuelve Radix con los
 // onValueChange correctos y con el onChange de NextUI no se tropeza nadie mas.
 
+import { useId } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Loader2, X, AlertTriangle, Inbox } from "lucide-react";
 import {
@@ -36,7 +37,7 @@ export function PageHeader({
   return (
     <header className="ec-page-header">
       <div>
-        <div className="h-eyebrow" style={{ marginBottom: 8 }}>
+        <div className="h-eyebrow" style={{ marginBottom: 6 }}>
           {eyebrow}
         </div>
         <h1 className="ec-page-title">{title}</h1>
@@ -51,13 +52,20 @@ export function PageHeader({
   );
 }
 
-/** Bloque con eyebrow arriba y contenido debajo. Para apartar secciones. */
-export function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/** Panel con titulo. `hint` explica para que sirve cuando el titulo no alcanza. */
+export function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <section style={{ marginBottom: 34 }}>
-      <div className="h-eyebrow" style={{ marginBottom: 14 }}>
-        {title}
-      </div>
+    <section className="crm-panel">
+      <h2 className="crm-panel-title font-serif">{title}</h2>
+      {hint ? <p className="crm-panel-hint">{hint}</p> : null}
       {children}
     </section>
   );
@@ -107,7 +115,7 @@ export function ErrorNotice({ message, onRetry }: { message: string; onRetry?: (
         <div style={{ fontSize: 13, color: "var(--ec-text-muted)", wordBreak: "break-word" }}>{message}</div>
       </div>
       {onRetry ? (
-        <button type="button" className="ec-btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }} onClick={onRetry}>
+        <button type="button" className="ec-btn-secondary crm-btn-sm" onClick={onRetry}>
           Retry
         </button>
       ) : null}
@@ -138,7 +146,9 @@ export function InlineResult({
   const color =
     tone === "ok" ? "var(--ec-success)" : tone === "error" ? "var(--ec-danger)" : "var(--ec-text-muted)";
   return (
-    <p style={{ fontSize: 12.5, color, marginTop: 8, wordBreak: "break-word" }}>{children}</p>
+    <p className="crm-result" style={{ color }}>
+      {children}
+    </p>
   );
 }
 
@@ -161,14 +171,16 @@ export function TextField({
   required?: boolean;
   autoFocus?: boolean;
 }) {
+  // Con varias plantillas en pantalla se repite "Subject": el id no puede salir de la etiqueta.
+  const id = useId();
   return (
     <div>
-      <label className="ec-field-label" htmlFor={`f-${label}`}>
+      <label className="ec-field-label" htmlFor={id}>
         {label}
         {required ? " *" : ""}
       </label>
       <input
-        id={`f-${label}`}
+        id={id}
         className="ec-field-input"
         type={type}
         value={value}
@@ -195,21 +207,26 @@ export function TextAreaField({
   rows?: number;
   mono?: boolean;
 }) {
+  const id = useId();
   const area = (
     <textarea
+      id={id}
+      aria-label={label ? undefined : placeholder}
       className="ec-field-input"
       rows={rows}
       value={value}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
-      style={mono ? { fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 12.5 } : undefined}
+      style={mono ? { fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 13 } : undefined}
     />
   );
 
   if (!label) return area;
   return (
     <div>
-      <span className="ec-field-label">{label}</span>
+      <label className="ec-field-label" htmlFor={id}>
+        {label}
+      </label>
       {area}
     </div>
   );
@@ -221,8 +238,7 @@ export type SelectOption = { value: string; label: string; disabled?: boolean };
  * Select sobre el wrapper de Radix del dashboard. Todo el CRM pasa por aqui, de
  * forma que si Radix se rompe por una version solo hay un archivo que arreglar.
  *
- * `value` vacio significa "sin elegir", que Radix expresa con el sentinel
- * "__placeholder__" porque un SelectItem no puede tener value "".
+ * `value` vacio significa "sin elegir": con "" Radix muestra el placeholder.
  */
 export function SelectField({
   label,
@@ -232,6 +248,7 @@ export function SelectField({
   placeholder = "Choose…",
   disabled,
   width,
+  hideLabel,
 }: {
   label: string;
   value: string;
@@ -240,16 +257,18 @@ export function SelectField({
   placeholder?: string;
   disabled?: boolean;
   width?: number | string;
+  /** Sin etiqueta visible, para filas donde el contexto ya la da. Sigue en aria-label. */
+  hideLabel?: boolean;
 }) {
   return (
-    <div style={{ width }}>
-      <span className="ec-field-label">{label}</span>
-      <Select
-        value={value || "__placeholder__"}
-        onValueChange={(next) => onChange(next === "__placeholder__" ? "" : next)}
-        disabled={disabled}
-      >
-        <SelectTrigger className="ec-field-input" style={{ width: "100%", cursor: disabled ? "not-allowed" : "pointer" }}>
+    <div style={{ width, flexShrink: 0 }}>
+      {hideLabel ? null : <span className="ec-field-label">{label}</span>}
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger
+          aria-label={label}
+          className="ec-field-input"
+          style={{ width: "100%", cursor: disabled ? "not-allowed" : "pointer" }}
+        >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         {/* z-[60]: el Modal usa z-index 50/51 y el SelectContent base 50; sin esto la
@@ -335,74 +354,20 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(10, 5, 8, 0.6)",
-            backdropFilter: "blur(2px)",
-            zIndex: 50,
-          }}
-        />
+        <Dialog.Overlay className="crm-modal-overlay" />
         <Dialog.Content
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: `min(${width}px, calc(100vw - 32px))`,
-            maxHeight: "calc(100vh - 64px)",
-            overflowY: "auto",
-            background: "var(--ec-surface-1)",
-            border: "1px solid var(--ec-hairline-strong)",
-            borderRadius: 16,
-            padding: 24,
-            zIndex: 51,
-            boxShadow: "var(--ec-shadow-lg)",
-          }}
+          className="crm-app crm-modal"
+          aria-describedby={undefined}
+          style={{ width: `min(${width}px, calc(100vw - 24px))` }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: 16,
-              marginBottom: 18,
-            }}
-          >
-            <Dialog.Title className="font-serif" style={{ fontSize: 22, fontWeight: 400, lineHeight: 1.1 }}>
-              {title}
-            </Dialog.Title>
-            <Dialog.Close
-              aria-label="Close"
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--ec-text-muted)",
-                cursor: "pointer",
-                padding: 4,
-                borderRadius: 6,
-                lineHeight: 0,
-              }}
-            >
+          <div className="crm-modal-head">
+            <Dialog.Title className="crm-modal-title font-serif">{title}</Dialog.Title>
+            <Dialog.Close aria-label="Close" className="crm-icon-btn">
               <X size={18} />
             </Dialog.Close>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
-          {footer ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                marginTop: 22,
-                paddingTop: 18,
-                borderTop: "1px solid var(--ec-hairline)",
-              }}
-            >
-              {footer}
-            </div>
-          ) : null}
+          <div className="crm-modal-body">{children}</div>
+          {footer ? <div className="crm-modal-foot">{footer}</div> : null}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -430,10 +395,8 @@ export function StatTile({
           : "var(--ec-text)";
 
   return (
-    <div className="ec-stat-tile">
-      <div className="ec-stat-tile-label" style={{ marginBottom: 6 }}>
-        {label}
-      </div>
+    <div className={cn("ec-stat-tile", tone === "danger" && "is-danger")}>
+      <div className="ec-stat-tile-label">{label}</div>
       <div className="ec-stat-tile-num" style={{ color }}>
         {value}
       </div>

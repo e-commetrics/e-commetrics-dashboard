@@ -51,6 +51,8 @@ export interface Activity {
   leadId: string;
   type: ActivityType;
   content: string;
+  /** Quien lo hizo. null: el sistema, o una actividad anterior a este registro. */
+  actor: string | null;
   createdAt: string;
 }
 
@@ -138,6 +140,14 @@ export interface CrmUser {
   role: string;
 }
 
+export type CrmRole = "admin" | "staff";
+
+/** Usuario en la pantalla de equipo. */
+export interface TeamUser extends CrmUser {
+  createdAt: string | null;
+  lastLoginAt: string | null;
+}
+
 /** Que integraciones tiene variables de entorno puestas. No prueba que respondan. */
 export interface ConfiguredFlags {
   facebookLeadSync: boolean;
@@ -168,10 +178,22 @@ export interface DashboardPayload {
   conversionStageName: string | null;
 }
 
+/** Lead con el mismo telefono o correo. Solo para avisar y abrirlo. */
+export type LeadDuplicate = Pick<Lead, "id" | "name" | "stage" | "archivedAt">;
+
 export interface LeadDetailPayload {
   lead: Lead;
   activities: Activity[];
   tasks: Task[];
+  duplicates: LeadDuplicate[];
+}
+
+export interface CsvImportResult {
+  created: number;
+  /** Filas omitidas porque el telefono o el correo ya existen. */
+  duplicates: number;
+  /** Filas sin nombre, con correo invalido o con columnas de mas. */
+  invalid: number;
 }
 
 /** Respuesta comun de los endpoints que operan algo y podem fallar. */

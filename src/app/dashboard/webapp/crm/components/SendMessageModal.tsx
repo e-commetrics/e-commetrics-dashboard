@@ -84,11 +84,10 @@ export function SendMessageModal({
     <>
       <button
         type="button"
-        className="ec-btn-secondary"
-        style={{ padding: "8px 14px", fontSize: 13 }}
+        className="ec-btn-primary"
         onClick={() => setOpen(true)}
       >
-        <Send size={13} />
+        <Send size={14} />
         Send message
       </button>
 
@@ -141,7 +140,7 @@ export function SendMessageModal({
         </div>
 
         {missingContact ? (
-          <p style={{ fontSize: 12.5, color: "var(--ec-danger)" }}>
+          <p className="crm-error-text" style={{ fontSize: 13, margin: 0 }}>
             This lead has no {channel === "email" ? "email address" : "phone number"} on file.
           </p>
         ) : null}
@@ -156,7 +155,7 @@ export function SendMessageModal({
         />
 
         {forChannel.length === 0 ? (
-          <p style={{ fontSize: 12.5, color: "var(--ec-text-muted)" }}>
+          <p className="crm-muted" style={{ margin: 0 }}>
             No {CHANNEL_LABEL[channel]} templates configured yet. Add one in Settings.
           </p>
         ) : null}
@@ -164,7 +163,7 @@ export function SendMessageModal({
         {selected ? (
           <div
             style={{
-              fontSize: 12.5,
+              fontSize: 13,
               color: "var(--ec-text-muted)",
               border: "1px solid var(--ec-hairline-strong)",
               borderRadius: 10,

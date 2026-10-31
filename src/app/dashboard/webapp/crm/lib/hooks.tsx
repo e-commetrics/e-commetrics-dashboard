@@ -36,7 +36,7 @@ function useCrmData() {
   return value;
 }
 
-type Resource<T> = {
+export type Resource<T> = {
   data: T | null;
   error: string | null;
   loading: boolean;

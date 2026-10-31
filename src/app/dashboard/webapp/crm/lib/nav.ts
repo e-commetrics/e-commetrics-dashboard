@@ -29,9 +29,10 @@ export function useCrmNav() {
   const view: CrmView = isView(rawView) ? rawView : "pipeline";
   const leadId = params.get("id");
 
-  const go = (next: CrmView, id?: string) => {
+  const go = (next: CrmView, id?: string, tab?: "web") => {
     const search = new URLSearchParams();
     search.set("view", next);
+    if (tab) search.set("tab", tab);
     if (next === "lead") {
       if (!id) return;
       search.set("id", id);
@@ -42,7 +43,9 @@ export function useCrmNav() {
   return {
     view,
     leadId: view === "lead" ? leadId : null,
+    pipelineTab: params.get("tab") === "web" ? ("web" as const) : ("crm" as const),
     goPipeline: () => go("pipeline"),
+    goBookings: () => go("pipeline", undefined, "web"),
     goDashboard: () => go("dashboard"),
     goSettings: () => go("settings"),
     goLead: (id: string) => go("lead", id),

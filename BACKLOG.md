@@ -74,6 +74,10 @@ Pendiente para darlo por cerrado:
       `crm_v2_backlog.md`. Requiere antes cerrar el punto 3 de este backlog y la decisión
       de privacidad del dueño.
 
+- **Actualización (2026-10-30):** rediseño, duplicados, equipo y roles, Lead → cita, tareas y eventos a Meta
+  desplegados, sin commit. Estado y pendientes en `crm_progreso_2026-10-26.md` §14. Los pendientes de seguridad se
+  dejaron como están por decisión del usuario.
+
 ## 2. Migrar el frontend a Vercel (siguiente feature tras el CRM)
 
 **Objetivo:** que el frontend deje de ser estático y de subirse a mano, para que crear una

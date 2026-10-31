@@ -56,6 +56,39 @@ export function formatDateTime(iso: string | null | undefined): string {
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
 }
 
+/** "5m", "3h", "2d": cuanto dura un lapso, para etiquetas cortas de tarjetas y tareas. */
+function shortSpan(ms: number): string {
+  const minutes = Math.max(1, Math.round(Math.abs(ms) / 60000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours}h`;
+  return `${Math.round(hours / 24)}d`;
+}
+
+/** "3h ago". Sirve para ver de un vistazo cuanto lleva esperando un lead. */
+export function formatAge(iso: string, now = Date.now()): string {
+  const time = new Date(iso).getTime();
+  if (Number.isNaN(time)) return "";
+  return `${shortSpan(now - time)} ago`;
+}
+
+/** "Overdue 3h" o "Due in 5h". */
+export function formatDue(isoDueAt: string, now = Date.now()): string {
+  const ms = new Date(isoDueAt).getTime() - now;
+  return ms < 0 ? `Overdue ${shortSpan(ms)}` : `Due in ${shortSpan(ms)}`;
+}
+
+/** "YYYY-MM-DDTHH:mm" en hora local, el formato de <input type="datetime-local">. */
+export function toLocalInputValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Hoy en Tijuana, como YYYY-MM-DD: las citas se guardan en hora de la clinica. */
+export function clinicToday(now = Date.now()): string {
+  return new Date(now).toLocaleDateString("sv-SE", { timeZone: "America/Tijuana" });
+}
+
 export function isOverdue(isoDueAt: string, now = Date.now()): boolean {
   return new Date(isoDueAt).getTime() < now;
 }

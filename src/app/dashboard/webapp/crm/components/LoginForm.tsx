@@ -60,8 +60,8 @@ export function LoginForm() {
 
         <form
           onSubmit={submit}
-          className="ec-project-card"
-          style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}
+          className="crm-panel"
+          style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16, marginBottom: 0 }}
         >
           <TextField
             label="Email"
@@ -94,13 +94,13 @@ export function LoginForm() {
             </p>
           ) : null}
 
-          <button type="submit" className="ec-btn-primary" disabled={submitting} style={{ marginTop: 4 }}>
+          <button type="submit" className="ec-btn-primary crm-btn-block" disabled={submitting} style={{ marginTop: 4 }}>
             {submitting ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p style={{ fontSize: 12, color: "var(--ec-text-dim)", textAlign: "center", marginTop: 18 }}>
+        <p className="crm-small" style={{ textAlign: "center", marginTop: 18 }}>
           Sessions last 7 days. Ask the CRM admin for an account.
         </p>
       </div>

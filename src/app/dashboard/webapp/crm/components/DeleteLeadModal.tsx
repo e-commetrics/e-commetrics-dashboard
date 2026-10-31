@@ -26,8 +26,7 @@ export function DeleteLeadModal({ lead, onDeleted }: { lead: Lead; onDeleted: ()
     <>
       <button
         type="button"
-        className="ec-btn-danger"
-        style={{ padding: "8px 14px", fontSize: 13 }}
+        className="ec-btn-danger crm-btn-block"
         onClick={() => setOpen(true)}
       >
         <Trash2 size={13} />
@@ -55,7 +54,7 @@ export function DeleteLeadModal({ lead, onDeleted }: { lead: Lead; onDeleted: ()
           </>
         }
       >
-        <p style={{ margin: 0, fontSize: 13.5 }}>
+        <p style={{ margin: 0, fontSize: 14 }}>
           <strong>{lead.name}</strong> and its notes, tasks and activity will be deleted. This cannot be undone. To
           only hide the lead, use Archive.
         </p>

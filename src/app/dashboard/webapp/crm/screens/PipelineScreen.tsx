@@ -3,54 +3,62 @@
 import { useMemo, useState } from "react";
 import { Download, Loader2, Search, X } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { apiExportCsv, apiListLeads, apiPatchLead, apiSettings } from "../lib/api";
+import { apiExportCsv, apiListLeads, apiListTasks, apiPatchLead, apiSettings } from "../lib/api";
 import { useMutation, useResource } from "../lib/hooks";
 import { downloadTextFile } from "../lib/format";
-import type { Stage } from "../lib/types";
+import type { Stage, Task } from "../lib/types";
 import { AddLeadModal } from "../components/AddLeadModal";
 import { LeadCard } from "../components/LeadCard";
 import { TasksPanel } from "../components/TasksPanel";
 import { WebBookings } from "../components/WebBookings";
-import { EmptyState, ErrorNotice, Loading, PageHeader, Switch } from "../components/ui";
+import { EmptyState, ErrorNotice, Loading, Switch } from "../components/ui";
 
 type PipelineTab = "crm" | "web";
 
 const TABS: { id: PipelineTab; label: string }[] = [
-  { id: "crm", label: "CRM" },
-  { id: "web", label: "Web" },
+  { id: "crm", label: "Leads" },
+  { id: "web", label: "Web bookings" },
 ];
 
-/** Pipeline con dos pestanas: el tablero de leads (CRM) y las citas del sitio (Web). */
-export function PipelineScreen({ onOpenLead }: { onOpenLead: (id: string) => void }) {
-  const [tab, setTab] = useState<PipelineTab>("crm");
+/** Pipeline con dos pestanas: el tablero de leads y las citas del sitio. */
+export function PipelineScreen({
+  initialTab = "crm",
+  onOpenLead,
+}: {
+  initialTab?: PipelineTab;
+  onOpenLead: (id: string) => void;
+}) {
+  const [tab, setTab] = useState<PipelineTab>(initialTab);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
-      <div role="tablist" aria-label="Pipeline views" style={{ display: "flex", gap: 6, padding: "16px 28px 0" }}>
-        {TABS.map((item) => {
-          const active = tab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              id={`pipeline-tab-${item.id}`}
-              aria-selected={active}
-              aria-controls={`pipeline-panel-${item.id}`}
-              className={active ? "ec-btn-primary" : "ec-btn-secondary"}
-              style={{ padding: "6px 16px", fontSize: 13 }}
-              onClick={() => setTab(item.id)}
-            >
-              {item.label}
-            </button>
-          );
-        })}
+    <div className="crm-pipeline">
+      <div className="crm-pipeline-head">
+        <h1 className="crm-screen-title font-serif">Pipeline</h1>
+        <div role="tablist" aria-label="Pipeline views" className="ec-segmented">
+          {TABS.map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                id={`pipeline-tab-${item.id}`}
+                aria-selected={active}
+                aria-controls={`pipeline-panel-${item.id}`}
+                className={active ? "active" : ""}
+                onClick={() => setTab(item.id)}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div
         role="tabpanel"
         id={`pipeline-panel-${tab}`}
         aria-labelledby={`pipeline-tab-${tab}`}
-        style={{ flex: 1, minHeight: 0 }}
+        className="crm-pipeline-panel"
       >
         {tab === "crm" ? <LeadBoard onOpenLead={onOpenLead} /> : <WebBookings onOpenLead={onOpenLead} />}
       </div>
@@ -75,6 +83,7 @@ function LeadBoard({ onOpenLead }: { onOpenLead: (id: string) => void }) {
   // Los stages vienen piggybacked en /settings, que es de donde los sacaba el
   // original tambien. Se piden en paralelo porque son independientes.
   const settings = useResource("settings", apiSettings);
+  const tasks = useResource("tasks", apiListTasks);
 
   const moveLead = useMutation(
     (id: string, stage: string) => apiPatchLead(id, { stage }),
@@ -94,7 +103,7 @@ function LeadBoard({ onOpenLead }: { onOpenLead: (id: string) => void }) {
     onError: (message) => toast.error(message),
   });
 
-  const allLeads = leads.data ?? [];
+  const allLeads = useMemo(() => leads.data ?? [], [leads.data]);
   const stages: Stage[] = useMemo(
     () => (settings.data?.stages ?? []).slice().sort((a, b) => a.order - b.order),
     [settings.data]
@@ -110,87 +119,60 @@ function LeadBoard({ onOpenLead }: { onOpenLead: (id: string) => void }) {
     );
   }, [allLeads, search]);
 
+  const leadNames = useMemo(() => new Map(allLeads.map((lead) => [lead.id, lead.name])), [allLeads]);
+
+  const nextTaskByLead = useMemo(() => {
+    const next = new Map<string, Task>();
+    for (const task of tasks.data ?? []) {
+      if (task.done) continue;
+      const current = next.get(task.leadId);
+      if (!current || task.dueAt < current.dueAt) next.set(task.leadId, task);
+    }
+    return next;
+  }, [tasks.data]);
+
   const loading = (leads.loading && !leads.data) || (settings.loading && !settings.data);
   const error = leads.error ?? settings.error;
 
   return (
-    <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "28px 28px 0" }}>
-          <PageHeader
-            eyebrow="⎯⎯⎯  PIPELINE"
-            title="Lead pipeline"
-            subtitle={
-              search
-                ? `${filtered.length} of ${allLeads.length} leads match "${search}"`
-                : `${allLeads.length} ${allLeads.length === 1 ? "lead" : "leads"} in total`
-            }
-            actions={
-              <>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--ec-text-muted)" }}>
-                  <Switch checked={showArchived} onChange={setShowArchived} label="Show archived leads" />
-                  Show archived
-                </span>
-                <button
-                  type="button"
-                  className="ec-btn-secondary"
-                  style={{ padding: "8px 14px", fontSize: 13 }}
-                  onClick={() => void exportCsv.run()}
-                  disabled={exportCsv.loading}
-                >
-                  {exportCsv.loading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                  Export CSV
-                </button>
-                <AddLeadModal />
-              </>
-            }
-          />
-
-          <div style={{ position: "relative", marginBottom: 18, maxWidth: 420 }}>
-            <Search
-              size={14}
-              style={{
-                position: "absolute",
-                left: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--ec-text-dim)",
-                pointerEvents: "none",
-              }}
-            />
+    <div className="crm-board-layout">
+      <div className="crm-board-main">
+        <div className="crm-toolbar">
+          <div className="crm-search">
+            <Search size={14} className="crm-search-icon" aria-hidden />
             <input
               className="ec-field-input"
-              style={{ paddingLeft: 34, paddingRight: search ? 34 : 14 }}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search name, email, phone, campaign…"
               aria-label="Search leads"
             />
             {search ? (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                aria-label="Clear search"
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  color: "var(--ec-text-muted)",
-                  cursor: "pointer",
-                  padding: 2,
-                  lineHeight: 0,
-                }}
-              >
+              <button type="button" className="crm-icon-btn crm-search-clear" onClick={() => setSearch("")} aria-label="Clear search">
                 <X size={14} />
               </button>
             ) : null}
           </div>
+          <span className="crm-muted" role="status">
+            {search
+              ? `${filtered.length} of ${allLeads.length} leads`
+              : `${allLeads.length} ${allLeads.length === 1 ? "lead" : "leads"}`}
+          </span>
+
+          <div className="crm-toolbar-end">
+            <span className="crm-toggle">
+              <Switch checked={showArchived} onChange={setShowArchived} label="Show archived leads" />
+              Show archived
+            </span>
+            <button type="button" className="ec-btn-secondary" onClick={() => void exportCsv.run()} disabled={exportCsv.loading}>
+              {exportCsv.loading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              Export CSV
+            </button>
+            <AddLeadModal onOpenLead={onOpenLead} />
+          </div>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, overflowX: "auto", padding: "0 28px 28px" }}>
+        <div className="crm-board-scroll">
           {loading ? <Loading label="Loading pipeline…" /> : null}
           {error ? <ErrorNotice message={error} onRetry={() => { leads.reload(); settings.reload(); }} /> : null}
 
@@ -208,14 +190,16 @@ function LeadBoard({ onOpenLead }: { onOpenLead: (id: string) => void }) {
             />
           ) : null}
 
-          {stages.length > 0 ? (
-            <div style={{ display: "flex", gap: 14, height: "100%", minWidth: "min-content", alignItems: "stretch" }}>
+          {stages.length > 0 && allLeads.length > 0 ? (
+            <div className="crm-columns">
               {stages.map((stage) => {
                 const inStage = filtered.filter((lead) => lead.stage === stage.id);
                 const isTarget = draggingOverStage === stage.id;
                 return (
-                  <div
+                  <section
                     key={stage.id}
+                    aria-label={`${stage.name}: ${inStage.length} leads`}
+                    className={isTarget ? "crm-column is-target" : "crm-column"}
                     onDragOver={(event) => {
                       event.preventDefault();
                       setDraggingOverStage(stage.id);
@@ -241,37 +225,30 @@ function LeadBoard({ onOpenLead }: { onOpenLead: (id: string) => void }) {
                         if (lead && lead.stage !== stage.id) void moveLead.run(id, stage.id);
                       }
                     }}
-                    style={{
-                      width: 252,
-                      flexShrink: 0,
-                      borderRadius: 12,
-                      background: isTarget ? "var(--ec-brand-softer)" : "var(--ec-surface-2)",
-                      border: `1px solid ${isTarget ? "var(--ec-brand)" : "transparent"}`,
-                      padding: 12,
-                      display: "flex",
-                      flexDirection: "column",
-                      transition: "background 150ms, border-color 150ms",
-                    }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "0 2px" }}>
-                      <span style={{ width: 9, height: 9, borderRadius: "50%", background: stage.color, flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{stage.name}</span>
-                      <span style={{ marginLeft: "auto", fontSize: 11.5, color: "var(--ec-text-dim)" }}>
-                        {inStage.length}
-                      </span>
-                    </div>
+                    <h2 className="crm-column-head">
+                      <span className="crm-column-dot" style={{ background: stage.color }} aria-hidden />
+                      {stage.name}
+                      <span className="crm-column-count">{inStage.length}</span>
+                    </h2>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", flex: 1 }}>
+                    <div className="crm-column-list">
                       {inStage.map((lead) => (
-                        <LeadCard key={lead.id} lead={lead} onDragStart={setDraggingId} onOpen={onOpenLead} />
+                        <LeadCard
+                          key={lead.id}
+                          lead={lead}
+                          nextTask={nextTaskByLead.get(lead.id) ?? null}
+                          stages={stages}
+                          onDragStart={setDraggingId}
+                          onOpen={onOpenLead}
+                          onMove={(id, next) => void moveLead.run(id, next)}
+                        />
                       ))}
                       {inStage.length === 0 ? (
-                        <p style={{ fontSize: 11.5, color: "var(--ec-text-faint)", padding: "10px 2px" }}>
-                          {isTarget ? "Drop here" : "Empty"}
-                        </p>
+                        <p className="crm-column-empty">{isTarget ? "Drop here" : "No leads"}</p>
                       ) : null}
                     </div>
-                  </div>
+                  </section>
                 );
               })}
             </div>
@@ -279,7 +256,7 @@ function LeadBoard({ onOpenLead }: { onOpenLead: (id: string) => void }) {
         </div>
       </div>
 
-      <TasksPanel onOpenLead={onOpenLead} />
+      <TasksPanel tasks={tasks} leadNames={leadNames} onOpenLead={onOpenLead} />
     </div>
   );
 }

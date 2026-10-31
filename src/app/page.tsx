@@ -20,7 +20,6 @@ const translations = {
     login: "Ingresar al Dashboard",
     explore: "Conocer E-commetrics",
     loading: "Cargando información...",
-    systems: "Todos los sistemas activos",
   },
   en: {
     title: "What would you like to do?",
@@ -28,7 +27,6 @@ const translations = {
     login: "Go to Dashboard",
     explore: "Explore E-commetrics",
     loading: "Loading information...",
-    systems: "All systems online",
   },
 };
 
@@ -246,10 +244,6 @@ export default function Page() {
                   letterSpacing: "0.12em", textTransform: "uppercase",
                 }}>
                   <span>v2.0 · 2026</span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-                    {t.systems}
-                  </span>
                 </div>
               </motion.div>
             </div>
@@ -262,16 +256,6 @@ export default function Page() {
               letterSpacing: "0.15em", zIndex: 2,
             }}>
               E-COMMETRICS · WORKSPACE · 2026
-            </div>
-
-            {/* Bottom-right label */}
-            <div style={{
-              position: "absolute", bottom: 18, right: 24,
-              fontFamily: "var(--font-jetbrains-mono), JetBrains Mono, monospace",
-              fontSize: 10, color: "rgba(255,255,255,0.3)",
-              letterSpacing: "0.15em", zIndex: 2,
-            }}>
-              SECURE · ENCRYPTED · MX
             </div>
           </motion.div>
         )}

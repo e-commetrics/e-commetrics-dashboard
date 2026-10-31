@@ -1061,18 +1061,6 @@ const Footer = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }
           {locale === "en" ? "Accessibility" : "Accesibilidad"}
         </a>
       </nav>
-
-      <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-        <span className="font-mono-ec" style={{ fontSize: 10, color: "var(--ec-text-faint)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          SECURE · ENCRYPTED · MX
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ec-success)", display: "inline-block" }} />
-          <span className="font-mono-ec" style={{ fontSize: 10, color: "var(--ec-text-faint)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            {locale === "en" ? "ALL SYSTEMS ONLINE" : "TODOS LOS SISTEMAS ACTIVOS"}
-          </span>
-        </div>
-      </div>
     </div>
   </motion.footer>
 );
