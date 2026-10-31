@@ -1,6 +1,6 @@
 # Backlog
 
-Última actualización: **2026-10-08**. El punto 1 se actualizó el **2026-10-20**.
+Última actualización: **2026-10-30** (puntos 1, 3 y 5, y actualización de cumplimiento del 2026-10-15).
 
 Orden de prioridad: de arriba hacia abajo. No empezar un punto hasta cerrar el anterior.
 
@@ -24,15 +24,14 @@ Pendiente para darlo por cerrado:
       (aplicado en producción y en MySQL el 2026-10-16).
 - [x] Cron fiable (2026-10-19): `POST /crm/cron/tick` con token y Cron Jobs de cPanel cada 5
       minutos; corrección del bucle de "Follow up again". Ver `crm_validacion_2026-10-19.md` §10.
-- [ ] Pendientes menores del CRM: monitor externo a `/health`, leer Last error, comprobar en 48 h
-      que "Follow up again" reaparece una sola vez, probar el envío de mensajes en producción, las
-      otras tres reglas y el segundo usuario del CRM.
-- [ ] Commit de los cambios del 16 y 19 de octubre en este repo y en `ReformaDental2025`, sin
-      `git add .`.
+- [x] Pendientes menores del CRM: Last error, "Follow up again" a las 48 h, envío de correo en producción
+      (21-oct) y reglas (recordatorio activo; las dos de mensaje siguen apagadas a propósito). El monitor
+      externo y el segundo usuario siguen abiertos abajo.
+- [x] Commit de los cambios del 16 y 19 de octubre en ambos repos (2026-10-29: `dd1ec91` y `d620a53`).
 - [x] Revisión de la mañana del 2026-10-20: el cron de cPanel estaba roto por un comando mal
       escrito (ruta de log inexistente); corregido y funcionando. Last sync avanza, Last error
       vacío, sin tareas duplicadas. Ver `crm_validacion_2026-10-20.md`.
-- [ ] **Reinicios del proceso:** aunque el cron llama cada 5 min, el proceso de Node se reinicia
+- [x] (Explicado el 2026-10-21, ver abajo) **Reinicios del proceso:** aunque el cron llama cada 5 min, el proceso de Node se reinicia
       seguido y sin patrón fijo (vidas de ~65, ~35, ~22 y ~12 min el 20-oct). Los ticks siguen, sin
       pérdida de datos. Los límites de la cuenta están al 1–5%. Caso abierto con Namecheap (live
       chat del 20-oct; responderán por correo). Falta revisar las gráficas de 24 h de Resource Usage.
@@ -44,9 +43,9 @@ Pendiente para darlo por cerrado:
       el correo está validado. Se reactivan quitando el canal de `DISABLED_CHANNELS` en
       `webapp/crm/lib/channels.ts` cuando el usuario lo indique. Solo frontend: falta build, subida
       y commit; el backend sigue aceptando envíos directos. Ver `crm_validacion_2026-10-20.md` §11.
-- **Actualización (2026-10-29):** WhatsApp quedó habilitado en el código del frontend; falta build
-  y subida. SMS permanece desactivado. El backend sigue aceptando envíos y WhatsApp apunta al número
-  de pruebas; validar configuración y plantillas antes de enviar a pacientes.
+- **Actualización (2026-10-30):** WhatsApp está habilitado y publicado en el frontend; SMS permanece
+  desactivado. El número nuevo y el token ya están (`crm_progreso_2026-10-26.md` §12), pero Meta sigue
+  sin método de pago: no usar con pacientes.
 - [ ] **Monitor externo** a `/health` con palabra clave `warnings` (un `warnings` llega con código 200).
       Candidato: Better Stack; confirmar que su plan gratis incluye palabra clave.
 - [x] **Comprobación de 48 h de "Follow up again" y `touchLead`: OK (2026-10-21).** Una sola tarea nueva
@@ -59,8 +58,7 @@ Pendiente para darlo por cerrado:
       §7 y §12.
 - [x] **Efectos de creación a prueba de reinicios (2026-10-21):** columna `crm_leads.effects_fired_at`
       aplicada en MySQL de producción (21 leads, 0 pendientes) y código del backend desplegado según el
-      usuario (`ReformaDental2025`, `CRM_STATUS.md` §11). **Falta:** probarlo con un lead nuevo real y
-      commitear (el código tiene `tick.js` sin trackear y más cambios previos sin commit).
+      usuario (`ReformaDental2025`, `CRM_STATUS.md` §11). **Falta:** probarlo con un lead nuevo real.
 - [ ] Decidir Ruta 1 (Shared + monitor + correo de aviso) o Ruta 2 (VPS), con las ventajas y desventajas de
       `crm_validacion_2026-10-20.md` §12.
 - [ ] Decisión futura: cuando haya un segundo CRM, pasar a una instancia por CRM en un VPS
@@ -75,8 +73,17 @@ Pendiente para darlo por cerrado:
       de privacidad del dueño.
 
 - **Actualización (2026-10-30):** rediseño, duplicados, equipo y roles, Lead → cita, tareas y eventos a Meta
-  desplegados, sin commit. Estado y pendientes en `crm_progreso_2026-10-26.md` §14. Los pendientes de seguridad se
-  dejaron como están por decisión del usuario.
+  desplegados. Este repo quedó commiteado (`b0df0c3`); `ReformaDental2025` sigue sin commit. Detalle en
+  `crm_progreso_2026-10-26.md` §14. Los pendientes de seguridad se dejaron como están por decisión del usuario.
+- [ ] Commit de los cambios del 2026-10-30 en `ReformaDental2025`, sin `git add .`.
+- [ ] Probar un cambio de etapa real y Lead → cita con un lead manual de prueba.
+- [ ] Revisar las citas creadas durante la falla del cron y mover a mano los leads que quedaron sin mover.
+- [ ] Revisar el rol del segundo usuario: los creados por SQL son Admin.
+- [ ] Probar correo a Outlook/Hotmail.
+- [ ] Revisar Events Manager tras el siguiente evento real (`event_id` y lada 52).
+- [ ] Con el siguiente lead real de Meta: ver llegar el aviso por correo y comprobar el flujo completo.
+- [ ] Terminar WhatsApp: método de pago, plantilla aprobada y campos de plantilla en `TemplateEditor.tsx`
+      (`crm_progreso_2026-10-26.md` §12).
 
 ## 2. Migrar el frontend a Vercel (siguiente feature tras el CRM)
 
@@ -322,7 +329,7 @@ la migración a Vercel y conviene hacerlos pronto.
 - [ ] `/api/register` envía la contraseña en texto plano por correo.
 - [~] (2026-10-29: los middleware ya existen en producción y protegen las rutas de usuarios; falta
       aplicarlos al resto) Middleware `requireAuth` y `requireAdmin` para las rutas de listado y escritura.
-- [ ] Añadir `"CRM"` a `allComponents` (si no se hizo ya en el punto 1).
+- [x] Añadir `"CRM"` a `allComponents` (hecho el 2026-10-16, ver punto 1).
 - [ ] Rutas de subida (`/api/upload-profile-image`, `/api/projects/content`,
       `PUT /api/project_content/:id`): exigir sesión, y limitar tamaño y tipo de archivo en
       multer.
@@ -386,7 +393,7 @@ del CCPA, montos de CIPA y Unruh) no están verificadas: confirmarlas con un abo
 publicarlas. Cualquier texto legal que se publique necesita visto bueno explícito.
 
 **ESTADO tras ejecutar la subtarea 2 (2026-10-13, solo frontend, cambios en el árbol de trabajo sin subir a git).** Hecho: `lint` migrado a `eslint` con la configuración nativa de Next 16; `<html lang>` sigue al idioma activo; enlace "saltar al contenido" y destino `<main>`; etiquetas asociadas y nombres accesibles en login y formulario de paquetes; casilla de consentimiento y aviso en el formulario de paquetes (el botón de envío espera el consentimiento); foco visible global; aviso del chat y roles de diálogo; páginas nuevas `/legal/privacy-policy` y `/accessibility` (bilingües, con enlaces en el pie de la landing y en el login); 3 errores de lint corregidos en archivos tocados. Verificación: `tsc` sin errores, `bun run build` correcto, axe sin hallazgos en entrada, landing, login (corregidos 1 crítico y 1 serio), formulario de paquetes, aviso y declaración, en claro y oscuro.
-**PENDIENTE de esa ejecución:** (1) aprobar el texto del aviso de privacidad (afirma que no se venden datos, que no hay analítica de terceros, que un proveedor externo de IA procesa el chat y que Meta y WhatsApp intervienen en el CRM si el cliente los activa); (2) decidir la razón social del responsable y si hay un correo de privacidad dedicado (hoy `admin@e-commetrics.com`); (3) no existe página de términos; (4) pruebas con sesión iniciada (panel, CRM y chat) y con NVDA y VoiceOver; (5) revisar a ojo 13 elementos de contraste del login que axe marcó "a revisar"; (6) alta manual de leads e importación CSV sin campo de consentimiento (requiere backend); (7) el pie de la landing dice "SECURE · ENCRYPTED · MX" y "ALL SYSTEMS ONLINE" como texto fijo, que se lee como una afirmación de seguridad mientras el punto 3 está abierto; (8) quedan 16 errores de lint en archivos no tocados (CRM, sidebar, calendario de Palmas).
+**PENDIENTE de esa ejecución:** (1) aprobar el texto del aviso de privacidad (afirma que no se venden datos, que no hay analítica de terceros, que un proveedor externo de IA procesa el chat y que Meta y WhatsApp intervienen en el CRM si el cliente los activa); (2) decidir la razón social del responsable y si hay un correo de privacidad dedicado (hoy `admin@e-commetrics.com`); (3) no existe página de términos; (4) pruebas con sesión iniciada (panel, CRM y chat) y con NVDA y VoiceOver; (5) revisar a ojo 13 elementos de contraste del login que axe marcó "a revisar"; (6) alta manual de leads e importación CSV sin campo de consentimiento (requiere backend); (7) ~~el pie de la landing dice "SECURE · ENCRYPTED · MX" y "ALL SYSTEMS ONLINE"~~ (quitados el 2026-10-30); (8) quedan 16 errores de lint en archivos no tocados (CRM, sidebar, calendario de Palmas).
 
 **Lo que ya cumple:** el frontend no carga trackers (sin GA, Pixel, Clarity ni scripts de
 terceros), las cookies son funcionales (`lang`, `sidebar_state`, sesión) y el token del CRM
@@ -458,11 +465,12 @@ y declaración; 4) aviso del chatbot y contratos de encargo.
   crecen o rotan mucho, o si se ofrece el CRM a otros clientes. Requiere un endpoint de
   token en el backend del dashboard y firma asimétrica (ES256). Antes hay que cerrar el
   punto 3.
-- **Pantalla de usuarios dentro del CRM** (crear, listar, borrar). Hoy se crean por SQL;
-  ver `ReformaDental2025/CRM_USUARIOS.md`. No compensa con pocos usuarios.
+- ~~**Pantalla de usuarios dentro del CRM**~~ Hecha el 2026-10-30: Settings › Team.
 - **Pruebas** de la lectura de reglas y del motor de automatización del CRM (un bug ahí
   pasó inadvertido).
-- **Campana de notificaciones conectada al CRM** (idea del 2026-10-28). La campana anterior
+- **Campana de notificaciones conectada al CRM** (idea del 2026-10-28). **Hecha el 2026-10-30 dentro del
+  CRM** (`webapp/crm/components/NotificationBell.tsx`); el encabezado general del dashboard sigue sin
+  campana. La campana anterior
   (`src/components/notification-bell.tsx`) era de muestra: contador fijo en 3, punto rojo siempre
   encendido y sin clic. **Se quitó del encabezado del dashboard el 2026-10-28** (recuperable con
   `git checkout -- src/components/notification-bell.tsx`, aunque no tenía lógica aprovechable).
@@ -482,7 +490,7 @@ y declaración; 4) aviso del chatbot y contratos de encargo.
 ## Actualización 2026-10-15 (cumplimiento)
 - Rama de trabajo: `compliance`, creada desde `main`. El sitio de producción se sirve como exportación estática desde `main`; la rama `vercel` no se puede subir a cPanel.
 - Hechos en frontend: `prefers-reduced-motion` (CSS global y `motion-provider.tsx`), cookies `lang` y `sidebar_state` con `SameSite=Lax` y `Secure` en https (`src/lib/cookies.ts`), banderas del selector de idioma decorativas con `aria-label`, captura de red e inventario (documento fuera del repo) y borradores de procesos de conservación, ARCO, brechas y subencargados.
-- Pendiente con visto bueno: corregir `e-commetris.com` en `src/app/layout.tsx` (línea 49) y quitar la limitación de movimiento reducido de `src/app/accessibility/page.tsx` (líneas 41 y 88). La tarea 2.10 (URL fija de `packages.tsx`) sigue en pausa con la migración a Vercel.
+- Hecho el 2026-10-30: corregido `e-commetris.com` en `src/app/layout.tsx` y quitada la limitación de movimiento reducido de `src/app/accessibility/page.tsx`. La tarea 2.10 (URL fija de `packages.tsx`) sigue en pausa con la migración a Vercel.
 - Detalle en `BACKLOG-compliance-remediation.md` (carpeta `e-commetrics`, fuera del repo).
 
 ## Actualización 2026-10-21 (revisión de cumplimiento y seguridad)
