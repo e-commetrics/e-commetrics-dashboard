@@ -1,4 +1,3 @@
-import { ThemeProvider } from "@/components/theme-provider";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -10,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import Bread from "@/components/bread";
 import ClientOnly from "@/components/ClientOnly";
 import LanguageToggle from "@/components/language-toggle";
+import RouteGuard from "@/components/route-guard";
 
 export default function RootLayout({
   children,
@@ -39,14 +39,8 @@ export default function RootLayout({
               <ModeToggle />
             </div>
           </header>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
+          {/* ThemeProvider already wraps the whole app in the root layout. */}
+          <RouteGuard>{children}</RouteGuard>
         </SidebarInset>
       </SidebarProvider>
     </>

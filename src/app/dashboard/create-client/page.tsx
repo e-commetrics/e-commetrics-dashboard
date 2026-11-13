@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { Eye, EyeOff, Mail, Lock, CheckCircle, Shield, Users, UserPlus } from "lucide-react";
 import { motion } from "motion/react";
+import { apiFetch } from "@/lib/api";
 
 const staggerContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.05 } } };
 const fadeUpItem = { hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.2, 0.7, 0.2, 1] as [number, number, number, number] } } };
@@ -44,7 +45,7 @@ function CreateClient() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/register`, {
+      const res = await apiFetch(`/api/register`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

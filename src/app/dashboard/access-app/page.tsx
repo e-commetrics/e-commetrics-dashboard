@@ -15,6 +15,7 @@ import {
   KanbanSquare,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { apiFetch } from "@/lib/api";
 
 type User = {
   id: number;
@@ -85,7 +86,7 @@ function Page() {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`, { credentials: "include" });
+      const res = await apiFetch(`/api/users`);
       if (!res.ok) throw new Error("Error al cargar usuarios");
       const data = await res.json();
       const clients = data.filter((user: User) => user.role === "client");
@@ -100,7 +101,7 @@ function Page() {
 
   const fetchPermissions = async (userId: number) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users/${userId}/apps`);
+      const res = await apiFetch(`/api/users/${userId}/apps`);
       if (!res.ok) throw new Error("Error al obtener permisos");
       const data = await res.json();
       const completePermissions = AVAILABLE_COMPONENTS.map((component) => {
@@ -133,9 +134,8 @@ function Page() {
   const savePermissions = async (userId: number) => {
     setSavingUsers((prev) => new Set([...prev, userId]));
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users/${userId}/apps`, {
+      const res = await apiFetch(`/api/users/${userId}/apps`, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(permissions[userId]),
       });

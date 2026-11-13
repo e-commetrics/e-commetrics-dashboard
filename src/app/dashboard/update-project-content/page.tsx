@@ -7,6 +7,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { Plus, Edit, Trash2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import { apiFetch } from "@/lib/api";
 
 interface Project {
   id: number;
@@ -51,19 +52,17 @@ export default function ProjectContentByProjectEditor() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedProjects, setExpandedProjects] = useState<number[]>([]);
 
-  useEffect(() => { loadData(); }, []);
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const projectsRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects`);
+      const projectsRes = await apiFetch(`/api/projects`);
       if (!projectsRes.ok) throw new Error("Error al cargar proyectos");
       const projectsData: Project[] = await projectsRes.json();
 
-      const contentRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/project_content`);
+      const contentRes = await apiFetch(`/api/project_content`);
       if (!contentRes.ok) throw new Error("Error al cargar contenido");
       const contentData: ProjectContent[] = await contentRes.json();
 
@@ -78,6 +77,8 @@ export default function ProjectContentByProjectEditor() {
       setLoading(false);
     }
   };
+
+  useEffect(() => { loadData(); }, []);
 
   const toggleProject = (projectId: number) => {
     setExpandedProjects((prev) =>
@@ -111,7 +112,7 @@ export default function ProjectContentByProjectEditor() {
     if (!deleteConfirm) return;
     setDeleting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/project_content/${deleteConfirm.id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/project_content/${deleteConfirm.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar");
       toast.success("Contenido eliminado");
       setContents((prev) => prev.filter((c) => c.id !== deleteConfirm.id));

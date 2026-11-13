@@ -155,6 +155,14 @@ Al retomar, empezar por "Backend en el mismo dominio" y luego el paso 1.
 4. Esperar "Valid Configuration" en ambos dominios en Vercel.
 5. Recién entonces quitar el redirect de cPanel.
 
+> **Cambio de decisión (2026-11-13):** se usa el **subdominio visible**. `e-commetrics.com`
+> → Vercel (solo frontend) y el backend Express en `api.e-commetrics.com` (cPanel, misma app
+> Node). `NEXT_PUBLIC_URL=https://api.e-commetrics.com`. Sin rewrites ni `BACKEND_ORIGIN`.
+> CORS y cookie no cambian (mismo sitio). Pendiente de código: `components/packages.tsx:55`
+> (URL fija a `e-commetrics.com/send-package-email`) y la imagen del correo de bienvenida
+> del backend (`https://e-commetrics.com/email_image.png`). La sección de abajo queda como
+> antecedente.
+
 ### Backend en el mismo dominio (decisión 2026-10-08: proxy con rewrites de Vercel)
 
 Un mismo nombre de host solo puede apuntar a un lugar: Vercel **o** cPanel. Para que el

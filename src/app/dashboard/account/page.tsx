@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
@@ -7,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { useLang } from "@/app/context/LangContext";
 import { Edit, Lock, Mail, User, AlertCircle, Check, Upload } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 export default function AccountPage() {
   const { user, setUser } = useAuth();
@@ -47,7 +47,7 @@ export default function AccountPage() {
   const uploadImage = async (file: File) => {
     const formData = new FormData();
     formData.append("profileImage", file);
-    const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/upload-profile-image`, {
+    const res = await apiFetch(`/api/upload-profile-image`, {
       method: "POST", credentials: "include", body: formData,
     });
     if (!res.ok) throw new Error("Error al subir la imagen");
@@ -63,7 +63,7 @@ export default function AccountPage() {
     }
     setPwLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/change-password`, {
+      const res = await apiFetch(`/api/change-password`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -96,7 +96,7 @@ export default function AccountPage() {
         imageUrl = await uploadImage(profileImageFile);
         setIsImageUploading(false);
       }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/update-profile`, {
+      const res = await apiFetch(`/api/update-profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

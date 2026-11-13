@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { motion } from "motion/react";
+import { apiFetch } from "@/lib/api";
 
 const TYPES = [
   "Business and Objectives",
@@ -12,7 +13,6 @@ const TYPES = [
   "Apps",
 ];
 
-type User = { id: number; userName: string };
 type Project = { id: number; project_name: string; id_user: number };
 
 const fadeUpCard = {
@@ -25,7 +25,6 @@ const staggerCards = {
 };
 
 export default function CreateProjectContent() {
-  const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -44,12 +43,7 @@ export default function CreateProjectContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`, { credentials: "include" })
-      .then((res) => res.json())
-      .then(setUsers)
-      .catch(() => toast.error("Error cargando usuarios"));
-
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects`)
+    apiFetch(`/api/projects`)
       .then((res) => res.json())
       .then(setProjects)
       .catch(() => toast.error("Error cargando proyectos"));
@@ -97,7 +91,7 @@ export default function CreateProjectContent() {
       data.append("type", form.type);
       if (imageFile) data.append("image", imageFile);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects/content`, {
+      const res = await apiFetch(`/api/projects/content`, {
         method: "POST",
         body: data,
       });

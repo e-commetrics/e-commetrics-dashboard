@@ -1,6 +1,16 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLang } from "@/app/context/LangContext";
+import {
+  DAYS_OF_WEEK,
+  MONTH_NAMES_EN,
+  MONTH_NAMES_ES,
+  formatDateForDisplay,
+  getDayOfWeek,
+  isoYMD,
+  parseLocalDateTime,
+} from "@/lib/calendar/dates";
+import { getOriginBadgeStyles, getOriginText } from "@/lib/calendar/origin";
 import axios from "axios";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
@@ -53,58 +63,6 @@ type AppointmentType = "normal" | "blocked";
 type BlockType = "single" | "multiple";
 
 const API_BASE_URL = "https://mongeortopedia.com";
-const DAYS_OF_WEEK = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const MONTH_NAMES_ES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-];
-const MONTH_NAMES_EN = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-// Función para obtener fecha en formato YYYY-MM-DD sin problemas de zona horaria
-function isoYMD(date: Date) {
-  // Usar fecha local para evitar problemas de UTC
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-// Función para parsear fecha y hora local sin problemas de zona horaria
-function parseLocalDateTime(dateStr: string, hourStr: string) {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const [hour, minute] = hourStr.split(":").map(Number);
-  // Crear fecha en zona horaria local
-  return new Date(year, month - 1, day, hour, minute);
-}
-
-// Función para obtener el día de la semana (0 = Domingo, 6 = Sábado)
-function getDayOfWeek(dateStr: string): number {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day).getDay();
-}
 
 // Función para obtener horas disponibles según el día
 function getAvailableHours(dateStr: string): string[] {
@@ -116,78 +74,6 @@ function getAvailableHours(dateStr: string): string[] {
     return ["10:00", "11:00", "12:00", "13:00"];
   }
   return [];
-}
-
-// Función para obtener fechas entre un rango
-function getDatesBetween(startDate: string, endDate: string): string[] {
-  const dates: string[] = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  if (start > end) return dates;
-
-  const current = new Date(start);
-  while (current <= end) {
-    dates.push(isoYMD(current));
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
-}
-
-// Función para formatear fecha para mostrar (corregida para evitar problemas de zona horaria)
-function formatDateForDisplay(dateStr: string, lang: "es" | "en"): string {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  // Crear fecha en mediodía para evitar problemas de zona horaria
-  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
-
-  return date.toLocaleDateString(lang === "es" ? "es-MX" : "en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-// Función para formatear fecha simple (sin día de la semana)
-function formatDateSimple(dateStr: string, lang: "es" | "en"): string {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
-
-  return date.toLocaleDateString(lang === "es" ? "es-MX" : "en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-// Función para obtener el texto del origen
-function getOriginText(
-  origen: string | undefined | null,
-  lang: "es" | "en"
-): string {
-  if (origen === "dashboard") {
-    return lang === "es" ? "Dashboard" : "Dashboard";
-  }
-  return lang === "es" ? "Página Web" : "Web Page";
-}
-
-// Función para obtener los estilos del badge según el origen
-function getOriginBadgeStyles(origen: string | undefined | null): React.CSSProperties {
-  const base: React.CSSProperties = { fontSize: 11, padding: "2px 8px", borderRadius: 6, border: "1px solid" };
-  if (!origen || origen === "null" || origen === "undefined") {
-    return { ...base, background: "rgba(34,197,94,0.12)", color: "#22c55e", borderColor: "rgba(34,197,94,0.3)" };
-  }
-  const origenStr = String(origen).trim().toLowerCase();
-  const map: Record<string, React.CSSProperties> = {
-    dashboard: { ...base, background: "rgba(168,85,247,0.12)", color: "#a855f7", borderColor: "rgba(168,85,247,0.3)" },
-    web: { ...base, background: "rgba(34,197,94,0.12)", color: "#22c55e", borderColor: "rgba(34,197,94,0.3)" },
-    paginaweb: { ...base, background: "rgba(34,197,94,0.12)", color: "#22c55e", borderColor: "rgba(34,197,94,0.3)" },
-    sitio: { ...base, background: "rgba(34,197,94,0.12)", color: "#22c55e", borderColor: "rgba(34,197,94,0.3)" },
-    telefono: { ...base, background: "rgba(249,115,22,0.12)", color: "#f97316", borderColor: "rgba(249,115,22,0.3)" },
-    app: { ...base, background: "rgba(99,102,241,0.12)", color: "#6366f1", borderColor: "rgba(99,102,241,0.3)" },
-    otro: { ...base, background: "rgba(100,116,139,0.12)", color: "#94a3b8", borderColor: "rgba(100,116,139,0.3)" },
-  };
-  return map[origenStr] || { ...base, background: "rgba(100,116,139,0.12)", color: "#94a3b8", borderColor: "rgba(100,116,139,0.3)" };
 }
 
 export default function CalendarMonge() {
@@ -560,46 +446,6 @@ export default function CalendarMonge() {
       : "normal";
   };
 
-  const getAvailableHoursForDay = (dateStr: string) => {
-    const availableHours = getAvailableHours(dateStr);
-    return availableHours.filter((hour) => {
-      const hourStr = `${hour}:00`;
-      const isBlocked = blockedDates.some(
-        (b) => b.date === dateStr && b.hour === hourStr
-      );
-      const isBooked = selectedDates.some(
-        (s) => s.fecha === dateStr && s.hora === hourStr
-      );
-
-      const [year, month, day] = dateStr.split("-").map(Number);
-      const hourNumber = parseInt(hour.split(":")[0]);
-      const currentDate = new Date(year, month - 1, day, hourNumber, 0, 0, 0);
-      const isPastHour = currentDate < new Date();
-
-      return !isBlocked && !isBooked && !isPastHour;
-    });
-  };
-
-  const getBlockedHoursForDay = (dateStr: string) => {
-    const availableHours = getAvailableHours(dateStr);
-    return availableHours.filter((hour) => {
-      const hourStr = `${hour}:00`;
-      const isBlocked = blockedDates.some(
-        (b) => b.date === dateStr && b.hour === hourStr
-      );
-      const isBooked = selectedDates.some(
-        (s) => s.fecha === dateStr && s.hora === hourStr
-      );
-      return isBlocked && !isBooked;
-    });
-  };
-
-  const getBookedHoursForDay = (dateStr: string) => {
-    return selectedDates
-      .filter((s) => s.fecha === dateStr)
-      .map((s) => s.hora.substring(0, 5));
-  };
-
   // Obtener todos los horarios del día con su estado
   const getCompleteDaySchedule = useCallback(() => {
     if (!selectedCalendarDay) return [];
@@ -856,16 +702,6 @@ export default function CalendarMonge() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // Calcular horas para el día seleccionado
-  const availableHoursForSelectedDay = selectedCalendarDay
-    ? getAvailableHoursForDay(selectedCalendarDay)
-    : [];
-  const blockedHoursForSelectedDay = selectedCalendarDay
-    ? getBlockedHoursForDay(selectedCalendarDay)
-    : [];
-  const bookedHoursForSelectedDay = selectedCalendarDay
-    ? getBookedHoursForDay(selectedCalendarDay)
-    : [];
 
   return (
     <div style={{ padding: "28px 24px" }} className="fade-in-up">

@@ -3,7 +3,7 @@
 import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { apiCompleteTask } from "../lib/api";
-import { useMutation, type Resource } from "../lib/hooks";
+import { useMutation, useNow, type Resource } from "../lib/hooks";
 import { DAY_MS, formatDue, isDueWithin, isOverdue } from "../lib/format";
 import type { Task } from "../lib/types";
 import { EmptyState, ErrorNotice, Loading } from "./ui";
@@ -26,14 +26,15 @@ export function TasksPanel({
     onError: (message) => toast.error(message),
   });
 
+  const now = useNow();
   const open = (tasks.data ?? []).filter((task) => !task.done);
-  const dueSoon = open.filter((task) => isDueWithin(task.dueAt, DAY_MS));
-  const overdue = dueSoon.filter((task) => isOverdue(task.dueAt));
-  const upcoming = dueSoon.filter((task) => !isOverdue(task.dueAt));
+  const dueSoon = open.filter((task) => isDueWithin(task.dueAt, DAY_MS, now));
+  const overdue = dueSoon.filter((task) => isOverdue(task.dueAt, now));
+  const upcoming = dueSoon.filter((task) => !isOverdue(task.dueAt, now));
   const hiddenCount = open.length - dueSoon.length;
 
   const renderTask = (task: Task) => {
-    const late = isOverdue(task.dueAt);
+    const late = isOverdue(task.dueAt, now);
     const leadName = leadNames.get(task.leadId);
     return (
       <li key={task.id} className="crm-task">
@@ -48,7 +49,7 @@ export function TasksPanel({
           <span className="crm-task-text">{task.description}</span>
           <span className={late ? "crm-task-meta is-overdue" : "crm-task-meta"}>
             {leadName ? `${leadName} · ` : ""}
-            {formatDue(task.dueAt)}
+            {formatDue(task.dueAt, now)}
           </span>
         </button>
       </li>

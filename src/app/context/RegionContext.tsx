@@ -8,6 +8,7 @@ import React, {
   useContext,
 } from "react";
 import type { Region } from "@/lib/pricing";
+import { apiFetch } from "@/lib/api";
 
 interface RegionContextProps {
   region: Region;
@@ -21,7 +22,7 @@ export function RegionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/geo`)
+    apiFetch(`/api/geo`)
       .then((res) => res.json())
       .then((data: { region?: unknown }) => {
         if (!cancelled && data.region === "us") setRegion("us");
