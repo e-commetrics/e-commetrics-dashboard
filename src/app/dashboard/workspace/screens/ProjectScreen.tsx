@@ -13,6 +13,8 @@ import { useMutation, useResource, useWorkspace } from "../lib/hooks";
 import { PROJECT_STATUS_META, TASK_STATUS_META, useT } from "../lib/i18n";
 import { packageName } from "../lib/packages";
 import { TASK_STATUSES, type Task, type TaskStatus } from "../lib/types";
+import { ClientResults } from "@/components/home/ClientResults";
+import { clientGroupFor, progressPct } from "@/lib/apps";
 
 type Mode = "board" | "list" | "calendar";
 
@@ -78,6 +80,7 @@ export function ProjectScreen({
   const client = memberById(project.clientId);
   const owner = memberById(project.ownerId);
   const pkg = packageName(project.packageId, lang);
+  const clientGroup = clientGroupFor(project.name, project.clientProjectName, client?.name);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, flex: 1 }}>
@@ -132,13 +135,20 @@ export function ProjectScreen({
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ec-text-muted)", marginBottom: 5 }}>
                 <span>{t("Avance", "Progress")}</span>
                 <span>
-                  {project.taskCounts.done}/{project.taskCounts.total}
+                  {progressPct(project.taskCounts)}% · {project.taskCounts.done}/{project.taskCounts.total}
                 </span>
               </div>
-              <ProgressBar done={project.taskCounts.done} total={project.taskCounts.total} color={project.color} />
+              <ProgressBar done={project.taskCounts.done} total={project.taskCounts.total} />
             </div>
           </div>
         </div>
+
+        {/* Resultados del cliente (reservas, citas, ingresos): viven dentro del proyecto. */}
+        {clientGroup ? (
+          <div style={{ marginTop: 18 }}>
+            <ClientResults group={clientGroup} />
+          </div>
+        ) : null}
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 16px", flexWrap: "wrap" }}>
           <nav className="ec-segmented">
@@ -280,18 +290,9 @@ function Board({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 6px" }}>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    color: "#fff",
-                    background: meta.color,
-                    padding: "3px 9px",
-                    borderRadius: 6,
-                  }}
-                >
+                {/* Columnas neutras: el color queda para lo que necesita atencion (vencidas). */}
+                <StatusDot status={s} />
+                <span style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ec-text)" }}>
                   {meta[lang]}
                 </span>
                 <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>{inCol.length}</span>
@@ -474,7 +475,7 @@ function ListView({
             >
               {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
               <StatusDot status={s} />
-              <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: meta.color }}>{meta[lang]}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ec-text)" }}>{meta[lang]}</span>
               <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>{group.length}</span>
             </button>
             {!isCollapsed ? (

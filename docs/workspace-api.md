@@ -20,7 +20,8 @@ shapes. Keep both files in sync.
 | Delete own post | ✓ | ✓ | ✗ |
 
 All `/api/pm/*` routes need the session cookie (`requireAuth`) and must reject
-`role = 'client'` with 403. Project writes need `requireAdmin`. The frontend guard
+`role = 'client'` with 403, **except `GET /api/pm/client/summary`**, which is for clients and
+returns only their own projects' progress (added 2026-11-13). Project writes need `requireAdmin`. The frontend guard
 is UX only; the backend must enforce this.
 
 ## Changes to existing tables
@@ -184,6 +185,8 @@ a 4xx/5xx status. Ids go out as strings, dates as ISO strings (`YYYY-MM-DD` for
 | `PATCH /projects/:id` (admin) | `Partial<ProjectInput>` | `{ project }`. `memberIds` replaces the member list. |
 | `DELETE /projects/:id` (admin) | | 204 |
 | `GET /tasks?assignee=me` | | `{ tasks: TaskWithProject[] }` — tasks and subtasks assigned to the caller, with `projectName`, `projectColor` |
+| `GET /tasks` | | `{ tasks: TaskWithProject[] }` — every **top-level** task the caller can see (same visibility as `GET /projects`), with `projectName`, `projectColor`. Feeds the team home: overdue, in review, and tasks completed this month vs last month (`completedAt`). |
+| `GET /client/summary` | | `{ projects: ClientProjectSummary[] }` — **the only route clients may call.** Projects where `client_id` = caller. Per project: `taskCounts`, and three short lists of top-level tasks reduced to `{ title, status, dueDate, completedAt }`: `inProgress` (in_progress or review, max 5), `upNext` (todo, max 3), `delivered` (done, newest first, max 5). Never include comments, labels, assignees, descriptions or subtasks. |
 | `POST /projects/:id/tasks` | `TaskInput` | `{ task }`. `position` = last in its group. Reject `parentId` that is itself a subtask. |
 | `GET /tasks/:id` | | `{ task, subtasks: Task[], comments: TaskComment[] }` |
 | `PATCH /tasks/:id` | `TaskPatch` | `{ task }`. Set `completedAt` when status becomes `done`, clear it otherwise. `assigneeIds` replaces the list. |
@@ -201,6 +204,10 @@ a 4xx/5xx status. Ids go out as strings, dates as ISO strings (`YYYY-MM-DD` for
 
 Every task returns `subtaskCounts: { total, done }` and `commentCount` (subqueries or
 `LEFT JOIN … GROUP BY`).
+
+## Project progress
+
+Progress is **always** `taskCounts.done / taskCounts.total` (top-level tasks). The hand-typed `projects.percentage` column of the old client pages is no longer shown anywhere; it can be dropped once nothing else reads it. A project with no linked workspace project shows no percentage.
 
 ## CORS
 

@@ -291,25 +291,27 @@ export function labelColor(name: string) {
 }
 
 export function LabelChip({ name, onRemove, small }: { name: string; onRemove?: () => void; small?: boolean }) {
-  const color = labelColor(name);
+  // Chip neutro con un punto de color: la etiqueta se reconoce sin competir con los estados.
+  const color = "var(--ec-text-muted)";
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 4,
+        gap: 5,
         padding: small ? "1px 7px" : "2px 9px",
         borderRadius: 99,
         fontSize: small ? 11 : 12,
-        fontWeight: 600,
+        fontWeight: 500,
         lineHeight: 1.5,
         color,
-        background: `${color}1f`,
-        border: `1px solid ${color}40`,
+        background: "var(--ec-surface-2)",
+        border: "1px solid var(--ec-hairline-strong)",
         whiteSpace: "nowrap",
         maxWidth: 160,
       }}
     >
+      <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: labelColor(name), flexShrink: 0 }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
       {onRemove ? (
         <button

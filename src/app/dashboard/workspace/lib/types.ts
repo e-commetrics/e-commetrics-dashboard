@@ -147,6 +147,35 @@ export type TaskInput = {
 
 export type TaskPatch = Partial<Omit<TaskInput, "parentId">> & { position?: number };
 
+// ─── Resumen para el cliente (inicio del cliente) ───────────────────────────
+
+/**
+ * Lo unico del espacio de trabajo que ve un cliente: el avance de SU proyecto.
+ * Sin comentarios, etiquetas, asignados ni tareas internas mas alla del titulo
+ * y la fecha de entrega. El backend lo arma en GET /api/pm/client/summary
+ * filtrando por projects.client_id = usuario conectado.
+ */
+export type ClientDeliverable = { title: string; status: TaskStatus; dueDate: string | null; completedAt: string | null };
+
+export type ClientProjectSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  packageId: PackageId | null;
+  status: ProjectStatus;
+  dueDate: string | null;
+  /** project_name de la pagina de entregables (/dashboard/[project_name]). */
+  clientProjectName: string | null;
+  /** Tareas de primer nivel. El avance es done / total. */
+  taskCounts: { total: number; done: number };
+  /** En curso o en revision, mas proximas primero (max 5). */
+  inProgress: ClientDeliverable[];
+  /** Proxima por empezar (max 3). */
+  upNext: ClientDeliverable[];
+  /** Terminadas, mas recientes primero (max 5). */
+  delivered: ClientDeliverable[];
+};
+
 // ─── Bandeja de entrada (notificaciones de tareas) ──────────────────────────
 
 /** Que cambio en una tarea. Cada cambio guardado genera una fila de actividad. */

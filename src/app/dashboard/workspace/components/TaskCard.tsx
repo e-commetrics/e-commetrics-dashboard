@@ -2,7 +2,8 @@
 
 import { CheckSquare, MessageSquare } from "lucide-react";
 import type { Task } from "../lib/types";
-import { AvatarStack, DueDate, LabelList, PriorityFlag } from "./shared";
+import { PRIORITY_META, useT } from "../lib/i18n";
+import { AvatarStack, DueDate, LabelList } from "./shared";
 
 /** Tarjeta de tarea del tablero. Arrastrable con HTML5, como el pipeline del CRM. */
 export function TaskCard({
@@ -18,7 +19,22 @@ export function TaskCard({
   onDragEnd?: () => void;
   dragging?: boolean;
 }) {
+  const { lang } = useT();
   const done = task.status === "done";
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const overdue = !done && !!task.dueDate && task.dueDate.slice(0, 10) < todayKey;
+  // Franja lateral: rojo solo si esta vencida; si no, la prioridad (urgente/alta) o neutro.
+  const stripe = overdue
+    ? "var(--ec-danger)"
+    : done
+      ? "var(--ec-hairline-strong)"
+      : task.priority === "urgent"
+        ? "var(--ec-warning)"
+        : task.priority === "high"
+          ? "var(--ec-info)"
+          : "var(--ec-hairline-strong)";
+  const priority = PRIORITY_META[task.priority];
   return (
     <div
       role="button"
@@ -39,6 +55,7 @@ export function TaskCard({
       style={{
         background: "var(--ec-surface-1)",
         border: "1px solid var(--ec-hairline-strong)",
+        borderLeft: `3px solid ${stripe}`,
         borderRadius: 10,
         padding: "11px 12px",
         cursor: "pointer",
@@ -62,7 +79,9 @@ export function TaskCard({
       </div>
       {task.labels?.length ? <LabelList labels={task.labels} small /> : null}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <PriorityFlag priority={task.priority} />
+        {!done && (task.priority === "urgent" || task.priority === "high") ? (
+          <span style={{ fontSize: 12, color: "var(--ec-text-muted)", fontWeight: 500 }}>{priority[lang]}</span>
+        ) : null}
         <DueDate date={task.dueDate} done={done} />
         {task.subtaskCounts.total > 0 ? (
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--ec-text-muted)" }}>

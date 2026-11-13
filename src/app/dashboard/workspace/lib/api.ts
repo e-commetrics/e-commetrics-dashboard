@@ -3,6 +3,7 @@
 import { apiFetch } from "@/lib/api";
 import { createMockApi } from "./mock";
 import type {
+  ClientProjectSummary,
   InboxItem,
   Member,
   ProjectDetail,
@@ -42,6 +43,10 @@ export interface WorkspaceApi {
   deleteProject(id: string): Promise<void>;
 
   listMyTasks(): Promise<TaskWithProject[]>;
+  /** Todas las tareas de primer nivel visibles para el usuario (inicio del equipo: vencidas, en revision, avance del mes). */
+  listTasks(): Promise<TaskWithProject[]>;
+  /** Avance de los proyectos del cliente conectado. Unica ruta del espacio de trabajo abierta a clientes. */
+  clientSummary(): Promise<ClientProjectSummary[]>;
   getTask(id: string): Promise<TaskDetail>;
   createTask(projectId: string, input: TaskInput): Promise<Task>;
   updateTask(id: string, patch: TaskPatch): Promise<Task>;
@@ -100,6 +105,8 @@ export const httpApi: WorkspaceApi = {
   deleteProject: (id) => call<void>("DELETE", `/projects/${enc(id)}`),
 
   listMyTasks: () => call<{ tasks: TaskWithProject[] }>("GET", "/tasks?assignee=me").then((d) => d.tasks),
+  listTasks: () => call<{ tasks: TaskWithProject[] }>("GET", "/tasks").then((d) => d.tasks),
+  clientSummary: () => call<{ projects: ClientProjectSummary[] }>("GET", "/client/summary").then((d) => d.projects),
   getTask: (id) => call<TaskDetail>("GET", `/tasks/${enc(id)}`),
   createTask: (projectId, input) =>
     call<{ task: Task }>("POST", `/projects/${enc(projectId)}/tasks`, input).then((d) => d.task),

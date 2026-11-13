@@ -3,7 +3,7 @@
 import { useAuth } from "@/app/context/AuthContext";
 import React, { useState, useEffect } from "react";
 import { toast, Toaster } from "react-hot-toast";
-import { Briefcase, Users, FileText, Hash, TrendingUp, Plus } from "lucide-react";
+import { Briefcase, Users, FileText, Hash, Plus } from "lucide-react";
 import { motion } from "motion/react";
 import { apiFetch } from "@/lib/api";
 
@@ -59,10 +59,6 @@ export default function CreateProject() {
     }
   };
 
-  const handleProgress = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((f) => ({ ...f, percentage: Number(e.target.value) }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -101,9 +97,6 @@ export default function CreateProject() {
     }
   };
 
-  const pct = form.percentage;
-  const pctColor = pct >= 80 ? "var(--ec-success)" : pct >= 50 ? "var(--ec-warning)" : pct > 0 ? "var(--ec-danger)" : "var(--ec-text-dim)";
-  const pctBarClass = pct >= 80 ? "success" : pct >= 50 ? "warning" : "danger";
   const isValid = !!form.id_user && !!form.title && !!form.project_name;
 
   return (
@@ -223,32 +216,9 @@ export default function CreateProject() {
               </p>
             </div>
 
-            {/* Progress range slider */}
-            <div>
-              <label className="ec-field-label" style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-                <TrendingUp size={11} /> Progreso Inicial
-              </label>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={pct}
-                  onChange={handleProgress}
-                  style={{ flex: 1, accentColor: "var(--ec-brand)", cursor: "pointer" }}
-                />
-                <div style={{
-                  width: 72, padding: "7px 12px",
-                  background: "var(--ec-surface-1)", border: "1px solid var(--ec-hairline)", borderRadius: 10,
-                  fontFamily: "JetBrains Mono, monospace", fontSize: 13, textAlign: "center",
-                  color: pctColor, fontWeight: 600,
-                }}>
-                  {pct}<span style={{ fontSize: 10 }}>%</span>
-                </div>
-              </div>
-              <div className="ec-progress" style={{ marginTop: 8 }}>
-                <div className={`ec-progress-bar ${pctBarClass}`} style={{ width: `${pct}%` }} />
-              </div>
+            {/* El avance ya no se escribe a mano: son las tareas completadas del proyecto en Workspace. */}
+            <div style={{ fontSize: 12.5, color: "var(--ec-text-muted)" }}>
+              El progreso se calcula solo, con las tareas completadas del proyecto en Workspace.
             </div>
 
             {/* Description */}

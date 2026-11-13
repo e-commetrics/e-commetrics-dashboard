@@ -7,6 +7,8 @@ import { Plus, AlertCircle, Trash2, Edit, Search } from "lucide-react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { apiFetch } from "@/lib/api";
+import { progressPct } from "@/lib/apps";
+import { useTaskProgressMap } from "@/lib/use-task-progress";
 
 type Project = {
   id: number;
@@ -24,6 +26,8 @@ type User = {
 
 export default function UpdateProject() {
   const { fetchProjects } = useAuth();
+  // Avance por tareas completadas del proyecto vinculado en Workspace.
+  const taskProgress = useTaskProgressMap();
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -195,8 +199,9 @@ export default function UpdateProject() {
             </thead>
             <tbody>
               {filteredProjects.map((project) => {
-                const pct = project.percentage ?? 0;
-                const pctColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "var(--ec-brand)";
+                const counts = taskProgress?.get(project.project_name);
+                const pct = progressPct(counts);
+                const pctColor = "var(--ec-brand)";
                 return (
                   <tr
                     key={project.id}
@@ -209,12 +214,12 @@ export default function UpdateProject() {
                       </span>
                     </td>
                     <td>
-                      {project.percentage !== null && project.percentage !== undefined ? (
+                      {counts ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{ width: 80, height: 3, borderRadius: 99, background: "var(--ec-hairline)", overflow: "hidden" }}>
                             <div style={{ height: "100%", width: `${pct}%`, background: pctColor, borderRadius: 99 }} />
                           </div>
-                          <span className="font-mono-ec" style={{ fontSize: 12, color: pctColor, fontWeight: 700 }}>{pct}%</span>
+                          <span className="font-mono-ec" style={{ fontSize: 12, color: "var(--ec-text-muted)", fontWeight: 600 }}>{pct}% · {counts.done}/{counts.total}</span>
                         </div>
                       ) : (
                         <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>—</span>
@@ -282,8 +287,12 @@ export default function UpdateProject() {
                 <input className="ec-field-input" type="text" name="project_name" value={selectedProject.project_name} onChange={handleChange} />
               </div>
               <div>
-                <label className="ec-field-label">Progreso (%)</label>
-                <input className="ec-field-input" type="number" name="percentage" value={selectedProject.percentage ?? ""} onChange={handleChange} min={0} max={100} />
+                <label className="ec-field-label">Progreso</label>
+                <div style={{ fontSize: 13, color: "var(--ec-text-muted)", padding: "9px 0" }}>
+                  {taskProgress?.get(selectedProject.project_name)
+                    ? `${progressPct(taskProgress.get(selectedProject.project_name))}% · se calcula con las tareas completadas en Workspace.`
+                    : "Se calcula con las tareas completadas. Vincula esta página a un proyecto de Workspace para verlo."}
+                </div>
               </div>
               <div>
                 <label className="ec-field-label">Usuario Asignado</label>

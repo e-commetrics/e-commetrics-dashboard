@@ -8,6 +8,8 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useLang } from "@/app/context/LangContext";
 import { Hash, Target, Sparkles, Layers, TrendingUp, Zap, ExternalLink, Plus, MoreHorizontal } from "lucide-react";
 import ContentModal from "@/components/ContentModal";
+import { progressPct } from "@/lib/apps";
+import { useTaskProgress } from "@/lib/use-task-progress";
 
 type Project = {
   id: number;
@@ -260,9 +262,11 @@ export default function ProjectContent({ project: initialProject }: { project: P
     fetchContents();
   }, [currentProject?.id, canAccess]);
 
-  const pct = currentProject?.percentage ?? 0;
+  // Avance = tareas completadas del proyecto vinculado en Workspace (ya no el porcentaje escrito a mano).
+  const taskProgress = useTaskProgress(currentProject?.project_name);
+  const pct = progressPct(taskProgress);
   const [displayPct, setDisplayPct] = useState(0);
-  const progressColor = pct >= 80 ? "var(--ec-success)" : pct >= 50 ? "var(--ec-warning)" : "var(--ec-danger)";
+  const progressColor = "var(--ec-brand)";
 
   useEffect(() => {
     let start = 0;
@@ -354,17 +358,17 @@ export default function ProjectContent({ project: initialProject }: { project: P
             {currentProject.project_name}
           </span>
           <span style={{ color: "var(--ec-text-faint)" }}>·</span>
-          {pct >= 80 ? (
+          {!taskProgress ? (
+            <span className="ec-badge ec-badge-neutral">
+              {lang === "es" ? "Sin plan de trabajo vinculado" : "No work plan linked"}
+            </span>
+          ) : taskProgress.total > 0 && taskProgress.done === taskProgress.total ? (
             <span className="ec-badge ec-badge-success">
               {lang === "es" ? "Completado" : "Completed"}
             </span>
-          ) : pct >= 50 ? (
-            <span className="ec-badge ec-badge-warning">
-              {lang === "es" ? "En progreso" : "In progress"}
-            </span>
           ) : (
-            <span className="ec-badge ec-badge-danger">
-              {lang === "es" ? "Iniciado" : "Started"}
+            <span className="ec-badge ec-badge-brand">
+              {lang === "es" ? "En progreso" : "In progress"}
             </span>
           )}
         </div>
@@ -455,6 +459,13 @@ export default function ProjectContent({ project: initialProject }: { project: P
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <CircularProgress value={pct} color={progressColor} />
+            <div style={{ fontSize: 12, color: "var(--ec-text-muted)", textAlign: "center" }}>
+              {taskProgress
+                ? lang === "es"
+                  ? `${taskProgress.done} de ${taskProgress.total} tareas completadas`
+                  : `${taskProgress.done} of ${taskProgress.total} tasks completed`
+                : lang === "es" ? "Avance por tareas" : "Progress by tasks"}
+            </div>
             <button
               onClick={() => { setModalMode("create"); setEditContent(null); setModalOpen(true); }}
               className="ec-btn-primary"

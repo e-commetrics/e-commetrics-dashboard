@@ -84,7 +84,7 @@ export default function Bread(): JSX.Element {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <span className="dark:text-white text-black">Dashboard</span>
+            <span className="dark:text-white text-black">{lang === "es" ? "Inicio" : "Home"}</span>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -101,7 +101,11 @@ export default function Bread(): JSX.Element {
     qr: lang === "es" ? "Generador de QR" : "QR Generator",
     vcard: lang === "es" ? "Generador de Contactos" : "Contact Generator",
     "access-app": lang === "es" ? "Permisos" : "Permission",
-    workspace: lang === "es" ? "Espacio de trabajo" : "Workspace",
+    workspace: "Workspace",
+    "update-client": lang === "es" ? "Usuarios" : "Users",
+    "update-project": lang === "es" ? "Páginas de cliente" : "Client pages",
+    "update-project-content": lang === "es" ? "Entregables" : "Deliverables",
+    "create-project": lang === "es" ? "Nueva página de cliente" : "New client page",
   };
 
   // Para rutas de 2 niveles (/dashboard/algo)
@@ -115,7 +119,7 @@ export default function Bread(): JSX.Element {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/dashboard">{lang === "es" ? "Inicio" : "Home"}</Link>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -272,7 +276,7 @@ export default function Bread(): JSX.Element {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/dashboard">{lang === "es" ? "Inicio" : "Home"}</Link>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -451,7 +455,7 @@ export default function Bread(): JSX.Element {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/dashboard">{lang === "es" ? "Inicio" : "Home"}</Link>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         {breadcrumbItems}

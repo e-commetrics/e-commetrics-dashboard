@@ -11,6 +11,8 @@ import { packageTemplateTasks } from "./packages";
 import type { WorkspaceApi } from "./api";
 import type {
   ActivityKind,
+  ClientDeliverable,
+  ClientProjectSummary,
   InboxItem,
   Member,
   PackageId,
@@ -330,6 +332,36 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
             return { ...taskOut(db, t), projectName: p?.name ?? "—", projectColor: p?.color ?? "#888" };
           })
       );
+    },
+    async listTasks() {
+      const db = load();
+      return delay(
+        db.tasks
+          .filter((t) => t.parentId === null)
+          .map((t) => {
+            const p = db.projects.find((pr) => pr.id === t.projectId);
+            return { ...taskOut(db, t), projectName: p?.name ?? "—", projectColor: p?.color ?? "#888" };
+          })
+      );
+    },
+    async clientSummary() {
+      const db = load();
+      // En el mock no hay relacion real cliente↔usuario: se muestra el primer
+      // proyecto activo como ejemplo. El backend filtra por client_id.
+      const project = db.projects.find((p) => p.status === "active") ?? db.projects[0];
+      if (!project) return delay([] as ClientProjectSummary[]);
+      const top = db.tasks.filter((t) => t.projectId === project.id && t.parentId === null);
+      const out = (t: StoredTask): ClientDeliverable => ({ title: t.title, status: t.status, dueDate: t.dueDate, completedAt: t.completedAt });
+      const byDue = (a: StoredTask, b: StoredTask) => (a.dueDate ?? "9").localeCompare(b.dueDate ?? "9");
+      const summary: ClientProjectSummary = {
+        id: project.id, name: project.name, description: project.description, packageId: project.packageId,
+        status: project.status, dueDate: project.dueDate, clientProjectName: project.clientProjectName,
+        taskCounts: withCounts(db, project).taskCounts,
+        inProgress: top.filter((t) => t.status === "in_progress" || t.status === "review").sort(byDue).slice(0, 5).map(out),
+        upNext: top.filter((t) => t.status === "todo").sort(byDue).slice(0, 3).map(out),
+        delivered: top.filter((t) => t.status === "done").sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")).slice(0, 5).map(out),
+      };
+      return delay([summary]);
     },
     async getTask(id: string) {
       const db = load();
