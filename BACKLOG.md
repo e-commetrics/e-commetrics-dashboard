@@ -73,9 +73,8 @@ Pendiente para darlo por cerrado:
       de privacidad del dueño.
 
 - **Actualización (2026-10-30):** rediseño, duplicados, equipo y roles, Lead → cita, tareas y eventos a Meta
-  desplegados. Este repo quedó commiteado (`b0df0c3`); `ReformaDental2025` sigue sin commit. Detalle en
+  desplegados y commiteados en ambos repos (`b0df0c3` y `eec7c11`). Detalle en
   `crm_progreso_2026-10-26.md` §14. Los pendientes de seguridad se dejaron como están por decisión del usuario.
-- [ ] Commit de los cambios del 2026-10-30 en `ReformaDental2025`, sin `git add .`.
 - [ ] Probar un cambio de etapa real y Lead → cita con un lead manual de prueba.
 - [ ] Revisar las citas creadas durante la falla del cron y mover a mano los leads que quedaron sin mover.
 - [ ] Revisar el rol del segundo usuario: los creados por SQL son Admin.

@@ -1,5 +1,4 @@
 import { ThemeProvider } from "@/components/theme-provider";
-import Chatbot from "@/components/chatbot";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -47,7 +46,6 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
-            <Chatbot />
           </ThemeProvider>
         </SidebarInset>
       </SidebarProvider>
