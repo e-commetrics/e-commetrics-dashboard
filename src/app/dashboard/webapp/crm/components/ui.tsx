@@ -12,6 +12,8 @@
 import { useId } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Loader2, X, AlertTriangle, Inbox } from "lucide-react";
+// Workspace tambien usa estas piezas: sin este import, fuera del CRM el Modal sale sin estilos.
+import "../crm.css";
 import {
   Select,
   SelectContent,
