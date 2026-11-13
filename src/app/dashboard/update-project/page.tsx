@@ -6,6 +6,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { Plus, AlertCircle, Trash2, Edit, Search } from "lucide-react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { apiFetch } from "@/lib/api";
 
 type Project = {
   id: number;
@@ -40,15 +41,10 @@ export default function UpdateProject() {
       })
     : projects;
 
-  useEffect(() => {
-    fetchProjectsList();
-    fetchUsers();
-  }, []);
-
   const fetchProjectsList = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects`);
+      const res = await apiFetch(`/api/projects`);
       if (!res.ok) throw new Error("Error cargando proyectos");
       const data = await res.json();
       setProjects(data);
@@ -61,7 +57,7 @@ export default function UpdateProject() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`);
+      const res = await apiFetch(`/api/users`);
       if (!res.ok) throw new Error("Error cargando usuarios");
       const data = await res.json();
       setUsers(data);
@@ -69,6 +65,11 @@ export default function UpdateProject() {
       toast.error("Error cargando usuarios");
     }
   };
+
+  useEffect(() => {
+    fetchProjectsList();
+    fetchUsers();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -90,7 +91,7 @@ export default function UpdateProject() {
 
     setSaving(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects/${selectedProject.id}`, {
+      const res = await apiFetch(`/api/projects/${selectedProject.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(selectedProject),
@@ -114,7 +115,7 @@ export default function UpdateProject() {
   const handleDelete = async (id: number) => {
     setDeleting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/projects/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || "Error al eliminar");

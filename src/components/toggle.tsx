@@ -14,8 +14,6 @@ import {
 export function ModeToggle() {
   const { theme, setTheme } = useTheme();
 
-  const icon = theme === "dark" ? Moon : Sun;
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

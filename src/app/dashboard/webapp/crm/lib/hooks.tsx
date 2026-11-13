@@ -62,8 +62,13 @@ export function useResource<T>(key: string, fetcher: () => Promise<T>): Resource
   const [loading, setLoading] = useState(true);
   const [manual, setManual] = useState(0);
 
+  // Latest-ref pattern: keep the newest fetcher without making it a dependency.
+  // Updated in an effect (declared before the fetch effect, so it runs first)
+  // because writing a ref during render is unsafe under concurrent rendering.
   const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -122,9 +127,11 @@ export function useMutation<TArgs extends unknown[], TResult>(
   const [error, setError] = useState<string | null>(null);
 
   const fnRef = useRef(fn);
-  fnRef.current = fn;
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+  useEffect(() => {
+    fnRef.current = fn;
+    optionsRef.current = options;
+  });
 
   const run = useCallback(
     async (...args: TArgs): Promise<TResult | null> => {
@@ -153,4 +160,17 @@ export function useMutation<TArgs extends unknown[], TResult>(
   const reset = useCallback(() => setError(null), []);
 
   return { run, loading, error, reset };
+}
+
+/**
+ * Current time in ms, refreshed every `intervalMs`. Reading Date.now() during
+ * render is impure (results change between renders); this keeps it in state.
+ */
+export function useNow(intervalMs = 60_000): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
 }

@@ -21,6 +21,11 @@ import {
   Search,
   Scan,
   KanbanSquare,
+  FolderKanban,
+  CheckSquare,
+  Megaphone,
+  Users,
+  Inbox,
 } from "lucide-react";
 import { NavUser } from "@/components/nav-user";
 import Cookies from "js-cookie";
@@ -502,6 +507,36 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       <SidebarHeader>{user && <TeamSwitcher user={user} />}</SidebarHeader>
 
       <SidebarContent>
+        {/* Espacio de trabajo interno: solo admins y empleados */}
+        {(user?.role === "admin" || user?.role === "employee") && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{lang === "es" ? "Espacio de trabajo" : "Workspace"}</SidebarGroupLabel>
+            <SidebarMenu>
+              {[
+                { view: "projects", icon: FolderKanban, es: "Proyectos", en: "Projects" },
+                { view: "inbox", icon: Inbox, es: "Bandeja", en: "Inbox" },
+                { view: "calendar", icon: CalendarDays, es: "Calendario", en: "Calendar" },
+                { view: "my-tasks", icon: CheckSquare, es: "Mis tareas", en: "My tasks" },
+                { view: "wall", icon: Megaphone, es: "Muro", en: "Wall" },
+                { view: "team", icon: Users, es: "Equipo", en: "Team" },
+              ].map((item) => (
+                <SidebarMenuItem key={item.view}>
+                  <SidebarMenuButton asChild tooltip={lang === "es" ? item.es : item.en}>
+                    <Link
+                      href={`/dashboard/workspace?view=${item.view}`}
+                      onClick={handleItemClick}
+                      className="flex items-center gap-2"
+                    >
+                      <item.icon className="w-4 h-4" />
+                      <span>{lang === "es" ? item.es : item.en}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
+
         {/* Sección de Acciones Administrativas - REESTRUCTURADA CON DROPDOWNS */}
         {user?.role === "admin" && Object.keys(groupedActions).length > 0 && (
           <SidebarGroup>

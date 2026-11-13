@@ -190,7 +190,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
 
   const [currentProject, setCurrentProject] = useState<Project | null>(initialProject[0] ?? null);
   const [contents, setContents] = useState<ProjectContentItem[]>([]);
-  const [clientEmail, setClientEmail] = useState<string>("");
+  const [ownerEmailFromAdminLookup, setOwnerEmailFromAdminLookup] = useState<string>("");
   const [activeType, setActiveType] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -199,30 +199,39 @@ export default function ProjectContent({ project: initialProject }: { project: P
   const [editContent, setEditContent] = useState<ProjectContentItem | null>(null);
 
   const types = lang === "es" ? CONTENT_TYPES_ES : CONTENT_TYPES_EN;
-  const allLabel = types[0];
 
   // Re-fetch project from API so id_user is always fresh
   useEffect(() => {
     if (!initialProject[0]?.project_name) return;
     axios
-      .get(`${process.env.NEXT_PUBLIC_URL}/api/project/${initialProject[0].project_name}`)
+      .get(`${process.env.NEXT_PUBLIC_URL}/api/project/${initialProject[0].project_name}`, { withCredentials: true })
       .then((res) => {
         if (Array.isArray(res.data) && res.data.length > 0) setCurrentProject(res.data[0]);
       })
       .catch(() => {});
   }, [initialProject[0]?.project_name]);
 
+  // Owner email shown in the header. A client viewing their own project already
+  // has it; only admins (who may list users) ask the backend for the owner.
+  // Previously every viewer downloaded the full user list for this.
+  const viewerIsOwner = !!user && Number(user.id) === Number(currentProject?.id_user);
+  const clientEmail = viewerIsOwner
+    ? user?.email || user?.userName || ""
+    : ownerEmailFromAdminLookup;
+
   useEffect(() => {
-    if (!currentProject?.id_user) return;
+    if (!currentProject?.id_user || !user || viewerIsOwner) return;
+    if (user.role !== "admin") return;
     axios
-      .get(`${process.env.NEXT_PUBLIC_URL}/api/users`)
+      .get(`${process.env.NEXT_PUBLIC_URL}/api/users`, { withCredentials: true })
       .then((res) => {
-        const users = Array.isArray(res.data) ? res.data : [];
-        const owner = users.find((u: any) => Number(u.id) === Number(currentProject.id_user));
-        setClientEmail(owner?.email || owner?.userName || "");
+        const users: { id: number | string; email?: string; userName?: string }[] =
+          Array.isArray(res.data) ? res.data : [];
+        const owner = users.find((u) => Number(u.id) === Number(currentProject.id_user));
+        setOwnerEmailFromAdminLookup(owner?.email || owner?.userName || "");
       })
       .catch(() => {});
-  }, [currentProject?.id_user]);
+  }, [currentProject?.id_user, user, viewerIsOwner]);
 
   useEffect(() => {
     if (user !== undefined) setAuthLoading(false);
@@ -238,7 +247,8 @@ export default function ProjectContent({ project: initialProject }: { project: P
       setLoading(true);
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_URL}/api/project_content/${currentProject.id}`
+          `${process.env.NEXT_PUBLIC_URL}/api/project_content/${currentProject.id}`,
+          { withCredentials: true }
         );
         setContents(Array.isArray(res.data) ? res.data : []);
       } catch {
@@ -270,7 +280,6 @@ export default function ProjectContent({ project: initialProject }: { project: P
     }, step);
     return () => clearInterval(timer);
   }, [pct]);
-  const progressCls = pct >= 80 ? "success" : pct >= 50 ? "warning" : "danger";
 
   const filteredContents = activeType
     ? contents.filter((item) => item.type === activeType)
@@ -880,7 +889,8 @@ export default function ProjectContent({ project: initialProject }: { project: P
             setLoading(true);
             try {
               const res = await axios.get(
-                `${process.env.NEXT_PUBLIC_URL}/api/project_content/${currentProject.id}`
+                `${process.env.NEXT_PUBLIC_URL}/api/project_content/${currentProject.id}`,
+                { withCredentials: true }
               );
               setContents(Array.isArray(res.data) ? res.data : []);
             } catch {

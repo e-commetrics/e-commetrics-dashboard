@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { X } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 const TYPES = [
   "Business and Objectives",
@@ -57,7 +58,7 @@ export default function ContentModal({ open, onClose, mode, projectId, content, 
 
   useEffect(() => {
     if (!open) return;
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects`)
+    apiFetch(`/api/projects`)
       .then((res) => res.json())
       .then(setProjects)
       .catch(() => toast.error("Error cargando proyectos"));
@@ -137,12 +138,12 @@ export default function ContentModal({ open, onClose, mode, projectId, content, 
 
       let res: Response;
       if (isEdit && content) {
-        res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/project_content/${content.id}`, {
+        res = await apiFetch(`/api/project_content/${content.id}`, {
           method: "PUT",
           body: data,
         });
       } else {
-        res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects/content`, {
+        res = await apiFetch(`/api/projects/content`, {
           method: "POST",
           body: data,
         });

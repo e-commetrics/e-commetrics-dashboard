@@ -1,6 +1,16 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLang } from "@/app/context/LangContext";
+import {
+  DAYS_OF_WEEK,
+  MONTH_NAMES_EN,
+  MONTH_NAMES_ES,
+  formatDateForDisplay,
+  getDayOfWeek,
+  isoYMD,
+  parseLocalDateTime,
+} from "@/lib/calendar/dates";
+import { getOriginBadgeStyles, getOriginText } from "@/lib/calendar/origin";
 import axios from "axios";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
@@ -54,72 +64,11 @@ type ModalType = "delete" | "edit" | null;
 type BlockType = "single" | "multiple";
 
 const API_BASE_URL = "https://reformadental.com";
-const DAYS_OF_WEEK = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const MONTH_NAMES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const MONTH_NAMES_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-function isoYMD(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function parseLocalDateTime(dateStr: string, hourStr: string) {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const [hour, minute] = hourStr.split(":").map(Number);
-  return new Date(year, month - 1, day, hour, minute);
-}
-
-function getDayOfWeek(dateStr: string): number {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day).getDay();
-}
 
 function getAvailableHours(dateStr: string): string[] {
   const dayOfWeek = getDayOfWeek(dateStr);
   if (dayOfWeek === 0) return [];
   return ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
-}
-
-function getDatesBetween(startDate: string, endDate: string): string[] {
-  const dates: string[] = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (start > end) return dates;
-  const current = new Date(start);
-  while (current <= end) {
-    dates.push(isoYMD(current));
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
-}
-
-function formatDateForDisplay(dateStr: string, lang: "es" | "en"): string {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
-  return date.toLocaleDateString(lang === "es" ? "es-MX" : "en-US", {
-    weekday: "long", year: "numeric", month: "long", day: "numeric",
-  });
-}
-
-function getOriginText(origen: string | undefined | null, lang: "es" | "en"): string {
-  if (origen === "dashboard") return "Dashboard";
-  return lang === "es" ? "Página Web" : "Web Page";
-}
-
-function getOriginBadgeStyles(origen: string | undefined | null): React.CSSProperties {
-  const base: React.CSSProperties = { fontSize: 11, padding: "2px 8px", borderRadius: 6, border: "1px solid" };
-  if (!origen || origen === "null" || origen === "undefined") {
-    return { ...base, background: "rgba(34,197,94,0.12)", color: "#22c55e", borderColor: "rgba(34,197,94,0.3)" };
-  }
-  const map: Record<string, React.CSSProperties> = {
-    dashboard: { ...base, background: "rgba(168,85,247,0.12)", color: "#a855f7", borderColor: "rgba(168,85,247,0.3)" },
-    web: { ...base, background: "rgba(34,197,94,0.12)", color: "#22c55e", borderColor: "rgba(34,197,94,0.3)" },
-    paginaweb: { ...base, background: "rgba(34,197,94,0.12)", color: "#22c55e", borderColor: "rgba(34,197,94,0.3)" },
-    telefono: { ...base, background: "rgba(249,115,22,0.12)", color: "#f97316", borderColor: "rgba(249,115,22,0.3)" },
-  };
-  return map[String(origen).trim().toLowerCase()] || { ...base, background: "rgba(100,116,139,0.12)", color: "#94a3b8", borderColor: "rgba(100,116,139,0.3)" };
 }
 
 export default function CalendarReforma() {
@@ -327,19 +276,6 @@ export default function CalendarReforma() {
     return appointment.nombre?.toUpperCase() === "BLOQUEADO" ? "blocked" : "normal";
   };
 
-  const getBlockedHoursForDay = (dateStr: string) => {
-    const availableHours = getAvailableHours(dateStr);
-    return availableHours.filter((hour) => {
-      const hourKey = hour.substring(0, 5);
-      return blockedDates.some((b) => b.hour.substring(0, 5) === hourKey && b.date === dateStr) &&
-             !selectedDates.some((s) => s.fecha === dateStr && s.hora.substring(0, 5) === hourKey);
-    });
-  };
-
-  const getBookedHoursForDay = (dateStr: string) => {
-    return selectedDates.filter((s) => s.fecha === dateStr).map((s) => s.hora.substring(0, 5));
-  };
-
   const getCompleteDaySchedule = useCallback(() => {
     if (!selectedCalendarDay) return [];
     const availableHours = getAvailableHours(selectedCalendarDay);
@@ -469,12 +405,6 @@ export default function CalendarReforma() {
   const monthNames = lang === "es" ? MONTH_NAMES_ES : MONTH_NAMES_EN;
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-
-  const availableHoursForSelectedDay = selectedCalendarDay ? getAvailableHours(selectedCalendarDay).filter((hour) => {
-    const hourKey = hour.substring(0, 5);
-    return !blockedDates.some((b) => b.hour.substring(0, 5) === hourKey && b.date === selectedCalendarDay) &&
-           !selectedDates.some((s) => s.hora.substring(0, 5) === hourKey && s.fecha === selectedCalendarDay);
-  }) : [];
 
   return (
     <div style={{ padding: "28px 24px" }} className="fade-in-up">

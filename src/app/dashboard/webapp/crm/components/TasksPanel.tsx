@@ -3,7 +3,7 @@
 import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { apiCompleteTask, apiListTasks } from "../lib/api";
-import { useMutation, useResource } from "../lib/hooks";
+import { useMutation, useNow, useResource } from "../lib/hooks";
 import { DAY_MS, formatDateTime, isDueWithin, isOverdue } from "../lib/format";
 import { EmptyState, ErrorNotice, Loading } from "./ui";
 
@@ -20,7 +20,7 @@ export function TasksPanel({ onOpenLead }: { onOpenLead: (id: string) => void })
   });
 
   const all = tasks.data ?? [];
-  const now = Date.now();
+  const now = useNow();
   const open = all.filter((task) => !task.done);
   const dueSoon = open.filter((task) => isDueWithin(task.dueAt, DAY_MS, now));
   const overdueCount = dueSoon.filter((task) => isOverdue(task.dueAt, now)).length;

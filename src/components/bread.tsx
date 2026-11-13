@@ -101,6 +101,7 @@ export default function Bread(): JSX.Element {
     qr: lang === "es" ? "Generador de QR" : "QR Generator",
     vcard: lang === "es" ? "Generador de Contactos" : "Contact Generator",
     "access-app": lang === "es" ? "Permisos" : "Permission",
+    workspace: lang === "es" ? "Espacio de trabajo" : "Workspace",
   };
 
   // Para rutas de 2 niveles (/dashboard/algo)

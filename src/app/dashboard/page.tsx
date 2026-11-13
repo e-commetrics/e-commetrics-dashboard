@@ -40,18 +40,6 @@ export default function Page() {
   const [search, setSearch] = useState("");
   const { lang } = useLang();
 
-  useEffect(() => {
-    if (user === null) {
-      router.push("/");
-    } else if (user) {
-      if (user.role === "admin") {
-        fetchProjects();
-      } else {
-        fetchProjects(Number(user.id));
-      }
-    }
-  }, [user, router]);
-
   const fetchProjects = async (userId?: number) => {
     setLoading(true);
     setError(null);
@@ -70,6 +58,18 @@ export default function Page() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user === null) {
+      router.push("/");
+    } else if (user) {
+      if (user.role === "admin") {
+        fetchProjects();
+      } else {
+        fetchProjects(Number(user.id));
+      }
+    }
+  }, [user, router]);
 
   const total = projects.length;
   const completed = useMemo(() => projects.filter((p) => p.percentage >= 80).length, [projects]);

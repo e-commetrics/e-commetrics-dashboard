@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { Briefcase, Users, FileText, Hash, TrendingUp, Plus } from "lucide-react";
 import { motion } from "motion/react";
+import { apiFetch } from "@/lib/api";
 
 type User = {
   id: number;
@@ -35,7 +36,7 @@ export default function CreateProject() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/users`)
+    apiFetch(`/api/users`)
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch(() => toast.error("Error cargando usuarios"));
@@ -72,7 +73,7 @@ export default function CreateProject() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects`, {
+      const res = await apiFetch(`/api/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

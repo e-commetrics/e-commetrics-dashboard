@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { MessageCircle, CheckCircle, Clock, X, Check, Search, Mail, Users } from "lucide-react";
+import { MessageCircle, CheckCircle, Clock, X, Check, Search } from "lucide-react";
 
 type Comment = {
   id: number;

@@ -44,6 +44,8 @@ interface AuthContextType {
 
   permissions: Permission[];
   setPermissions: React.Dispatch<React.SetStateAction<Permission[]>>;
+  /** True once permissions for the current user have been fetched (or are not needed). */
+  permissionsLoaded: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,60 +58,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [projects, setProjects] = useState<Project[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
 
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/profile`, {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          setUser(null);
-          setPermissions([]);
-          return;
-        }
-        const data = await res.json();
-        setUser(data.user);
-
-        // Obtener permisos si es client
-        if (data.user.role === "client") {
-          const permsRes = await fetch(
-            `${process.env.NEXT_PUBLIC_URL}/api/users/${data.user.id}/apps`
-          );
-          const permsData = await permsRes.json();
-          setPermissions(permsData);
-        } else {
-          setPermissions([]); // Admin no necesita permisos
-        }
-      } catch {
-        setUser(null);
-        setPermissions([]);
-      }
+  // Admins bypass permission checks; clients and employees get their per-app permissions.
+  async function loadPermissions(currentUser: User) {
+    setPermissionsLoaded(false);
+    if (currentUser.role === "admin") {
+      setPermissions([]);
+      setPermissionsLoaded(true);
+      return;
     }
-
-    loadUser();
-    fetchProjects();
-  }, []);
-  async function login(email: string, password: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/login`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!res.ok) throw new Error("Invalid credentials");
-
-    const data = await res.json();
-    setUser(data.user);
-  }
-
-  async function logout() {
-    await fetch(`${process.env.NEXT_PUBLIC_URL}/api/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-    setUser(null);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_URL}/api/users/${currentUser.id}/apps`,
+        { credentials: "include" }
+      );
+      const data = res.ok ? await res.json() : [];
+      setPermissions(Array.isArray(data) ? data : []);
+    } catch {
+      setPermissions([]);
+    } finally {
+      setPermissionsLoaded(true);
+    }
   }
 
   const fetchProjects = async () => {
@@ -125,6 +95,61 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/profile`, {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          setUser(null);
+          setPermissions([]);
+          setPermissionsLoaded(true);
+          return;
+        }
+        const data = await res.json();
+        setUser(data.user);
+        // Only load data once we know there is a session.
+        await Promise.all([loadPermissions(data.user), fetchProjects()]);
+      } catch {
+        setUser(null);
+        setPermissions([]);
+        setPermissionsLoaded(true);
+      }
+    }
+
+    loadUser();
+  }, []);
+
+  async function login(email: string, password: string) {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/login`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) throw new Error("Invalid credentials");
+
+    const data = await res.json();
+    setUser(data.user);
+    // Without this a client saw the wrong apps until a full reload.
+    await Promise.all([loadPermissions(data.user), fetchProjects()]);
+  }
+
+  async function logout() {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_URL}/api/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      setUser(null);
+      setProjects([]);
+      setPermissions([]);
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -137,6 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         fetchProjects,
         permissions,
         setPermissions,
+        permissionsLoaded,
       }}
     >
       {children}
