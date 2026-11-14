@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientDot } from "@/components/client-identity";
 import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { ErrorNotice, Loading, PageHeader } from "../../webapp/crm/components/ui";
@@ -95,7 +96,7 @@ export function CalendarScreen({
                 onClick={() => onSelectProject(p.id)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "none", background: "none", padding: 0, fontSize: 12, color: "var(--ec-text-muted)", cursor: "pointer" }}
               >
-                <span style={{ width: 9, height: 9, borderRadius: 3, background: p.color }} />
+                <ClientDot name={p.name} color={p.color} size={9} square />
                 {p.name}
               </button>
             ))}

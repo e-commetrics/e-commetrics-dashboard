@@ -84,3 +84,35 @@ export function projectHealth(project: WorkProject, overdueTasks: number, today:
 }
 
 export const todayYMD = () => ymd(new Date());
+
+/** Tasks completed per week (Monday to Sunday) for the last `weeks` weeks, oldest first. */
+export function weeklyCompleted(tasks: TaskWithProject[], weeks = 8, now: Date = new Date()): { starts: Date[]; values: number[] } {
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+  const starts: Date[] = [];
+  const values: number[] = [];
+  for (let i = weeks - 1; i >= 0; i--) {
+    const from = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - i * 7);
+    const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6);
+    const a = ymd(from), b = ymd(to);
+    starts.push(from);
+    values.push(tasks.filter((t) => t.status === "done" && t.completedAt && localDay(t.completedAt) >= a && localDay(t.completedAt) <= b).length);
+  }
+  return { starts, values };
+}
+
+export type Workload = { memberId: string; open: number; overdue: number };
+
+/** Open tasks per assignee, with how many of them are past due. Busiest first. */
+export function workload(tasks: TaskWithProject[], today: string): Workload[] {
+  const byMember = new Map<string, Workload>();
+  for (const task of tasks) {
+    if (task.status === "done") continue;
+    for (const memberId of task.assigneeIds) {
+      const row = byMember.get(memberId) ?? { memberId, open: 0, overdue: 0 };
+      row.open += 1;
+      if (isOverdue(task, today)) row.overdue += 1;
+      byMember.set(memberId, row);
+    }
+  }
+  return [...byMember.values()].sort((x, y) => y.open - x.open);
+}

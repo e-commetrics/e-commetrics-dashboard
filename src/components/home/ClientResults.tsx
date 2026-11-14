@@ -11,6 +11,22 @@ function Delta({ metric, lang }: { metric: ResultMetric; lang: string }) {
   return <span>{metric.prev} {lang === "es" ? "el mes anterior" : "last month"}</span>;
 }
 
+/** Loads the results of one client group. `data` stays null while loading or when the client has no loader. */
+export function useClientResults(groupId: string | undefined) {
+  const [state, setState] = useState<{ data: Results | null; failed: boolean }>({ data: null, failed: false });
+  useEffect(() => {
+    if (!groupId || !hasClientResults(groupId)) return;
+    let cancelled = false;
+    loadClientResults(groupId)
+      .then((data) => !cancelled && setState({ data, failed: false }))
+      .catch(() => !cancelled && setState({ data: null, failed: true }));
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId]);
+  return state;
+}
+
 /**
  * "Resultados" card of one client: bookings, income, appointments... read
  * from that client's own app. Lives inside the project (client home and the
@@ -19,18 +35,7 @@ function Delta({ metric, lang }: { metric: ResultMetric; lang: string }) {
 export function ClientResults({ group, linkToApp = true }: { group: ClientGroup; linkToApp?: boolean }) {
   const { lang } = useLang();
   const es = lang === "es";
-  const [state, setState] = useState<{ data: Results | null; failed: boolean }>({ data: null, failed: false });
-
-  useEffect(() => {
-    if (!hasClientResults(group.id)) return;
-    let cancelled = false;
-    loadClientResults(group.id)
-      .then((data) => !cancelled && setState({ data, failed: false }))
-      .catch(() => !cancelled && setState({ data: null, failed: true }));
-    return () => {
-      cancelled = true;
-    };
-  }, [group.id]);
+  const state = useClientResults(group.id);
 
   if (!hasClientResults(group.id)) return null;
 

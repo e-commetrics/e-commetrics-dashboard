@@ -70,7 +70,7 @@ export default function VCardPage() {
       const width = 400, height = 600;
       canvas.width = width * 2; canvas.height = height * 2;
       ctx.scale(2, 2);
-      ctx.fillStyle = "#BD155C";
+      ctx.fillStyle = "#861453";
       ctx.fillRect(0, 0, width, height);
       ctx.fillStyle = "white"; ctx.textAlign = "left";
       ctx.font = "14px Arial"; ctx.globalAlpha = 0.8;
@@ -151,7 +151,7 @@ export default function VCardPage() {
             <button
               onClick={downloadCompleteTicket}
               disabled={isDownloading}
-              style={{ padding: "14px 28px", background: "var(--ec-brand)", color: "white", border: 0, borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: isDownloading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 10, marginBottom: 16, opacity: isDownloading ? 0.7 : 1, width: 260 }}
+              style={{ padding: "14px 28px", background: "var(--ec-brand-fill)", color: "white", border: 0, borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: isDownloading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 10, marginBottom: 16, opacity: isDownloading ? 0.7 : 1, width: 260 }}
             >
               {isDownloading
                 ? <><div style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid white", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} /> {lang === "es" ? "Generando…" : "Generating…"}</>
@@ -183,7 +183,7 @@ export default function VCardPage() {
               color: "white",
               aspectRatio: "0.7/1",
               display: "flex", flexDirection: "column",
-              boxShadow: "0 24px 64px -16px rgba(189,21,92,0.5), 0 0 0 1px rgba(189,21,92,0.3)",
+              boxShadow: "0 24px 64px -16px rgba(134,20,83,0.5), 0 0 0 1px rgba(134,20,83,0.3)",
               overflow: "hidden",
             }}
           >
@@ -192,7 +192,7 @@ export default function VCardPage() {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
               <span className="h-eyebrow" style={{ color: "rgba(255,255,255,0.7)" }}>{(formData.org?.slice(0,3) || "VCD").toUpperCase()}</span>
-              <div style={{ width: 32, height: 32, background: "rgba(255,255,255,0.18)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-instrument-serif), serif", fontSize: 18 }}>
+              <div style={{ width: 32, height: 32, background: "rgba(255,255,255,0.18)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-breston), serif", fontSize: 18 }}>
                 {(formData.name?.[0] || "?").toUpperCase()}
               </div>
             </div>
@@ -237,7 +237,7 @@ export default function VCardPage() {
 
         <div className="ec-project-card" style={{ padding: 28, borderRadius: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22, paddingBottom: 18, borderBottom: "1px solid var(--ec-border)" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(189,21,92,0.12)", color: "var(--ec-brand)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(134,20,83,0.12)", color: "var(--ec-brand)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <QrCode size={18} />
             </div>
             <div>

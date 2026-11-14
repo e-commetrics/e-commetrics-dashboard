@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientDot } from "@/components/client-identity";
 import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { EmptyState, ErrorNotice, Loading, PageHeader } from "../../webapp/crm/components/ui";
@@ -107,7 +108,7 @@ export function MyTasksScreen({ onOpenTask, onOpenProject }: { onOpenTask: (id: 
                         }}
                         style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, marginTop: 2, fontSize: 12, color: "var(--ec-text-muted)", cursor: "pointer" }}
                       >
-                        <span style={{ width: 8, height: 8, borderRadius: 2, background: task.projectColor }} />
+                        <ClientDot name={task.projectName} color={task.projectColor} size={8} square />
                         {task.projectName}
                       </button>
                     </div>

@@ -6,9 +6,13 @@ import axios from "axios";
 import { motion } from "motion/react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useLang } from "@/app/context/LangContext";
-import { Hash, Target, Sparkles, Layers, TrendingUp, Zap, ExternalLink, Plus, MoreHorizontal } from "lucide-react";
+import { Target, Sparkles, Layers, TrendingUp, Zap, ExternalLink, Plus, MoreHorizontal } from "lucide-react";
 import ContentModal from "@/components/ContentModal";
-import { progressPct } from "@/lib/apps";
+import { clientGroupFor, progressPct } from "@/lib/apps";
+import { Chart } from "@/components/charts";
+import { ClientTile } from "@/components/client-identity";
+import { useClientResults } from "@/components/home/ClientResults";
+import { clientIdentity } from "@/lib/client-identity";
 import { useTaskProgress } from "@/lib/use-task-progress";
 
 type Project = {
@@ -68,7 +72,7 @@ const PHASE_CONFIG = [
   {
     type: "Business and Objectives",
     icon: Target,
-    accent: "#A78BFA",
+    accent: "var(--ec-d5)",
     label_es: "Business & Objectives",
     label_en: "Business & Objectives",
     desc_es: "Objetivos, KPIs y posicionamiento estratégico.",
@@ -77,7 +81,7 @@ const PHASE_CONFIG = [
   {
     type: "MVP + IDEA",
     icon: Sparkles,
-    accent: "#60A5FA",
+    accent: "var(--ec-info)",
     label_es: "MVP + Idea",
     label_en: "MVP + Idea",
     desc_es: "Concepto inicial, hipótesis, alcance del MVP.",
@@ -86,7 +90,7 @@ const PHASE_CONFIG = [
   {
     type: "Business strategy",
     icon: Layers,
-    accent: "#34D399",
+    accent: "var(--ec-success)",
     label_es: "Business Strategy",
     label_en: "Business Strategy",
     desc_es: "Plan de mercado, pricing y diferenciación.",
@@ -95,7 +99,7 @@ const PHASE_CONFIG = [
   {
     type: "Growth Hacking strategy",
     icon: TrendingUp,
-    accent: "#FBBF24",
+    accent: "var(--ec-warning)",
     label_es: "Growth Hacking",
     label_en: "Growth Hacking",
     desc_es: "Experimentos, embudo y canales de adquisición.",
@@ -104,87 +108,13 @@ const PHASE_CONFIG = [
   {
     type: "Apps",
     icon: Zap,
-    accent: "#F87171",
+    accent: "var(--ec-danger)",
     label_es: "Apps",
     label_en: "Apps",
     desc_es: "Aplicaciones especializadas conectadas al proyecto.",
     desc_en: "Specialized apps connected to the project.",
   },
 ];
-
-function CircularProgress({ value, color }: { value: number; color: string }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const size = 132;
-  const stroke = 10;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const targetOffset = c - (value / 100) * c;
-
-  useEffect(() => {
-    let start = 0;
-    const duration = 800;
-    const step = 16;
-    const increment = value / (duration / step);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= value) {
-        setDisplayValue(value);
-        clearInterval(timer);
-      } else {
-        setDisplayValue(Math.round(start));
-      }
-    }, step);
-    return () => clearInterval(timer);
-  }, [value]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
-      style={{ position: "relative", width: size, height: size, flexShrink: 0 }}
-    >
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--ec-surface-2)" strokeWidth={stroke} fill="none" />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={r}
-          stroke={color}
-          strokeWidth={stroke}
-          fill="none"
-          strokeDasharray={c}
-          strokeLinecap="round"
-          initial={{ strokeDashoffset: c }}
-          animate={{ strokeDashoffset: targetOffset }}
-          transition={{ duration: 0.8, ease: [0.2, 0.7, 0.2, 1] }}
-          style={{ filter: `drop-shadow(0 0 8px ${color}80)` }}
-        />
-      </svg>
-      <div
-        style={{
-          position: "absolute", inset: 0,
-          display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center",
-        }}
-      >
-        <div
-          className="font-serif"
-          style={{ fontSize: 40, fontWeight: 400, lineHeight: 1, color }}
-        >
-          {displayValue}<span style={{ fontSize: 16 }}>%</span>
-        </div>
-        <motion.div
-          className="h-eyebrow"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          style={{ marginTop: 2, fontSize: 9 }}
-        >
-          OVERALL
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function ProjectContent({ project: initialProject }: { project: Project[] }) {
   const { user } = useAuth();
@@ -264,9 +194,11 @@ export default function ProjectContent({ project: initialProject }: { project: P
 
   // Avance = tareas completadas del proyecto vinculado en Workspace (ya no el porcentaje escrito a mano).
   const taskProgress = useTaskProgress(currentProject?.project_name);
+  const clientGroup = clientGroupFor(currentProject?.title, currentProject?.project_name);
+  const results = useClientResults(clientGroup?.id);
+  const identity = clientIdentity(currentProject?.title ?? "", { color: clientGroup?.color });
   const pct = progressPct(taskProgress);
   const [displayPct, setDisplayPct] = useState(0);
-  const progressColor = "var(--ec-brand)";
 
   useEffect(() => {
     let start = 0;
@@ -346,135 +278,116 @@ export default function ProjectContent({ project: initialProject }: { project: P
         background: "var(--ec-bg)",
       }}
     >
-      {/* Project hero header */}
-      <div className="fade-in-up" style={{ marginBottom: 36 }}>
-        {/* ID + status badge row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <Hash size={11} style={{ color: "var(--ec-text-dim)" }} />
-          <span
-            className="font-mono-ec"
-            style={{ fontSize: 11, color: "var(--ec-text-muted)" }}
-          >
-            {currentProject.project_name}
+      {/* Client page = a report. The one screen that carries the brand gradient; results come before work. */}
+      <div className="ec-chero fade-in-up">
+        <div className="ec-chero-top">
+          <span>
+            {lang === "es" ? "Clientes" : "Clients"} / <b>{currentProject.project_name}</b>
           </span>
-          <span style={{ color: "var(--ec-text-faint)" }}>·</span>
           {!taskProgress ? (
-            <span className="ec-badge ec-badge-neutral">
-              {lang === "es" ? "Sin plan de trabajo vinculado" : "No work plan linked"}
-            </span>
+            <span className="ec-chero-pill">{lang === "es" ? "Sin plan de trabajo vinculado" : "No work plan linked"}</span>
           ) : taskProgress.total > 0 && taskProgress.done === taskProgress.total ? (
-            <span className="ec-badge ec-badge-success">
+            <span className="ec-chero-pill">
+              <span className="ec-glyph ec-glyph-ok" aria-hidden />
               {lang === "es" ? "Completado" : "Completed"}
             </span>
           ) : (
-            <span className="ec-badge ec-badge-brand">
+            <span className="ec-chero-pill">
+              <span className="ec-glyph ec-glyph-ok" aria-hidden />
               {lang === "es" ? "En progreso" : "In progress"}
             </span>
           )}
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, auto)",
-            gap: 32,
-            alignItems: "end",
-            paddingBottom: 28,
-            borderBottom: "1px solid var(--ec-hairline)",
-          }}
-        >
-          <div>
-            <h1
-              className="font-serif"
-              style={{
-                fontSize: "clamp(36px, 5vw, 64px)",
-                fontWeight: 400,
-                lineHeight: 1,
-                letterSpacing: "-0.025em",
-                color: "var(--ec-text)",
-                marginBottom: 14,
-              }}
-            >
-              {currentProject.title}
-            </h1>
-            {currentProject.content && (
-              <p
-                style={{
-                  fontSize: 15,
-                  color: "var(--ec-text-muted)",
-                  maxWidth: "60ch",
-                  lineHeight: 1.55,
-                }}
-              >
-                {currentProject.content}
-              </p>
-            )}
-            <div style={{ display: "flex", gap: 18, marginTop: 18, flexWrap: "wrap" }}>
-              <motion.div
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-              >
-                <div className="h-eyebrow" style={{ marginBottom: 4 }}>
-                  {lang === "es" ? "Progreso" : "Progress"}
-                </div>
-                <div
-                  className="font-mono-ec"
-                  style={{ fontSize: 14, color: progressColor, fontWeight: 500 }}
-                >
-                  {displayPct}%
-                </div>
-              </motion.div>
-              <div style={{ width: 1, background: "var(--ec-hairline)" }} />
-              <div>
-                <div className="h-eyebrow" style={{ marginBottom: 4 }}>
-                  {lang === "es" ? "Contenidos" : "Contents"}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--ec-text)" }}>
-                  {contents.length}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 24, marginTop: 20, flexWrap: "wrap" }}>
-              <div>
-                <div className="h-eyebrow" style={{ marginBottom: 4 }}>
-                  {lang === "es" ? "Cliente" : "Client"}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--ec-text)" }}>
-                  {clientEmail || "—"}
-                </div>
-              </div>
-              <div style={{ width: 1, background: "var(--ec-hairline)" }} />
-              <div>
-                <div className="h-eyebrow" style={{ marginBottom: 4 }}>
-                  {lang === "es" ? "Iniciado" : "Started"}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--ec-text)" }}>
-                  {currentProject.created_at ? formatDate(currentProject.created_at, lang) : "—"}
-                </div>
-              </div>
+        <div className="ec-chero-id">
+          <ClientTile identity={identity} size={60} radius={15} />
+          <div style={{ minWidth: 0 }}>
+            <h1 className="ec-display">{currentProject.title}</h1>
+            {currentProject.content ? <p>{currentProject.content}</p> : null}
+            <div className="ec-chero-meta">
+              {clientEmail ? <span>{clientEmail}</span> : null}
+              {currentProject.created_at ? (
+                <span>
+                  {lang === "es" ? "Desde" : "Since"} {formatDate(currentProject.created_at, lang)}
+                </span>
+              ) : null}
             </div>
           </div>
+        </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <CircularProgress value={pct} color={progressColor} />
-            <div style={{ fontSize: 12, color: "var(--ec-text-muted)", textAlign: "center" }}>
+        <div className="ec-chero-kpis">
+          {(results.data?.metrics ?? []).map((m) => (
+            <div key={m.key}>
+              <b className="ec-num">{m.value}</b>
+              <span>{lang === "es" ? m.es : m.en}</span>
+              {m.prev !== undefined ? (
+                <small>
+                  {m.prev} {lang === "es" ? "el mes anterior" : "last month"}
+                </small>
+              ) : null}
+            </div>
+          ))}
+          <div>
+            <b className="ec-num">{taskProgress ? `${taskProgress.done} / ${taskProgress.total}` : "—"}</b>
+            <span>{lang === "es" ? "Tareas del proyecto hechas" : "Project tasks done"}</span>
+            {taskProgress ? <small>{displayPct}%</small> : null}
+          </div>
+          <div>
+            <b className="ec-num">{contents.length}</b>
+            <span>{lang === "es" ? "Entregables publicados" : "Published deliverables"}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="ec-creport fade-in-up">
+        {results.data?.series ? (
+          <section className="ec-hcard">
+            <header>
+              <h2>{lang === "es" ? results.data.series.es : results.data.series.en}</h2>
+              <span>{lang === "es" ? "Últimas 12 semanas" : "Last 12 weeks"}</span>
+            </header>
+            <div style={{ padding: "12px 16px 10px" }}>
+              <Chart
+                type="bar"
+                labels={results.data.series.labels}
+                unit={lang === "es" ? results.data.series.unitEs : results.data.series.unitEn}
+                ariaLabel={lang === "es" ? results.data.series.es : results.data.series.en}
+                series={[{ name: lang === "es" ? results.data.series.es : results.data.series.en, values: results.data.series.values, color: "var(--ec-d2)" }]}
+              />
+            </div>
+          </section>
+        ) : results.failed ? (
+          <section className="ec-hcard">
+            <div className="ec-hempty">
+              {lang === "es" ? "No se pudieron cargar los resultados del cliente. Intenta de nuevo más tarde." : "Could not load the client results. Try again later."}
+            </div>
+          </section>
+        ) : null}
+        <section className="ec-hcard">
+          <header>
+            <h2>{lang === "es" ? "Avance del proyecto" : "Project progress"}</h2>
+            <span className="ec-num">{taskProgress ? `${pct}%` : ""}</span>
+          </header>
+          <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="ec-bar ec-bar-lg" role="img" aria-label={`${pct}%`} style={{ flex: "none" }}>
+              <i style={{ width: `${pct}%` }} />
+            </div>
+            <div style={{ fontSize: 13, color: "var(--ec-text-muted)" }}>
               {taskProgress
                 ? lang === "es"
                   ? `${taskProgress.done} de ${taskProgress.total} tareas completadas`
                   : `${taskProgress.done} of ${taskProgress.total} tasks completed`
-                : lang === "es" ? "Avance por tareas" : "Progress by tasks"}
+                : lang === "es" ? "Este cliente aún no tiene un proyecto vinculado en Workspace." : "This client has no linked Workspace project yet."}
             </div>
             <button
               onClick={() => { setModalMode("create"); setEditContent(null); setModalOpen(true); }}
               className="ec-btn-primary"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: 12, whiteSpace: "nowrap", cursor: "pointer", border: "none" }}
+              style={{ alignSelf: "flex-start", padding: "8px 14px", fontSize: 12.5 }}
             >
-              <Plus size={14} /> {lang === "es" ? "Crear Contenido" : "Create Content"}
+              <Plus size={14} /> {lang === "es" ? "Crear contenido" : "Create content"}
             </button>
           </div>
-        </div>
+        </section>
       </div>
 
       {/* Phase filter strip */}
@@ -502,7 +415,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
                   border: isActive
                     ? `1px solid ${phase.accent}`
                     : "1px solid var(--ec-hairline)",
-                  boxShadow: isActive ? `0 0 0 4px ${phase.accent}25` : "none",
+                  boxShadow: isActive ? `0 0 0 4px color-mix(in srgb, ${phase.accent} 15%, transparent)` : "none",
                 }}
               >
                 <div
@@ -516,7 +429,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
                     style={{
                       width: 32, height: 32,
                       borderRadius: 8,
-                      background: `${phase.accent}1a`,
+                      background: `color-mix(in srgb, ${phase.accent} 10%, transparent)`,
                       color: phase.accent,
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}
@@ -526,7 +439,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
                   <span
                     className="ec-badge ec-badge-mono"
                     style={{
-                      background: `${phase.accent}14`,
+                      background: `color-mix(in srgb, ${phase.accent} 8%, transparent)`,
                       color: phase.accent,
                       fontSize: 10,
                     }}
@@ -734,11 +647,11 @@ export default function ProjectContent({ project: initialProject }: { project: P
                     <div
                       style={{
                         height: 80,
-                        background: `${accent}10`,
+                        background: `color-mix(in srgb, ${accent} 6%, transparent)`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        borderBottom: `1px solid ${accent}25`,
+                        borderBottom: `1px solid color-mix(in srgb, ${accent} 15%, transparent)`,
                         position: "relative",
                       }}
                     >
@@ -752,7 +665,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
                         <button
                           onClick={() => { setEditContent(item); setModalMode("edit"); setModalOpen(true); }}
                           style={{
-                            background: `${accent}20`,
+                            background: `color-mix(in srgb, ${accent} 13%, transparent)`,
                             border: "none",
                             borderRadius: 6,
                             width: 28, height: 28,
@@ -780,7 +693,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
                     {/* Type badge */}
                     <span
                       className="ec-badge ec-badge-mono"
-                      style={{ background: `${accent}14`, color: accent, alignSelf: "flex-start" }}
+                      style={{ background: `color-mix(in srgb, ${accent} 8%, transparent)`, color: accent, alignSelf: "flex-start" }}
                     >
                       {item.type}
                     </span>

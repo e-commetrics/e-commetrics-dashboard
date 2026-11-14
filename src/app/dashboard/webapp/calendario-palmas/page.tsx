@@ -213,13 +213,13 @@ export default function CalendarioPalmasPage() {
   const getStatusBadge = (status: string) => {
     if (status === "confirmed") {
       return (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(16,185,129,0.12)", color: "var(--ec-success)" }}>
           <CheckCircle className="h-3 w-3" /> Confirmada
         </span>
       );
     }
     return (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(239,68,68,0.12)", color: "var(--ec-danger)" }}>
         <XCircle className="h-3 w-3" /> Cancelada
       </span>
     );
@@ -316,25 +316,25 @@ export default function CalendarioPalmasPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             icon={<BedDouble className="h-5 w-5" />}
-            iconStyle={{ background: "rgba(59,130,246,0.12)", color: "#3b82f6" }}
+            iconStyle={{ background: "rgba(59,130,246,0.12)", color: "var(--ec-info)" }}
             label="Reservas del mes"
             value={loadingBookings ? "—" : monthBookings.length}
           />
           <StatCard
             icon={<CheckCircle className="h-5 w-5" />}
-            iconStyle={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
+            iconStyle={{ background: "rgba(16,185,129,0.12)", color: "var(--ec-success)" }}
             label="Confirmadas del mes"
             value={loadingBookings ? "—" : confirmedMonthBookings.length}
           />
           <StatCard
             icon={<DollarSign className="h-5 w-5" />}
-            iconStyle={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}
+            iconStyle={{ background: "rgba(245,158,11,0.12)", color: "var(--ec-warning)" }}
             label="Ingresos del mes"
             value={loadingBookings ? "—" : `$${monthRevenue.toLocaleString()}`}
           />
           <StatCard
             icon={<MessageSquare className="h-5 w-5" />}
-            iconStyle={{ background: "rgba(168,85,247,0.12)", color: "#a855f7" }}
+            iconStyle={{ background: "rgba(168,85,247,0.12)", color: "var(--ec-d5)" }}
             label="Total Contactos"
             value={loadingContacts ? "—" : contacts.length}
           />
@@ -472,11 +472,11 @@ export default function CalendarioPalmasPage() {
                             <td style={{ padding: "10px 16px" }}><SourceBadge source={booking.source} /></td>
                             <td style={{ padding: "10px 16px", textAlign: "center" }}>
                               {booking.reminder_sent_at ? (
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 500, background: "rgba(16,185,129,0.12)", color: "#10b981", whiteSpace: "nowrap" }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 500, background: "rgba(16,185,129,0.12)", color: "var(--ec-success)", whiteSpace: "nowrap" }}>
                                   <CheckCircle className="h-3 w-3" /> Enviado
                                 </span>
                               ) : booking.status === "confirmed" && new Date(booking.check_in) >= new Date(new Date().toDateString()) ? (
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 500, background: "rgba(245,158,11,0.12)", color: "#f59e0b", whiteSpace: "nowrap" }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 500, background: "rgba(245,158,11,0.12)", color: "var(--ec-warning)", whiteSpace: "nowrap" }}>
                                   <Mail className="h-3 w-3" /> Pendiente
                                 </span>
                               ) : (

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Montserrat } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/app/context/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -8,26 +9,18 @@ import { RegionProvider } from "@/app/context/RegionContext";
 import { MotionProvider } from "@/components/motion-provider";
 import SkipLink from "@/components/skip-link";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Brand Board: Montserrat for the interface, Breston for page titles and client names.
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  subsets: ["latin"],
+const breston = localFont({
+  src: "./fonts/Breston-Regular.otf",
+  variable: "--font-breston",
   weight: "400",
-});
-
-const jetBrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -85,7 +78,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetBrainsMono.variable} antialiased`}
+        className={`${montserrat.variable} ${breston.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"

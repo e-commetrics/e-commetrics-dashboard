@@ -209,7 +209,7 @@ function Page() {
                       </div>
                     </div>
                     <button
-                      style={{ width: 34, height: 34, borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "none", background: "var(--ec-brand)", color: "#fff", cursor: "pointer", transition: "opacity 150ms" }}
+                      style={{ width: 34, height: 34, borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "none", background: "var(--ec-brand-fill)", color: "#fff", cursor: "pointer", transition: "opacity 150ms" }}
                       onClick={() => savePermissions(user.id)}
                       disabled={isSaving}
                       title="Guardar permisos"
@@ -236,14 +236,14 @@ function Page() {
                           style={{
                             padding: "12px 14px", borderRadius: 10, cursor: "pointer",
                             border: isChecked ? "1.5px solid var(--ec-brand)" : "1px solid var(--ec-border)",
-                            background: isChecked ? "rgba(189,21,92,0.06)" : "var(--ec-surface-2)",
+                            background: isChecked ? "rgba(134,20,83,0.06)" : "var(--ec-surface-2)",
                             transition: "all 150ms",
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                             <div style={{
                               width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center",
-                              background: isChecked ? "rgba(189,21,92,0.15)" : "var(--ec-surface-3)",
+                              background: isChecked ? "rgba(134,20,83,0.15)" : "var(--ec-surface-3)",
                             }}>
                               <IconComp size={14} style={{ color: isChecked ? "var(--ec-brand)" : "var(--ec-text-muted)" }} />
                             </div>

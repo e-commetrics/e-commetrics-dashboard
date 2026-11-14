@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientDot } from "@/components/client-identity";
 import { useState } from "react";
 import { Heart, Loader2, MessageSquare, Pin, PinOff, Send, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -156,7 +157,7 @@ function PostCard({ post, projects, onOpenProject }: { post: WallPost; projects:
           className="ec-badge ec-badge-neutral"
           style={{ cursor: "pointer", border: "none", marginBottom: 10 }}
         >
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: project.color }} />
+          <ClientDot name={project.name} color={project.color} size={8} square />
           {project.name}
         </button>
       ) : null}

@@ -159,9 +159,9 @@ export default function AccountPage() {
                 background: "linear-gradient(135deg, var(--ec-brand), #7A0E3B)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "white",
-                fontFamily: "var(--font-instrument-serif), serif",
+                fontFamily: "var(--font-breston), serif",
                 fontSize: 44,
-                boxShadow: "0 12px 32px -8px rgba(189,21,92,0.45), 0 0 0 1px rgba(189,21,92,0.3)",
+                boxShadow: "0 12px 32px -8px rgba(134,20,83,0.45), 0 0 0 1px rgba(134,20,83,0.3)",
                 overflow: "hidden",
                 cursor: "pointer",
               }}
@@ -200,7 +200,7 @@ export default function AccountPage() {
         {/* Profile card */}
         <div className="ec-project-card" style={{ padding: 28, marginBottom: 16, borderRadius: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(189,21,92,0.12)", color: "var(--ec-brand)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(134,20,83,0.12)", color: "var(--ec-brand)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Edit size={16} />
             </div>
             <div>
@@ -267,7 +267,7 @@ export default function AccountPage() {
         {/* Password card */}
         <div className="ec-project-card" style={{ padding: 28, marginBottom: 16, borderRadius: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(96,165,250,0.12)", color: "#60A5FA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(96,165,250,0.12)", color: "var(--ec-info)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Lock size={16} />
             </div>
             <div>
@@ -338,9 +338,9 @@ export default function AccountPage() {
         {/* Info card */}
         <div style={{ padding: 16, background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", borderRadius: 12 }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <AlertCircle size={18} style={{ color: "#60A5FA", flexShrink: 0, marginTop: 1 }} />
+            <AlertCircle size={18} style={{ color: "var(--ec-info)", flexShrink: 0, marginTop: 1 }} />
             <div>
-              <div style={{ fontWeight: 500, fontSize: 13, color: "#60A5FA", marginBottom: 4 }}>
+              <div style={{ fontWeight: 500, fontSize: 13, color: "var(--ec-info)", marginBottom: 4 }}>
                 {lang === "es" ? "Información importante" : "Important information"}
               </div>
               <p style={{ fontSize: 12.5, color: "var(--ec-text-dim)", lineHeight: 1.55 }}>

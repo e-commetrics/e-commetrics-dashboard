@@ -237,8 +237,8 @@ export default function ProjectContentByProjectEditor() {
                     </h3>
                     <span style={{
                       padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700,
-                      background: "rgba(189,21,92,0.10)", color: "var(--ec-brand)",
-                      fontFamily: "var(--font-jetbrains-mono), monospace",
+                      background: "rgba(134,20,83,0.10)", color: "var(--ec-brand)",
+                      fontFamily: "var(--font-montserrat), monospace",
                     }}>
                       {projectContents.length}
                     </span>
@@ -318,7 +318,7 @@ export default function ProjectContentByProjectEditor() {
                                 <td>
                                   <div style={{ display: "flex", gap: 8 }}>
                                     {/* <button
-                                      style={{ width: 30, height: 30, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "none", background: "var(--ec-brand)", color: "#fff", cursor: "pointer", transition: "opacity 150ms" }}
+                                      style={{ width: 30, height: 30, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "none", background: "var(--ec-brand-fill)", color: "#fff", cursor: "pointer", transition: "opacity 150ms" }}
                                       onClick={() => { setEditingContent(content); setImageFile(null); setImagePreview(null); }}
                                       title="Editar"
                                     >
@@ -488,8 +488,8 @@ export default function ProjectContentByProjectEditor() {
                 <button
                   style={{
                     flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "9px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, fontFamily: "var(--font-inter), var(--font-sans)",
-                    background: "var(--ec-brand)", color: "#fff", border: "none", cursor: "pointer", transition: "opacity 150ms",
+                    padding: "9px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, fontFamily: "var(--font-montserrat), var(--font-sans)",
+                    background: "var(--ec-brand-fill)", color: "#fff", border: "none", cursor: "pointer", transition: "opacity 150ms",
                   }}
                   disabled={deleting}
                   onClick={handleDeleteConfirm}

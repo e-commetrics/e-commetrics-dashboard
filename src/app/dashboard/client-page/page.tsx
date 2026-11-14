@@ -206,7 +206,7 @@ function ClientPageView() {
                   <span>{taskProgress.done}/{taskProgress.total}</span>
                 </div>
                 <div style={{ height: 8, borderRadius: 99, background: "var(--ec-surface-2)", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: "var(--ec-brand)" }} />
+                  <div style={{ width: `${pct}%`, height: "100%", background: "var(--ec-brand-fill)" }} />
                 </div>
               </>
             ) : (

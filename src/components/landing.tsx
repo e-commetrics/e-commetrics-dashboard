@@ -37,7 +37,7 @@ type ConsultingItem = {
 /* Same 4-accent palette used by the package tiers, reused here for visual consistency. */
 const CONSULTING_ACCENTS = [
   { accent: "#6366f1", soft: "rgba(99,102,241,0.10)" },
-  { accent: "#BD155C", soft: "rgba(189,21,92,0.10)" },
+  { accent: "#BD155C", soft: "rgba(134,20,83,0.10)" },
   { accent: "#f59e0b", soft: "rgba(245,158,11,0.10)" },
   { accent: "#10b981", soft: "rgba(16,185,129,0.10)" },
 ];
@@ -104,7 +104,7 @@ const Hero = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }) 
           color: "var(--ec-text-muted)",
           fontSize: 12,
           cursor: "pointer",
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-montserrat), monospace",
           letterSpacing: "0.08em",
           textTransform: "uppercase",
           transition: "all 160ms",
@@ -123,7 +123,7 @@ const Hero = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }) 
 
         <h1
           style={{
-            fontFamily: "var(--font-instrument-serif), Instrument Serif, serif",
+            fontFamily: "var(--font-breston), Instrument Serif, serif",
             fontWeight: 400,
             fontSize: "clamp(52px, 9vw, 96px)",
             lineHeight: 1.0,
@@ -166,7 +166,7 @@ const Hero = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }) 
             onClick={() => document.getElementById("lp-services")?.scrollIntoView({ behavior: "smooth" })}
             style={{
               padding: "14px 28px",
-              background: "var(--ec-brand)",
+              background: "var(--ec-brand-fill)",
               color: "#fff",
               borderRadius: 12,
               fontSize: 14,
@@ -177,7 +177,7 @@ const Hero = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }) 
               alignItems: "center",
               gap: 8,
               transition: "all 200ms",
-              boxShadow: "0 8px 24px -8px rgba(189,21,92,0.5)",
+              boxShadow: "0 8px 24px -8px rgba(134,20,83,0.5)",
             }}
           >
             {locale === "en" ? "Our Services" : "Nuestros Servicios"}
@@ -538,7 +538,7 @@ const Services = ({ locale }: { locale: Locale }) => {
                   color: "var(--ec-brand)",
                   fontSize: 12,
                   fontWeight: 600,
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-montserrat), monospace",
                   letterSpacing: "0.06em",
                 }}
               >
@@ -877,10 +877,10 @@ const Footer = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }
           <div
             style={{
               width: 38, height: 38, borderRadius: 11,
-              background: "var(--ec-brand)",
+              background: "var(--ec-brand-fill)",
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
-              boxShadow: "0 4px 16px -4px rgba(189,21,92,0.5)",
+              boxShadow: "0 4px 16px -4px rgba(134,20,83,0.5)",
             }}
           >
             <span style={{ fontFamily: "Instrument Serif, serif", fontSize: 24, color: "#fff", lineHeight: 1 }}>E</span>
@@ -953,7 +953,7 @@ const Footer = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }
                   transition: "color 140ms",
                 }}
               >
-                <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--ec-brand)", flexShrink: 0, opacity: 0.6 }} />
+                <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--ec-brand-fill)", flexShrink: 0, opacity: 0.6 }} />
                 {item.label}
               </button>
             </li>
@@ -976,7 +976,7 @@ const Footer = ({ locale, goToLogin }: { locale: Locale; goToLogin: () => void }
             locale === "en" ? "Consulting" : "Consultoría",
           ].map((svc) => (
             <li key={svc} style={{ fontSize: 13, color: "var(--ec-text-muted)", display: "flex", alignItems: "center", gap: 7 }}>
-              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--ec-brand)", flexShrink: 0, opacity: 0.6 }} />
+              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--ec-brand-fill)", flexShrink: 0, opacity: 0.6 }} />
               {svc}
             </li>
           ))}

@@ -33,7 +33,7 @@ export function ModeToggle() {
             position: "relative",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(189,21,92,0.06)";
+            e.currentTarget.style.background = "rgba(134,20,83,0.06)";
             e.currentTarget.style.borderColor = "var(--ec-brand)";
             e.currentTarget.style.color = "var(--ec-brand)";
           }}
@@ -63,7 +63,7 @@ export function ModeToggle() {
         <DropdownMenuItem
           onClick={() => setTheme("light")}
           style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 10, color: theme === "light" ? "var(--ec-brand)" : "var(--ec-text)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(189,21,92,0.06)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(134,20,83,0.06)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
         >
           <Sun size={15} style={{ color: theme === "light" ? "var(--ec-brand)" : "var(--ec-text-muted)" }} />
@@ -75,7 +75,7 @@ export function ModeToggle() {
         <DropdownMenuItem
           onClick={() => setTheme("dark")}
           style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 10, color: theme === "dark" ? "var(--ec-brand)" : "var(--ec-text)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(189,21,92,0.06)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(134,20,83,0.06)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
         >
           <Moon size={15} style={{ color: theme === "dark" ? "var(--ec-brand)" : "var(--ec-text-muted)" }} />
@@ -88,7 +88,7 @@ export function ModeToggle() {
         <DropdownMenuItem
           onClick={() => setTheme("system")}
           style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 10, color: theme === "system" ? "var(--ec-brand)" : "var(--ec-text)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(189,21,92,0.06)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(134,20,83,0.06)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
         >
           <Monitor size={15} style={{ color: theme === "system" ? "var(--ec-brand)" : "var(--ec-text-muted)" }} />

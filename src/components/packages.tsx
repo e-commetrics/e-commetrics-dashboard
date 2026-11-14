@@ -12,7 +12,7 @@ type Locale = "en" | "es";
 /* ── tier accent colors ───────────────────────────────────── */
 const TIER_COLORS = [
   { accent: "#6366f1", soft: "rgba(99,102,241,0.10)", label: "TIER 1" },
-  { accent: "#BD155C", soft: "rgba(189,21,92,0.10)",  label: "TIER 2" },
+  { accent: "#BD155C", soft: "rgba(134,20,83,0.10)",  label: "TIER 2" },
   { accent: "#f59e0b", soft: "rgba(245,158,11,0.10)", label: "TIER 3" },
   { accent: "#10b981", soft: "rgba(16,185,129,0.10)", label: "TIER 4" },
 ];

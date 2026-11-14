@@ -17,7 +17,7 @@ import { useWorkspace } from "../lib/hooks";
 import { PRIORITY_META, TASK_STATUS_META, useT } from "../lib/i18n";
 import type { Member, Priority, TaskStatus } from "../lib/types";
 
-const AVATAR_COLORS = ["#BD155C", "#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ef4444"];
+const AVATAR_COLORS = ["var(--ec-d1)", "var(--ec-d2)", "var(--ec-d3)", "var(--ec-d4)", "var(--ec-d5)", "var(--ec-d6)"];
 
 function initials(name: string) {
   return name
@@ -47,10 +47,12 @@ export function Avatar({ member, size = 26 }: { member: Member | undefined; size
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: Math.round(size * 0.4),
+        fontSize: Math.max(8, Math.round(size * 0.34)),
+        boxSizing: "content-box",
+        letterSpacing: 0,
         fontWeight: 700,
-        background: `${color}26`,
-        color,
+        background: `color-mix(in srgb, ${color} 14%, var(--ec-surface-2))`,
+        color: "var(--ec-text-muted)",
         border: "2px solid var(--ec-surface-1)",
         flexShrink: 0,
         overflow: "hidden",
@@ -103,10 +105,8 @@ export function StatusPill({ status }: { status: TaskStatus }) {
   const { lang } = useT();
   const meta = TASK_STATUS_META[status];
   return (
-    <span
-      className="ec-badge"
-      style={{ background: `${meta.color}22`, color: meta.color, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600 }}
-    >
+    <span className={`ec-badge ${meta.badge}`}>
+      <span className={`ec-glyph ${meta.glyph}`} aria-hidden />
       {meta[lang]}
     </span>
   );
@@ -118,9 +118,9 @@ export function PriorityFlag({ priority, showLabel }: { priority: Priority; show
   return (
     <span
       title={meta[lang]}
-      style={{ display: "inline-flex", alignItems: "center", gap: 4, color: meta.color, fontSize: 12 }}
+      style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--ec-text-muted)", fontSize: 12 }}
     >
-      <Flag size={13} fill={priority === "low" ? "none" : meta.color} />
+      <Flag size={13} color={meta.color} fill={priority === "low" || priority === "normal" ? "none" : meta.color} />
       {showLabel ? meta[lang] : null}
     </span>
   );
@@ -135,12 +135,14 @@ export function DueDate({ date, done }: { date: string | null; done?: boolean })
   const diff = Math.round((d.getTime() - today.getTime()) / 86_400_000);
   const overdue = !done && diff < 0;
   const soon = !done && diff >= 0 && diff <= 2;
-  const label =
+  const base =
     diff === 0
       ? lang === "es" ? "Hoy" : "Today"
       : diff === 1
         ? lang === "es" ? "Mañana" : "Tomorrow"
         : d.toLocaleDateString(lang === "es" ? "es-MX" : "en-US", { day: "numeric", month: "short" });
+  // An overdue date says so in words: colour alone is not the signal.
+  const label = overdue ? `${base} · ${lang === "es" ? "vencida" : "overdue"}` : base;
   return (
     <span
       style={{
@@ -158,7 +160,7 @@ export function DueDate({ date, done }: { date: string | null; done?: boolean })
   );
 }
 
-export function ProgressBar({ done, total, color = "var(--ec-brand)" }: { done: number; total: number; color?: string }) {
+export function ProgressBar({ done, total, color = "var(--ec-brand-fill)" }: { done: number; total: number; color?: string }) {
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   return (
     <div className="ec-progress" aria-label={`${pct}%`}>
@@ -281,7 +283,7 @@ export function clientsOf(members: Member[]) {
 
 // ─── Etiquetas ───────────────────────────────────────────────────────────────
 
-const LABEL_COLORS = ["#BD155C", "#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ef4444", "#64748b", "#ec4899", "#14b8a6"];
+const LABEL_COLORS = ["var(--ec-d1)", "var(--ec-d2)", "var(--ec-d3)", "var(--ec-d4)", "var(--ec-d5)", "var(--ec-d6)"];
 
 /** Color estable por nombre: la misma etiqueta se ve igual en todas partes. */
 export function labelColor(name: string) {

@@ -45,7 +45,9 @@ export type WorkProject = {
   createdAt: string;
   updatedAt: string;
   /** Solo tareas de primer nivel (no subtareas). Calculado por el backend. */
-  taskCounts: { total: number; done: number };
+  taskCounts: { total: number; done: number; /** Abiertas con fecha pasada. Opcional: sin el, la tarjeta no muestra vencidas. */ overdue?: number };
+  /** Proxima tarea abierta con fecha (la mas cercana). Opcional; alimenta "Proxima entrega" en la tarjeta. */
+  nextDue?: { title: string; dueDate: string } | null;
 };
 
 export const TASK_STATUSES = ["todo", "in_progress", "review", "done"] as const;

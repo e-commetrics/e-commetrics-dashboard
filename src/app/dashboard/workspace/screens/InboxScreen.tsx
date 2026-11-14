@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientDot } from "@/components/client-identity";
 import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { CheckCheck, CornerDownRight } from "lucide-react";
@@ -198,7 +199,7 @@ export function InboxScreen({ onOpenTask }: { onOpenTask: (id: string) => void }
                   }}
                 >
                   <span style={{ width: 8, paddingTop: 10, flexShrink: 0 }}>
-                    {!i.read ? <span style={{ display: "block", width: 8, height: 8, borderRadius: 99, background: "var(--ec-brand)" }} /> : null}
+                    {!i.read ? <span style={{ display: "block", width: 8, height: 8, borderRadius: 99, background: "var(--ec-brand-fill)" }} /> : null}
                   </span>
                   <Avatar member={memberById(i.actorId)} size={30} />
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -213,7 +214,7 @@ export function InboxScreen({ onOpenTask }: { onOpenTask: (id: string) => void }
                       {describe(i)}
                     </span>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 3, background: i.projectColor }} />
+                      <ClientDot name={i.projectName} color={i.projectColor} size={8} square />
                       {i.projectName}
                     </span>
                   </span>

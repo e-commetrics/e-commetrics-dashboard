@@ -192,7 +192,7 @@ export default function PromoPalmasPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${PALMAS_COLOR}1a`, color: PALMAS_COLOR, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `color-mix(in srgb, ${PALMAS_COLOR} 10%, transparent)`, color: PALMAS_COLOR, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Tag size={18} />
             </div>
             <div>
@@ -215,12 +215,12 @@ export default function PromoPalmasPage() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
-          { icon: Hash,  color: "#60A5FA", label: "Total",        value: total },
+          { icon: Hash,  color: "var(--ec-info)", label: "Total",        value: total },
           { icon: Check, color: PALMAS_COLOR, label: "Activos",   value: active },
-          { icon: Users, color: "#A78BFA", label: "Usos totales", value: totalUses },
+          { icon: Users, color: "var(--ec-d5)", label: "Usos totales", value: totalUses },
         ].map(({ icon: Icon, color, label, value }) => (
           <div key={label} className="ec-project-card" style={{ padding: 18, display: "flex", alignItems: "center", gap: 14, borderRadius: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: `${color}1a`, color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: `color-mix(in srgb, ${color} 10%, transparent)`, color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Icon size={18} />
             </div>
             <div>
@@ -246,7 +246,7 @@ export default function PromoPalmasPage() {
                   type="text" value={form.code}
                   onChange={(e) => setForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))}
                   placeholder="ej. PALMAS20" required
-                  style={{ ...inputStyle, flex: 1, fontFamily: "var(--font-jetbrains-mono), monospace" }}
+                  style={{ ...inputStyle, flex: 1, fontFamily: "var(--font-montserrat), monospace" }}
                 />
                 <button type="button" onClick={generateCode} title="Generar código aleatorio" style={{ padding: "0 12px", background: "var(--ec-surface-1)", border: "1px solid var(--ec-border)", borderRadius: 10, color: "var(--ec-text-dim)", cursor: "pointer" }}>
                   <Shuffle size={14} />
@@ -303,7 +303,7 @@ export default function PromoPalmasPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                 <label className="h-eyebrow">Alcance del descuento</label>
                 <button type="button" onClick={() => { setAdvancedMode((m) => !m); setForm((p) => ({ ...p, applies_to: "all", target_ids: [], targets: [] })); }}
-                  style={{ fontSize: 11, padding: "4px 10px", borderRadius: 6, border: `1px solid ${PALMAS_COLOR}`, background: `${PALMAS_COLOR}12`, color: PALMAS_COLOR, cursor: "pointer" }}>
+                  style={{ fontSize: 11, padding: "4px 10px", borderRadius: 6, border: `1px solid ${PALMAS_COLOR}`, background: `color-mix(in srgb, ${PALMAS_COLOR} 7%, transparent)`, color: PALMAS_COLOR, cursor: "pointer" }}>
                   {advancedMode ? "Modo simple" : "Modo avanzado"}
                 </button>
               </div>
@@ -329,7 +329,7 @@ export default function PromoPalmasPage() {
                         <span style={{ fontSize: 11, color: "var(--ec-text-dim)", width: 14 }}>%</span>
                       </div>
                       <button type="button" onClick={() => setForm((p) => ({ ...p, targets: p.targets.filter((_, j) => j !== i) }))}
-                        style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(248,113,113,0.3)", background: "none", color: "#F87171", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(248,113,113,0.3)", background: "none", color: "var(--ec-danger)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -339,7 +339,7 @@ export default function PromoPalmasPage() {
                     <Plus size={14} /> Agregar target
                   </button>
                   {form.targets.length === 0 && (
-                    <p style={{ fontSize: 12, color: "#F87171", marginTop: 2 }}>Agrega al menos un target</p>
+                    <p style={{ fontSize: 12, color: "var(--ec-danger)", marginTop: 2 }}>Agrega al menos un target</p>
                   )}
                 </div>
               ) : (
@@ -349,7 +349,7 @@ export default function PromoPalmasPage() {
                       <button key={opt} type="button"
                         style={{
                           flex: 1, padding: "10px 12px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 500,
-                          border: `2px solid ${PALMAS_COLOR}`, background: `${PALMAS_COLOR}12`, color: PALMAS_COLOR,
+                          border: `2px solid ${PALMAS_COLOR}`, background: `color-mix(in srgb, ${PALMAS_COLOR} 7%, transparent)`, color: PALMAS_COLOR,
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         }}
                       >
@@ -365,7 +365,7 @@ export default function PromoPalmasPage() {
                           <label key={id} style={{
                             display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13,
                             border: `1px solid ${selected ? PALMAS_COLOR : "var(--ec-border)"}`,
-                            background: selected ? `${PALMAS_COLOR}12` : "var(--ec-surface-2)",
+                            background: selected ? `color-mix(in srgb, ${PALMAS_COLOR} 7%, transparent)` : "var(--ec-surface-2)",
                             color: selected ? PALMAS_COLOR : "var(--ec-text)",
                             transition: "all 140ms",
                           }}>
@@ -390,7 +390,7 @@ export default function PromoPalmasPage() {
                           <label key={id} style={{
                             display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13,
                             border: `1px solid ${selected ? PALMAS_COLOR : "var(--ec-border)"}`,
-                            background: selected ? `${PALMAS_COLOR}12` : "var(--ec-surface-2)",
+                            background: selected ? `color-mix(in srgb, ${PALMAS_COLOR} 7%, transparent)` : "var(--ec-surface-2)",
                             color: selected ? PALMAS_COLOR : "var(--ec-text)",
                             transition: "all 140ms",
                           }}>
@@ -408,7 +408,7 @@ export default function PromoPalmasPage() {
                     </div>
                   )}
                   {form.applies_to !== "all" && form.target_ids.length === 0 && (
-                    <p style={{ fontSize: 12, color: "#F87171", marginTop: 6 }}>Selecciona al menos un elemento</p>
+                    <p style={{ fontSize: 12, color: "var(--ec-danger)", marginTop: 6 }}>Selecciona al menos un elemento</p>
                   )}
                 </>
               )}
@@ -450,19 +450,19 @@ export default function PromoPalmasPage() {
 
             return (
               <div key={code.id} className="ec-project-card" style={{ padding: 18, display: "flex", alignItems: "center", gap: 18, borderRadius: 12, flexWrap: "wrap" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: code.is_active ? `${PALMAS_COLOR}1a` : "var(--ec-surface-2)", color: code.is_active ? PALMAS_COLOR : "var(--ec-text-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: code.is_active ? `color-mix(in srgb, ${PALMAS_COLOR} 10%, transparent)` : "var(--ec-surface-2)", color: code.is_active ? PALMAS_COLOR : "var(--ec-text-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Tag size={18} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-                    <code style={{ fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 16, fontWeight: 500, color: code.is_active ? PALMAS_COLOR : "var(--ec-text-dim)" }}>{code.code}</code>
+                    <code style={{ fontFamily: "var(--font-montserrat), monospace", fontSize: 16, fontWeight: 500, color: code.is_active ? PALMAS_COLOR : "var(--ec-text-dim)" }}>{code.code}</code>
                     {code.is_active && !isExpired && !isExhausted && (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 100, background: `${PALMAS_COLOR}1a`, color: PALMAS_COLOR, fontSize: 11 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 100, background: `color-mix(in srgb, ${PALMAS_COLOR} 10%, transparent)`, color: PALMAS_COLOR, fontSize: 11 }}>
                         <span style={{ width: 5, height: 5, borderRadius: "50%", background: PALMAS_COLOR }} /> activo
                       </span>
                     )}
-                    {isExpired && <span style={{ padding: "2px 8px", borderRadius: 100, background: "rgba(248,113,113,0.12)", color: "#F87171", fontSize: 11 }}>Expirado</span>}
-                    {isExhausted && <span style={{ padding: "2px 8px", borderRadius: 100, background: "rgba(251,191,36,0.12)", color: "#FBBF24", fontSize: 11 }}>Agotado</span>}
+                    {isExpired && <span style={{ padding: "2px 8px", borderRadius: 100, background: "rgba(248,113,113,0.12)", color: "var(--ec-danger)", fontSize: 11 }}>Expirado</span>}
+                    {isExhausted && <span style={{ padding: "2px 8px", borderRadius: 100, background: "rgba(251,191,36,0.12)", color: "var(--ec-warning)", fontSize: 11 }}>Agotado</span>}
                     {!code.is_active && <span style={{ padding: "2px 8px", borderRadius: 100, background: "var(--ec-surface-2)", color: "var(--ec-text-dim)", fontSize: 11 }}>Inactivo</span>}
                   </div>
                   <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--ec-text-dim)", flexWrap: "wrap" }}>
@@ -500,7 +500,7 @@ export default function PromoPalmasPage() {
                     {code.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
                   </button>
                   <button onClick={() => handleDelete(code.id)} disabled={deletingId === code.id} title="Eliminar"
-                    style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: "1px solid rgba(248,113,113,0.3)", color: "#F87171", cursor: deletingId === code.id ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: deletingId === code.id ? 0.5 : 1 }}>
+                    style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: "1px solid rgba(248,113,113,0.3)", color: "var(--ec-danger)", cursor: deletingId === code.id ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: deletingId === code.id ? 0.5 : 1 }}>
                     {deletingId === code.id ? <Loader2 size={14} style={{ animation: "spin 0.8s linear infinite" }} /> : <Trash2 size={14} />}
                   </button>
                 </div>

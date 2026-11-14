@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientDot } from "@/components/client-identity";
 import { Mail } from "lucide-react";
 import { ErrorNotice, Loading, PageHeader } from "../../webapp/crm/components/ui";
 import { Avatar, employeesOf } from "../components/shared";
@@ -47,7 +48,7 @@ export function TeamScreen({ onOpenProject }: { onOpenProject: (id: string) => v
                 {theirs.length === 0 ? <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>{t("Sin proyectos", "No projects")}</span> : null}
                 {theirs.map((p) => (
                   <button key={p.id} type="button" onClick={() => onOpenProject(p.id)} className="ec-badge ec-badge-neutral" style={{ border: "none", cursor: "pointer" }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: p.color }} />
+                    <ClientDot name={p.name} color={p.color} size={8} square />
                     {p.name}
                   </button>
                 ))}

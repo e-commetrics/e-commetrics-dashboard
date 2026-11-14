@@ -434,7 +434,7 @@ export default function CalendarReforma() {
               let bg = "transparent";
               let borderColor = "var(--ec-border)";
               let textColor = day.isCurrentMonth ? "var(--ec-text)" : "var(--ec-text-dim)";
-              if (day.isSelected) { bg = "rgba(189,21,92,0.12)"; borderColor = "var(--ec-brand)"; textColor = "var(--ec-brand)"; }
+              if (day.isSelected) { bg = "rgba(134,20,83,0.12)"; borderColor = "var(--ec-brand)"; textColor = "var(--ec-brand)"; }
               else if (day.isToday) { bg = "rgba(99,102,241,0.12)"; borderColor = "#6366f1"; textColor = "#6366f1"; }
               else if (day.isBlocked) { bg = "rgba(239,68,68,0.1)"; borderColor = "rgba(239,68,68,0.5)"; textColor = "#ef4444"; }
               else if (day.isBooked) { bg = "rgba(34,197,94,0.1)"; borderColor = "rgba(34,197,94,0.4)"; textColor = "#22c55e"; }
@@ -450,9 +450,9 @@ export default function CalendarReforma() {
                   )}
                   {(day.webCount > 0 || day.dashboardCount > 0 || day.blockedCount > 0) && (
                     <div style={{ display: "flex", gap: 3, marginTop: 1, flexWrap: "wrap", justifyContent: "center" }}>
-                      {day.webCount > 0 && <span style={{ fontSize: 9, lineHeight: "14px", padding: "0 4px", borderRadius: 4, background: "rgba(34,197,94,0.2)", color: "#22c55e", fontWeight: 600 }}>{day.webCount}W</span>}
-                      {day.dashboardCount > 0 && <span style={{ fontSize: 9, lineHeight: "14px", padding: "0 4px", borderRadius: 4, background: "rgba(168,85,247,0.2)", color: "#a855f7", fontWeight: 600 }}>{day.dashboardCount}D</span>}
-                      {day.blockedCount > 0 && <span style={{ fontSize: 9, lineHeight: "14px", padding: "0 4px", borderRadius: 4, background: "rgba(239,68,68,0.2)", color: "#ef4444", fontWeight: 600 }}>{day.blockedCount}B</span>}
+                      {day.webCount > 0 && <span style={{ fontSize: 9, lineHeight: "14px", padding: "0 4px", borderRadius: 4, background: "rgba(34,197,94,0.2)", color: "var(--ec-success)", fontWeight: 600 }}>{day.webCount}W</span>}
+                      {day.dashboardCount > 0 && <span style={{ fontSize: 9, lineHeight: "14px", padding: "0 4px", borderRadius: 4, background: "rgba(168,85,247,0.2)", color: "var(--ec-d5)", fontWeight: 600 }}>{day.dashboardCount}D</span>}
+                      {day.blockedCount > 0 && <span style={{ fontSize: 9, lineHeight: "14px", padding: "0 4px", borderRadius: 4, background: "rgba(239,68,68,0.2)", color: "var(--ec-danger)", fontWeight: 600 }}>{day.blockedCount}B</span>}
                     </div>
                   )}
                 </div>
@@ -487,7 +487,7 @@ export default function CalendarReforma() {
             <h3 className="font-serif" style={{ fontSize: 20, fontWeight: 400, color: "var(--ec-text)" }}>
               {selectedCalendarDay ? formatDateForDisplay(selectedCalendarDay, lang) : lang === "es" ? "Próximas Citas" : "Upcoming Appointments"}
             </h3>
-            <span style={{ background: "rgba(189,21,92,0.12)", color: "var(--ec-brand)", padding: "3px 12px", borderRadius: 99, fontSize: 13, fontWeight: 600 }}>
+            <span style={{ background: "rgba(134,20,83,0.12)", color: "var(--ec-brand)", padding: "3px 12px", borderRadius: 99, fontSize: 13, fontWeight: 600 }}>
               {selectedCalendarDay ? completeDaySchedule.length : upcomingAppointments.length}
             </span>
           </div>
@@ -498,7 +498,7 @@ export default function CalendarReforma() {
               <p style={{ color: "var(--ec-text-dim)", fontSize: 13 }}>{lang === "es" ? "Cargando citas..." : "Loading appointments..."}</p>
             </div>
           ) : error ? (
-            <p style={{ color: "#F87171", textAlign: "center", padding: "14px 0" }}>{error}</p>
+            <p style={{ color: "var(--ec-danger)", textAlign: "center", padding: "14px 0" }}>{error}</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
               {selectedCalendarDay ? (
@@ -517,7 +517,7 @@ export default function CalendarReforma() {
                             </span>
                             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                               {appointmentType === "normal" && <span style={getOriginBadgeStyles(a.origen)}>{getOriginText(a.origen, lang)}</span>}
-                              <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(99,102,241,0.12)", color: "#6366f1", fontWeight: 600 }}>{item.time}</span>
+                              <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(99,102,241,0.12)", color: "var(--ec-info)", fontWeight: 600 }}>{item.time}</span>
                             </div>
                           </div>
                           {appointmentType === "normal" && (
@@ -548,7 +548,7 @@ export default function CalendarReforma() {
                         <div key={idx} style={{ padding: 14, borderRadius: 12, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.06)", position: "relative" }} className="group">
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                             <span style={{ fontWeight: 600, fontSize: 14, color: "var(--ec-text)" }}>⛔ {lang === "es" ? "Horario Bloqueado" : "Blocked Time Slot"}</span>
-                            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(239,68,68,0.12)", color: "#ef4444", fontWeight: 600 }}>{item.time}</span>
+                            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(239,68,68,0.12)", color: "var(--ec-danger)", fontWeight: 600 }}>{item.time}</span>
                           </div>
                           <div style={{ fontSize: 13, color: "var(--ec-text-muted)" }}>{lang === "es" ? "Este horario no está disponible para reservaciones" : "This time slot is not available for booking"}</div>
                           <div style={{ display: "flex", marginTop: 10 }} className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -560,8 +560,8 @@ export default function CalendarReforma() {
                       return (
                         <div key={idx} style={{ padding: 14, borderRadius: 12, border: "1px solid rgba(34,197,94,0.25)", background: "rgba(34,197,94,0.05)" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                            <span style={{ fontWeight: 600, fontSize: 14, color: "#22c55e" }}>✓ {lang === "es" ? "Horario Disponible" : "Available Time Slot"}</span>
-                            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(34,197,94,0.12)", color: "#22c55e", fontWeight: 600 }}>{item.time}</span>
+                            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--ec-success)" }}>✓ {lang === "es" ? "Horario Disponible" : "Available Time Slot"}</span>
+                            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(34,197,94,0.12)", color: "var(--ec-success)", fontWeight: 600 }}>{item.time}</span>
                           </div>
                           <div style={{ fontSize: 13, color: "var(--ec-text-muted)", marginBottom: 10 }}>{lang === "es" ? "Este horario está libre para agendar una cita" : "This time slot is free to schedule an appointment"}</div>
                           <button onClick={() => { setAppointmentForm((prev) => ({ ...prev, date: selectedCalendarDay, time: item.hourStr })); document.querySelector(".grid-cols-1\\.5fr_1fr")?.scrollIntoView({ behavior: "smooth" }); }} style={{ width: "100%", padding: "8px 12px", background: "#22c55e", color: "white", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{lang === "es" ? "Agendar en este horario" : "Schedule at this time"}</button>
@@ -588,7 +588,7 @@ export default function CalendarReforma() {
                         </span>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                           {appointmentType === "normal" && <span style={getOriginBadgeStyles(a.origen)}>{getOriginText(a.origen, lang)}</span>}
-                          <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(99,102,241,0.12)", color: "#6366f1", fontWeight: 600 }}>{a.hora.substring(0, 5)}</span>
+                          <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(99,102,241,0.12)", color: "var(--ec-info)", fontWeight: 600 }}>{a.hora.substring(0, 5)}</span>
                         </div>
                       </div>
                       {appointmentType === "normal" && (
@@ -757,7 +757,7 @@ export default function CalendarReforma() {
                 </div>
               )}
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--ec-surface-2)", border: "1px solid var(--ec-border)", borderRadius: 10 }}>
-                <input type="checkbox" checked={blockForm.blockAllDay} onChange={(e) => setBlockForm((prev) => ({ ...prev, blockAllDay: e.target.checked, startTime: "", endTime: "" }))} style={{ width: 18, height: 18, accentColor: "#ef4444", cursor: "pointer" }} />
+                <input type="checkbox" checked={blockForm.blockAllDay} onChange={(e) => setBlockForm((prev) => ({ ...prev, blockAllDay: e.target.checked, startTime: "", endTime: "" }))} style={{ width: 18, height: 18, accentColor: "var(--ec-danger)", cursor: "pointer" }} />
                 <label style={{ fontSize: 14, fontWeight: 500, color: "var(--ec-text)", cursor: "pointer" }}>{lang === "es" ? "Bloquear día completo" : "Block all day"}</label>
               </div>
               {!blockForm.blockAllDay && (

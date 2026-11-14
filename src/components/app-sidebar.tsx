@@ -44,9 +44,11 @@ import { useLang } from "@/app/context/LangContext";
 import { APPS, CLIENT_GROUPS, TOOL_APPS, appBySlug, appUrl, clientGroupFor, type AppDef, type ClientGroup } from "@/lib/apps";
 import { getApi } from "@/app/dashboard/workspace/lib/api";
 import { apiFetch } from "@/lib/api";
+import { ClientDot, ClientTile } from "@/components/client-identity";
+import { clientIdentity } from "@/lib/client-identity";
 import type { ClientAccount } from "@/lib/clients";
 
-const CLIENT_COLORS = ["#BD155C", "#D97706", "#2563EB", "#059669", "#7C3AED", "#0891B2", "#DC2626", "#4F46E5"];
+const CLIENT_COLORS = ["#EB6834", "#EDA100", "#C2185B", "#6250D6", "#1BAF7A", "#2A78D6"];
 
 // Sidebar organised around how people work, not around the code:
 //   team   → Inicio / Bandeja / Mis tareas / Calendario, then Workspace,
@@ -137,7 +139,7 @@ function SidebarNav() {
       </SidebarMenuButton>
       {item.badge ? (
         <SidebarMenuBadge
-          style={{ background: "var(--ec-brand)", color: "var(--ec-brand-on)", borderRadius: 99, fontSize: 11 }}
+          style={{ background: "var(--ec-brand-fill)", color: "var(--ec-brand-on)", borderRadius: 99, fontSize: 11 }}
         >
           {item.badge > 99 ? "99+" : item.badge}
         </SidebarMenuBadge>
@@ -393,7 +395,11 @@ function ClientEntry({
               aria-hidden
               style={{ width: 16, display: "inline-flex", justifyContent: "center", flexShrink: 0 }}
             >
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />
+              {clientIdentity(name, { color }).logo ? (
+                <ClientTile identity={clientIdentity(name, { color })} size={16} radius={4} />
+              ) : (
+                <ClientDot name={name} color={color} />
+              )}
             </span>
             <span>{name}</span>
             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />

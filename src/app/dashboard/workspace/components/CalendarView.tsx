@@ -1,5 +1,6 @@
 "use client";
 
+import { clientIdentity, identityVars } from "@/lib/client-identity";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, CornerDownRight } from "lucide-react";
 import { TASK_STATUS_META, useT } from "../lib/i18n";
@@ -108,6 +109,7 @@ export function CalendarView({
           e.dataTransfer.effectAllowed = "move";
         }}
         onClick={() => onOpenTask(task.id)}
+        className="ec-client"
         title={`${task.title}${showProject ? ` · ${task.projectName}` : ""} · ${TASK_STATUS_META[task.status][lang]}`}
         style={{
           display: "flex",
@@ -116,7 +118,8 @@ export function CalendarView({
           width: "100%",
           padding: "3px 6px",
           border: "none",
-          borderLeft: `3px solid ${task.projectColor}`,
+          ...identityVars(clientIdentity(task.projectName, { color: task.projectColor })),
+          borderLeft: "3px solid var(--client)",
           borderRadius: 5,
           background: "var(--ec-surface-2)",
           color: done ? "var(--ec-text-faint)" : "var(--ec-text)",

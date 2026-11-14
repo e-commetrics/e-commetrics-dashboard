@@ -206,7 +206,7 @@ export function CalendarView({
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                         <p style={{ fontSize: 12, fontWeight: 600, color: isCancelled ? "var(--ec-text-dim)" : rc.color }}>{ROOM_NAMES[b.room_id] ?? b.room_id}</p>
                         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          {isCancelled && <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "1px 6px", borderRadius: 99, fontSize: 11, fontWeight: 500, background: "rgba(239,68,68,0.1)", color: "#ef4444" }}><XCircle size={10} />Cancelada</span>}
+                          {isCancelled && <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "1px 6px", borderRadius: 99, fontSize: 11, fontWeight: 500, background: "rgba(239,68,68,0.1)", color: "var(--ec-danger)" }}><XCircle size={10} />Cancelada</span>}
                           <SourceBadge source={b.source} />
                         </div>
                       </div>

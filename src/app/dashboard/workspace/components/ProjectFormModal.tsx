@@ -309,7 +309,7 @@ export function ProjectFormModal({
         </Field>
       </Grid>
 
-      <Field label={t("Color", "Color")}>
+      <Field label={t("Color (solo si el cliente no tiene logo)", "Color (only when the client has no logo)")}>
         <div style={{ display: "flex", gap: 8 }}>
           {PROJECT_COLORS.map((c) => (
             <button

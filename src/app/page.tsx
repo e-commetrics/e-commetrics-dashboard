@@ -34,7 +34,7 @@ function LogoMark({ size = 28 }: { size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: Math.round(size * 0.29),
-      background: "var(--ec-brand)", display: "flex",
+      background: "var(--ec-brand-fill)", display: "flex",
       alignItems: "center", justifyContent: "center",
       flexShrink: 0,
     }}>
@@ -90,7 +90,7 @@ export default function Page() {
                 <span style={{ fontFamily: "Instrument Serif, serif", fontSize: 17, color: "white" }}>
                   E-commetrics
                 </span>
-                <span style={{ fontFamily: "var(--font-jetbrains-mono), JetBrains Mono, monospace", fontSize: 9, color: "rgba(255,255,255,0.45)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                <span style={{ fontFamily: "var(--font-montserrat), JetBrains Mono, monospace", fontSize: 9, color: "rgba(255,255,255,0.45)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
                   Workspace
                 </span>
               </div>
@@ -142,7 +142,7 @@ export default function Page() {
               >
                 {/* Eyebrow */}
                 <div style={{
-                  fontFamily: "var(--font-jetbrains-mono), JetBrains Mono, monospace",
+                  fontFamily: "var(--font-montserrat), JetBrains Mono, monospace",
                   fontSize: 10.5, fontWeight: 600, letterSpacing: "0.12em",
                   textTransform: "uppercase", color: "rgba(255,255,255,0.45)",
                   marginBottom: 18,
@@ -174,7 +174,7 @@ export default function Page() {
                     style={{
                       position: "relative",
                       padding: "18px 22px",
-                      background: hoverIdx === 0 ? "#E73B85" : "#BD155C",
+                      background: hoverIdx === 0 ? "#A81B66" : "#861453",
                       color: "white",
                       borderRadius: 14,
                       fontSize: 15,
@@ -184,8 +184,8 @@ export default function Page() {
                       transition: "all 240ms cubic-bezier(.2,.7,.2,1)",
                       transform: hoverIdx === 0 ? "translateY(-2px)" : "none",
                       boxShadow: hoverIdx === 0
-                        ? "0 16px 40px -12px rgba(189,21,92,0.7), 0 0 0 1px #E73B85"
-                        : "0 6px 16px -6px rgba(189,21,92,0.5), 0 0 0 1px #BD155C",
+                        ? "0 16px 40px -12px rgba(134,20,83,0.7), 0 0 0 1px #E73B85"
+                        : "0 6px 16px -6px rgba(134,20,83,0.5), 0 0 0 1px #861453",
                       overflow: "hidden",
                     }}
                   >
@@ -239,7 +239,7 @@ export default function Page() {
                   marginTop: 28, paddingTop: 20,
                   borderTop: "1px solid rgba(255,255,255,0.08)",
                   display: "flex", justifyContent: "space-between",
-                  fontFamily: "var(--font-jetbrains-mono), JetBrains Mono, monospace",
+                  fontFamily: "var(--font-montserrat), JetBrains Mono, monospace",
                   fontSize: 10.5, color: "rgba(255,255,255,0.4)",
                   letterSpacing: "0.12em", textTransform: "uppercase",
                 }}>
@@ -251,7 +251,7 @@ export default function Page() {
             {/* Bottom-left label */}
             <div style={{
               position: "absolute", bottom: 18, left: 24,
-              fontFamily: "var(--font-jetbrains-mono), JetBrains Mono, monospace",
+              fontFamily: "var(--font-montserrat), JetBrains Mono, monospace",
               fontSize: 10, color: "rgba(255,255,255,0.3)",
               letterSpacing: "0.15em", zIndex: 2,
             }}>

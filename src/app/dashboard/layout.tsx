@@ -22,7 +22,7 @@ export default function RootLayout({
         <ClientOnly>
           <AppSidebar />
         </ClientOnly>
-        <SidebarInset id="main-content" tabIndex={-1} className="focus:outline-none">
+        <SidebarInset id="main-content" tabIndex={-1} className="focus:outline-none min-w-0">
           <header className="flex relative h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />

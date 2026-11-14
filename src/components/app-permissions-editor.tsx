@@ -118,7 +118,7 @@ export function AppPermissionsEditor({
                 borderRadius: 10,
                 cursor: "pointer",
                 border: checked ? "1.5px solid var(--ec-brand)" : "1px solid var(--ec-border)",
-                background: checked ? "rgba(189,21,92,0.06)" : "var(--ec-surface-2)",
+                background: checked ? "rgba(134,20,83,0.06)" : "var(--ec-surface-2)",
                 transition: "all 150ms",
               }}
             >
@@ -131,7 +131,7 @@ export function AppPermissionsEditor({
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: checked ? "rgba(189,21,92,0.15)" : "var(--ec-surface-3)",
+                    background: checked ? "rgba(134,20,83,0.15)" : "var(--ec-surface-3)",
                   }}
                 >
                   <Icon size={13} style={{ color: checked ? "var(--ec-brand)" : "var(--ec-text-muted)" }} />

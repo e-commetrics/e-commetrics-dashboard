@@ -407,7 +407,7 @@ export function BookingFormModal({
                 const checked = form.extras.includes(id);
                 return (
                   <label key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, border: `1px solid ${checked ? "rgba(245,158,11,0.4)" : "var(--ec-border)"}`, background: checked ? "rgba(245,158,11,0.07)" : "transparent", cursor: "pointer", transition: "all 140ms" }}>
-                    <input type="checkbox" checked={checked} onChange={() => toggleExtra(id)} style={{ width: 16, height: 16, accentColor: "#f59e0b", cursor: "pointer", flexShrink: 0 }} />
+                    <input type="checkbox" checked={checked} onChange={() => toggleExtra(id)} style={{ width: 16, height: 16, accentColor: "var(--ec-warning)", cursor: "pointer", flexShrink: 0 }} />
                     <span style={{ fontSize: 13, color: "var(--ec-text)", flex: 1, lineHeight: 1.3 }}>{name}</span>
                     <span style={{ fontSize: 12, fontWeight: 500, color: "var(--ec-text-dim)", flexShrink: 0 }}>${EXTRA_PRICES[id]}</span>
                   </label>
@@ -425,11 +425,11 @@ export function BookingFormModal({
             {promoApplied ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-                  <CheckCircle size={14} style={{ color: "#10b981", flexShrink: 0 }} />
-                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontWeight: 600, color: "#10b981" }}>{promoApplied.code}</span>
-                  <span style={{ color: "#10b981" }}>— {promoApplied.discount_type === "percentage" ? `${promoApplied.discount_value}% de descuento` : `$${promoApplied.discount_value} de descuento`}</span>
+                  <CheckCircle size={14} style={{ color: "var(--ec-success)", flexShrink: 0 }} />
+                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontWeight: 600, color: "var(--ec-success)" }}>{promoApplied.code}</span>
+                  <span style={{ color: "var(--ec-success)" }}>— {promoApplied.discount_type === "percentage" ? `${promoApplied.discount_value}% de descuento` : `$${promoApplied.discount_value} de descuento`}</span>
                 </div>
-                <button type="button" onClick={removePromo} style={{ padding: 4, background: "none", border: "none", cursor: "pointer", color: "#10b981", display: "flex" }}><X size={14} /></button>
+                <button type="button" onClick={removePromo} style={{ padding: 4, background: "none", border: "none", cursor: "pointer", color: "var(--ec-success)", display: "flex" }}><X size={14} /></button>
               </div>
             ) : (
               <div style={{ display: "flex", gap: 8 }}>
@@ -441,14 +441,14 @@ export function BookingFormModal({
               </div>
             )}
             {promoError && (
-              <p style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#ef4444", marginTop: 6 }}>
+              <p style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--ec-danger)", marginTop: 6 }}>
                 <XCircle size={12} style={{ flexShrink: 0 }} /> {promoError}
               </p>
             )}
             {promoApplied && discountAmount > 0 && (
               <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--ec-hairline)", display: "flex", flexDirection: "column", gap: 4, fontSize: 13 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ec-text-muted)" }}><span>Subtotal</span><span>${baseTotal}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", color: "#10b981" }}><span>Descuento ({promoApplied.discount_type === "percentage" ? `${promoApplied.discount_value}%` : `$${promoApplied.discount_value}`})</span><span>-${discountAmount}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ec-success)" }}><span>Descuento ({promoApplied.discount_type === "percentage" ? `${promoApplied.discount_value}%` : `$${promoApplied.discount_value}`})</span><span>-${discountAmount}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600, color: "var(--ec-text)", paddingTop: 4, borderTop: "1px solid var(--ec-hairline)" }}><span>Total con descuento</span><span>${autoTotal}</span></div>
               </div>
             )}

@@ -219,7 +219,7 @@ export function TextAreaField({
       value={value}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
-      style={mono ? { fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 13 } : undefined}
+      style={mono ? { fontFamily: "var(--font-montserrat), monospace", fontSize: 13 } : undefined}
     />
   );
 
@@ -399,7 +399,8 @@ export function StatTile({
   return (
     <div className={cn("ec-stat-tile", tone === "danger" && "is-danger")}>
       <div className="ec-stat-tile-label">{label}</div>
-      <div className="ec-stat-tile-num" style={{ color }}>
+      <div className="ec-stat-tile-num" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {tone === "default" ? null : <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} aria-hidden />}
         {value}
       </div>
     </div>

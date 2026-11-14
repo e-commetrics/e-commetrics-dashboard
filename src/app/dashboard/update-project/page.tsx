@@ -228,7 +228,7 @@ export default function UpdateProject() {
                     <td>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button
-                          style={{ width: 30, height: 30, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "none", background: "var(--ec-brand)", color: "#fff", cursor: "pointer", transition: "opacity 150ms" }}
+                          style={{ width: 30, height: 30, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "none", background: "var(--ec-brand-fill)", color: "#fff", cursor: "pointer", transition: "opacity 150ms" }}
                           onClick={() => { setSelectedProject(project); setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100); }}
                           title="Editar"
                         >
@@ -358,8 +358,8 @@ export default function UpdateProject() {
                 <button
                   style={{
                     flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "9px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, fontFamily: "var(--font-inter), var(--font-sans)",
-                    background: "var(--ec-brand)", color: "#fff", border: "none", cursor: "pointer", transition: "opacity 150ms",
+                    padding: "9px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, fontFamily: "var(--font-montserrat), var(--font-sans)",
+                    background: "var(--ec-brand-fill)", color: "#fff", border: "none", cursor: "pointer", transition: "opacity 150ms",
                   }}
                   disabled={deleting}
                   onClick={() => handleDelete(deleteConfirm.id)}

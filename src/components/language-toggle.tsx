@@ -63,7 +63,7 @@ export default function LanguageToggle() {
         transition: "all 150ms",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(189,21,92,0.06)";
+        e.currentTarget.style.background = "rgba(134,20,83,0.06)";
         e.currentTarget.style.borderColor = "var(--ec-brand)";
       }}
       onMouseLeave={(e) => {

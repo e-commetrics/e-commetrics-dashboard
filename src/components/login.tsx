@@ -63,7 +63,7 @@ function LogoMark({ size = 36 }: { size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: Math.round(size * 0.29),
-      background: "#BD155C", display: "flex",
+      background: "var(--ec-brand-fill)", display: "flex",
       alignItems: "center", justifyContent: "center", flexShrink: 0,
     }}>
       <span style={{ fontFamily: "Instrument Serif, serif", fontSize: size * 0.65, color: "#fff", lineHeight: 1 }}>E</span>
@@ -126,7 +126,7 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
         {/* Accent dots */}
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
           {[{ top: "12%", left: "20%" }, { top: "34%", left: "72%" }, { top: "55%", left: "40%" }, { top: "70%", left: "15%" }, { top: "82%", left: "65%" }, { top: "24%", left: "55%" }].map((pos, i) => (
-            <div key={i} style={{ position: "absolute", ...pos, width: 5, height: 5, borderRadius: "50%", background: "var(--ec-brand)", opacity: 0.5 }} />
+            <div key={i} style={{ position: "absolute", ...pos, width: 5, height: 5, borderRadius: "50%", background: "var(--ec-brand-fill)", opacity: 0.5 }} />
           ))}
         </div>
 

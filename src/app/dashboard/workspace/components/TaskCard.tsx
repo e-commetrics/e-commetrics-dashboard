@@ -24,16 +24,15 @@ export function TaskCard({
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const overdue = !done && !!task.dueDate && task.dueDate.slice(0, 10) < todayKey;
-  // Franja lateral: rojo solo si esta vencida; si no, la prioridad (urgente/alta) o neutro.
-  const stripe = overdue
-    ? "var(--ec-danger)"
-    : done
-      ? "var(--ec-hairline-strong)"
-      : task.priority === "urgent"
+  // Franja lateral = prioridad (solo urgente y alta llevan color). Lo vencido se lee en la fecha, en rojo y con palabra.
+  const stripe = done
+    ? "var(--ec-hairline-strong)"
+    : task.priority === "urgent"
+      ? "var(--ec-danger)"
+      : task.priority === "high"
         ? "var(--ec-warning)"
-        : task.priority === "high"
-          ? "var(--ec-info)"
-          : "var(--ec-hairline-strong)";
+        : "var(--ec-hairline-strong)";
+  void overdue;
   const priority = PRIORITY_META[task.priority];
   return (
     <div
@@ -56,19 +55,19 @@ export function TaskCard({
         background: "var(--ec-surface-1)",
         border: "1px solid var(--ec-hairline-strong)",
         borderLeft: `3px solid ${stripe}`,
-        borderRadius: 10,
-        padding: "11px 12px",
+        borderRadius: 8,
+        padding: "9px 10px",
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
-        gap: 9,
+        gap: 7,
         opacity: dragging ? 0.4 : 1,
         boxShadow: "var(--ec-shadow-sm)",
       }}
     >
       <div
         style={{
-          fontSize: 13.5,
+          fontSize: 13,
           fontWeight: 500,
           lineHeight: 1.35,
           color: done ? "var(--ec-text-muted)" : "var(--ec-text)",

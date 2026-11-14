@@ -145,7 +145,7 @@ export default function CreateProject() {
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 18px",
             color: "white",
-            boxShadow: "0 12px 32px -8px rgba(189,21,92,0.5), 0 0 0 1px rgba(189,21,92,0.3)",
+            boxShadow: "0 12px 32px -8px rgba(134,20,83,0.5), 0 0 0 1px rgba(134,20,83,0.3)",
           }}>
             <Briefcase size={26} />
           </div>

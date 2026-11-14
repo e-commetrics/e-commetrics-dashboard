@@ -89,7 +89,7 @@ function Workspace() {
                       height: 18,
                       padding: "0 5px",
                       borderRadius: 99,
-                      background: "var(--ec-brand)",
+                      background: "var(--ec-brand-fill)",
                       color: "var(--ec-brand-on)",
                       fontSize: 11,
                       fontWeight: 700,

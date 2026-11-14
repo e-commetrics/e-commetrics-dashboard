@@ -188,7 +188,7 @@ a 4xx/5xx status. Ids go out as strings, dates as ISO strings (`YYYY-MM-DD` for
 |---|---|---|
 | `GET /me` | | `{ member: Member }` |
 | `GET /members` | | `{ members: Member[] }` — admins, employees and clients (clients are needed to link projects). Never send password hashes. |
-| `GET /projects` | | `{ projects: WorkProject[] }` with `memberIds` and `taskCounts` (top-level tasks only) |
+| `GET /projects` | | `{ projects: WorkProject[] }` with `memberIds` and `taskCounts` (top-level tasks only). Optional, used by the project card: `taskCounts.overdue` (open top-level tasks past their due date) and `nextDue: { title, dueDate } \| null` (the nearest open top-level task with a due date today or later). Without them the card hides the overdue count and the next delivery. |
 | `POST /projects` (admin) | `ProjectInput` | `{ project }`. If `templateTasks` is present, insert one `todo` task per item in the same transaction. |
 | `POST /projects/with-dashboard` (admin) | `{ id_user, title, project_name, content? }` for an existing client, or `{ newClient: { email, password, userName?, jobTitle? }, title, project_name, content? }` | Creates the client account when requested, its legacy client page and a linked Workspace project atomically. Response is `{ clientId, legacyProjectId, project }`. |
 | `GET /projects/:id` | | `{ project, tasks: Task[] }` — all tasks and subtasks of the project |

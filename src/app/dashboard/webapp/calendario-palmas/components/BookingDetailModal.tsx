@@ -123,11 +123,11 @@ export function BookingDetailModal({
         <div className="p-5 space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
             {booking.status === "confirmed" ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(16,185,129,0.12)", color: "var(--ec-success)" }}>
                 <CheckCircle className="h-3 w-3" /> Confirmada
               </span>
             ) : (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 99, fontSize: 12, fontWeight: 500, background: "rgba(239,68,68,0.12)", color: "var(--ec-danger)" }}>
                 <XCircle className="h-3 w-3" /> Cancelada
               </span>
             )}
@@ -194,8 +194,8 @@ export function BookingDetailModal({
           )}
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12 }}>
-            <span style={{ fontWeight: 600, color: "#f59e0b" }}>Total</span>
-            <span style={{ fontSize: 20, fontWeight: 700, color: "#f59e0b" }}>${booking.total} USD</span>
+            <span style={{ fontWeight: 600, color: "var(--ec-warning)" }}>Total</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: "var(--ec-warning)" }}>${booking.total} USD</span>
           </div>
 
           {/* Reminder section */}

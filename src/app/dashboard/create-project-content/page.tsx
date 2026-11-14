@@ -169,7 +169,7 @@ export default function CreateProjectContent() {
             </div>
 
             {form.id_user && (
-              <div style={{ padding: "8px 12px", background: "rgba(189,21,92,0.06)", borderRadius: 8, border: "1px solid rgba(189,21,92,0.15)" }}>
+              <div style={{ padding: "8px 12px", background: "rgba(134,20,83,0.06)", borderRadius: 8, border: "1px solid rgba(134,20,83,0.15)" }}>
                 <span className="font-mono-ec" style={{ fontSize: 11, color: "var(--ec-brand)" }}>
                   Usuario asignado automáticamente desde el proyecto
                 </span>

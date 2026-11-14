@@ -112,13 +112,13 @@ function BlogManagerPage() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
-          { icon: MessageCircle, color: "#60A5FA", label: "Total", value: total },
-          { icon: CheckCircle,   color: "#10B981", label: "Aprobados", value: approved },
-          { icon: Clock,         color: "#FBBF24", label: "Pendientes", value: pending },
-          { icon: X,             color: "#F87171", label: "Rechazados", value: rejected },
+          { icon: MessageCircle, color: "var(--ec-info)", label: "Total", value: total },
+          { icon: CheckCircle,   color: "var(--ec-success)", label: "Aprobados", value: approved },
+          { icon: Clock,         color: "var(--ec-warning)", label: "Pendientes", value: pending },
+          { icon: X,             color: "var(--ec-danger)", label: "Rechazados", value: rejected },
         ].map(({ icon: Icon, color, label, value }) => (
           <div key={label} className="ec-project-card" style={{ padding: 18, display: "flex", alignItems: "center", gap: 14, borderRadius: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${color}1a`, color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `color-mix(in srgb, ${color} 10%, transparent)`, color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Icon size={20} />
             </div>
             <div>
@@ -148,7 +148,7 @@ function BlogManagerPage() {
                 fontSize: 13, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap",
               }}
             >
-              {f.label} <span style={{ fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 10, opacity: 0.7, marginLeft: 4 }}>{f.count}</span>
+              {f.label} <span style={{ fontFamily: "var(--font-montserrat), monospace", fontSize: 10, opacity: 0.7, marginLeft: 4 }}>{f.count}</span>
             </button>
           ))}
         </div>
@@ -170,7 +170,7 @@ function BlogManagerPage() {
             <thead>
               <tr style={{ borderBottom: "1px solid var(--ec-border)" }}>
                 {["Nombre", "Correo", "Comentario", "Estado", "Blog", "Acciones"].map((h, i) => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: i === 5 ? "right" : "left", fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ec-text-dim)", fontWeight: 400, whiteSpace: "nowrap" }}>
+                  <th key={h} style={{ padding: "12px 16px", textAlign: i === 5 ? "right" : "left", fontFamily: "var(--font-montserrat), monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ec-text-dim)", fontWeight: 400, whiteSpace: "nowrap" }}>
                     {h}
                   </th>
                 ))}
@@ -192,14 +192,14 @@ function BlogManagerPage() {
                   <tr key={comment.id} style={{ borderBottom: "1px solid var(--ec-border)" }}>
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: `${avatarColor}22`, color: avatarColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: `color-mix(in srgb, ${avatarColor} 13%, transparent)`, color: avatarColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
                           {comment.nombre[0]?.toUpperCase()}
                         </div>
                         <span style={{ fontWeight: 500, fontSize: 13 }}>{comment.nombre}</span>
                       </div>
                     </td>
                     <td style={{ padding: "14px 16px" }}>
-                      <span style={{ fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 11.5, padding: "4px 8px", background: "var(--ec-surface-2)", borderRadius: 6, border: "1px solid var(--ec-border)", color: "var(--ec-text-dim)" }}>
+                      <span style={{ fontFamily: "var(--font-montserrat), monospace", fontSize: 11.5, padding: "4px 8px", background: "var(--ec-surface-2)", borderRadius: 6, border: "1px solid var(--ec-border)", color: "var(--ec-text-dim)" }}>
                         {comment.correo}
                       </span>
                     </td>
@@ -216,31 +216,31 @@ function BlogManagerPage() {
                     </td>
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       {isApproved ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(16,185,129,0.12)", color: "#10B981", fontSize: 11.5, fontWeight: 500 }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(16,185,129,0.12)", color: "var(--ec-success)", fontSize: 11.5, fontWeight: 500 }}>
                           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10B981" }} /> aprobado
                         </span>
                       ) : isRejected ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(248,113,113,0.12)", color: "#F87171", fontSize: 11.5, fontWeight: 500 }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(248,113,113,0.12)", color: "var(--ec-danger)", fontSize: 11.5, fontWeight: 500 }}>
                           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#F87171" }} /> rechazado
                         </span>
                       ) : (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(251,191,36,0.12)", color: "#FBBF24", fontSize: 11.5, fontWeight: 500 }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(251,191,36,0.12)", color: "var(--ec-warning)", fontSize: 11.5, fontWeight: 500 }}>
                           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#FBBF24" }} /> pendiente
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: "14px 16px", fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 11, color: "var(--ec-text-dim)", whiteSpace: "nowrap" }}>
+                    <td style={{ padding: "14px 16px", fontFamily: "var(--font-montserrat), monospace", fontSize: 11, color: "var(--ec-text-dim)", whiteSpace: "nowrap" }}>
                       {getBlogName(comment.blog_id).slice(0, 20)}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "right", whiteSpace: "nowrap" }}>
                       <div style={{ display: "inline-flex", gap: 4 }}>
                         {!isApproved && (
-                          <button onClick={() => handleApproveClick(comment)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", background: "rgba(16,185,129,0.12)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 8, fontSize: 11.5, cursor: "pointer" }}>
+                          <button onClick={() => handleApproveClick(comment)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", background: "rgba(16,185,129,0.12)", color: "var(--ec-success)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 8, fontSize: 11.5, cursor: "pointer" }}>
                             <Check size={12} /> Aceptar
                           </button>
                         )}
                         {!isRejected && (
-                          <button onClick={() => handleRejectClick(comment)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", background: "rgba(248,113,113,0.12)", color: "#F87171", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 11.5, cursor: "pointer" }}>
+                          <button onClick={() => handleRejectClick(comment)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", background: "rgba(248,113,113,0.12)", color: "var(--ec-danger)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 11.5, cursor: "pointer" }}>
                             <X size={12} /> Rechazar
                           </button>
                         )}
@@ -256,7 +256,7 @@ function BlogManagerPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ padding: "14px 16px", borderTop: "1px solid var(--ec-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 11.5, color: "var(--ec-text-dim)" }}>
+            <span style={{ fontFamily: "var(--font-montserrat), monospace", fontSize: 11.5, color: "var(--ec-text-dim)" }}>
               {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length}
             </span>
             <div style={{ display: "flex", gap: 4 }}>
@@ -318,7 +318,7 @@ function BlogManagerPage() {
               <p style={{ fontSize: 13, color: "var(--ec-text)" }}>{selectedBlogName}</p>
             </div>
             <div style={{ padding: "14px 24px", borderTop: "1px solid var(--ec-border)", display: "flex", justifyContent: "flex-end" }}>
-              <button onClick={() => setShowCommentModal(false)} style={{ padding: "10px 24px", background: "var(--ec-brand)", border: 0, borderRadius: 10, color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={() => setShowCommentModal(false)} style={{ padding: "10px 24px", background: "var(--ec-brand-fill)", border: 0, borderRadius: 10, color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                 Cerrar
               </button>
             </div>

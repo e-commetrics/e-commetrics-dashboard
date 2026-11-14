@@ -67,9 +67,9 @@ function seed(): Db {
     name: string; pkg: PackageId; client: string; clientProject: string | null; status: StoredProject["status"];
     color: string; owner: string; members: string[]; start: number; due: number; description: string;
   }[] = [
-    { name: "Reforma Dental · Tracción", pkg: "advanced", client: "c-reforma", clientProject: "reforma-dental", status: "active", color: "#BD155C", owner: "u-diego", members: ["u-ana", "u-carlos", "u-sofia", "u-diego", VIEWER_ID], start: -40, due: 80, description: "Sitio nuevo, CRM y campañas de captación para la clínica." },
-    { name: "Las Palmas · Arranque", pkg: "simple", client: "c-palmas", clientProject: "palmas", status: "active", color: "#22c55e", owner: "u-diego", members: ["u-ana", "u-carlos", "u-diego", VIEWER_ID], start: -20, due: 70, description: "Presencia digital completa y calendario de reservas." },
-    { name: "Monge · Escala", pkg: "grower", client: "c-monge", clientProject: "monge", status: "planning", color: "#3b82f6", owner: "u-sofia", members: ["u-sofia", "u-carlos"], start: 7, due: 160, description: "Crecimiento orgánico y automatización." },
+    { name: "Reforma Dental · Tracción", pkg: "advanced", client: "c-reforma", clientProject: "reforma-dental", status: "active", color: "#9CCC0C", owner: "u-diego", members: ["u-ana", "u-carlos", "u-sofia", "u-diego", VIEWER_ID], start: -40, due: 80, description: "Sitio nuevo, CRM y campañas de captación para la clínica." },
+    { name: "Las Palmas · Arranque", pkg: "simple", client: "c-palmas", clientProject: "palmas", status: "active", color: "#1BAF7A", owner: "u-diego", members: ["u-ana", "u-carlos", "u-diego", VIEWER_ID], start: -20, due: 70, description: "Presencia digital completa y calendario de reservas." },
+    { name: "Monge · Escala", pkg: "grower", client: "c-monge", clientProject: "monge", status: "planning", color: "#2A78D6", owner: "u-sofia", members: ["u-sofia", "u-carlos"], start: 7, due: 160, description: "Crecimiento orgánico y automatización." },
   ];
 
   const statuses: TaskStatus[] = ["done", "done", "in_progress", "review", "in_progress", "todo", "todo", "todo", "todo", "todo", "todo", "todo", "todo", "todo", "todo", "todo"];
@@ -209,7 +209,18 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
 
   function withCounts(db: Db, p: StoredProject): WorkProject {
     const top = db.tasks.filter((t) => t.projectId === p.id && t.parentId === null);
-    return { ...p, taskCounts: { total: top.length, done: top.filter((t) => t.status === "done").length } };
+    const today = new Date().toISOString().slice(0, 10);
+    const open = top.filter((t) => t.status !== "done" && t.dueDate);
+    const next = open.filter((t) => (t.dueDate as string).slice(0, 10) >= today).sort((x, y) => (x.dueDate as string).localeCompare(y.dueDate as string))[0];
+    return {
+      ...p,
+      taskCounts: {
+        total: top.length,
+        done: top.filter((t) => t.status === "done").length,
+        overdue: open.filter((t) => (t.dueDate as string).slice(0, 10) < today).length,
+      },
+      nextDue: next ? { title: next.title, dueDate: next.dueDate as string } : null,
+    };
   }
   function taskOut(db: Db, t: StoredTask): Task {
     const subs = db.tasks.filter((s) => s.parentId === t.id);
@@ -286,7 +297,7 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
       const project: StoredProject = {
         id: pid, name: input.name, description: input.description ?? null, packageId: input.packageId ?? null,
         clientId: input.clientId ?? null, clientProjectName: input.clientProjectName ?? null,
-        status: input.status ?? "planning", color: input.color ?? "#BD155C", ownerId: input.ownerId ?? meId(),
+        status: input.status ?? "planning", color: input.color ?? "#2A78D6", ownerId: input.ownerId ?? meId(),
         memberIds: input.memberIds ?? [], startDate: input.startDate ?? null, dueDate: input.dueDate ?? null,
         createdAt: now(), updatedAt: now(),
       };

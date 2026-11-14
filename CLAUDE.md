@@ -58,7 +58,10 @@ The `component` field in permissions must exactly match the string IDs defined i
 
 ### UI conventions
 
-- Brand color: `#BD155C`
+- Brand color: `#861453` (Brand Board). Use the tokens in `src/app/globals.css`: `--ec-brand` for text and links, `--ec-brand-fill` for filled surfaces with white text, `--ec-grad` once per screen
+- Text is always ink (`--ec-text`, `--ec-text-muted`, `--ec-text-dim`); never use a hue as text on a tint of itself. Status uses the `ec-badge-*` pills with a glyph and a word
+- Fonts: Montserrat (UI) and Breston (display, `src/app/fonts/Breston-Regular.otf`), exposed as `--font-montserrat` and `--font-breston`
+- Client identity: logo tile plus one color taken from the client logo, stepped for light and dark (`src/lib/client-identity.ts`, `src/components/client-identity.tsx`). The six `--ec-d1..d6` colors are only for chart series, labels and clients without a logo
 - Components in `src/components/ui/` follow the shadcn/ui pattern (Radix UI primitives + `class-variance-authority` + `tailwind-merge`)
 - Dark mode is supported via `next-themes` (`ThemeProvider` with `attribute="class"`)
 - Animations use `motion` (Framer Motion v12)

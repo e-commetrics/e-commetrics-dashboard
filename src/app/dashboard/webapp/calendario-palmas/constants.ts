@@ -12,13 +12,13 @@ export const ROOM_NAMES: Record<string, string> = {
 };
 
 export const ROOM_COLORS: Record<string, { bg: string; color: string; dot: string }> = {
-  private:       { bg: "rgba(59,130,246,0.1)",  color: "#3b82f6", dot: "#3b82f6" },
-  shared:        { bg: "rgba(16,185,129,0.1)",  color: "#10b981", dot: "#10b981" },
-  "large-private": { bg: "rgba(168,85,247,0.1)", color: "#a855f7", dot: "#a855f7" },
-  vip:           { bg: "rgba(245,158,11,0.1)",  color: "#f59e0b", dot: "#f59e0b" },
+  private:       { bg: "rgba(59,130,246,0.1)",  color: "var(--ec-info)", dot: "var(--ec-info)" },
+  shared:        { bg: "rgba(16,185,129,0.1)",  color: "var(--ec-success)", dot: "var(--ec-success)" },
+  "large-private": { bg: "rgba(168,85,247,0.1)", color: "var(--ec-d5)", dot: "var(--ec-d5)" },
+  vip:           { bg: "rgba(245,158,11,0.1)",  color: "var(--ec-warning)", dot: "var(--ec-warning)" },
 };
 
-export const DEFAULT_ROOM_COLOR = { bg: "rgba(100,116,139,0.1)", color: "#94a3b8", dot: "#94a3b8" };
+export const DEFAULT_ROOM_COLOR = { bg: "rgba(100,116,139,0.1)", color: "var(--ec-text-dim)", dot: "var(--ec-text-dim)" };
 
 export const ROOM_PRICES: Record<string, number> = {
   shared: 170,

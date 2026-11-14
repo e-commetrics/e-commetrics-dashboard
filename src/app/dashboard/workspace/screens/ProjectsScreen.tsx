@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Columns3, LayoutGrid, Plus, Search } from "lucide-react";
 import { EmptyState, ErrorNotice, Loading, PageHeader, StatTile } from "../../webapp/crm/components/ui";
 import { ProjectFormModal } from "../components/ProjectFormModal";
-import { AvatarStack, DueDate, ProgressBar } from "../components/shared";
+import { ProjectCard, ProjectMini } from "../components/ProjectCard";
 import { useResource, useWorkspace } from "../lib/hooks";
 import { PROJECT_STATUS_META, useT } from "../lib/i18n";
-import { packageName, packageOptions } from "../lib/packages";
-import type { ProjectStatus, WorkProject } from "../lib/types";
+import { packageOptions } from "../lib/packages";
+import type { ProjectStatus } from "../lib/types";
 
 type Filter = "all" | "mine" | ProjectStatus;
 
@@ -20,6 +20,7 @@ export function ProjectsScreen({ onOpen }: { onOpen: (id: string) => void }) {
   const [pkg, setPkg] = useState("");
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
+  const [layout, setLayout] = useState<"cards" | "board">("cards");
 
   const all = useMemo(() => projects.data ?? [], [projects.data]);
   const visible = useMemo(() => {
@@ -84,6 +85,16 @@ export function ProjectsScreen({ onOpen }: { onOpen: (id: string) => void }) {
             </option>
           ))}
         </select>
+        <nav className="ec-segmented" aria-label={t("Vista", "Layout")}>
+          <button type="button" className={layout === "cards" ? "active" : ""} onClick={() => setLayout("cards")} aria-pressed={layout === "cards"}>
+            <LayoutGrid size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: 5 }} />
+            {t("Tarjetas", "Cards")}
+          </button>
+          <button type="button" className={layout === "board" ? "active" : ""} onClick={() => setLayout("board")} aria-pressed={layout === "board"}>
+            <Columns3 size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: 5 }} />
+            {t("Tablero", "Board")}
+          </button>
+        </nav>
         <div style={{ position: "relative", width: 240 }}>
           <Search size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--ec-text-dim)" }} />
           <input className="ec-field-input" style={{ paddingLeft: 32, padding: "7px 12px 7px 32px", fontSize: 13 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("Buscar proyecto…", "Search projects…")} />
@@ -99,58 +110,32 @@ export function ProjectsScreen({ onOpen }: { onOpen: (id: string) => void }) {
         />
       ) : null}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-        {visible.map((p) => (
-          <ProjectCard key={p.id} project={p} onOpen={() => onOpen(p.id)} />
-        ))}
-      </div>
+      {layout === "cards" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          {visible.map((p) => (
+            <ProjectCard key={p.id} project={p} onOpen={() => onOpen(p.id)} />
+          ))}
+        </div>
+      ) : (
+        <div className="ec-pboard">
+          {(["planning", "active", "on_hold", "completed"] as ProjectStatus[]).map((status) => {
+            const list = visible.filter((p) => p.status === status);
+            return (
+              <section key={status} className="ec-pboard-col">
+                <h3>
+                  <span>{PROJECT_STATUS_META[status][lang]}</span>
+                  <span className="ec-num">{list.length}</span>
+                </h3>
+                {list.map((p) => (
+                  <ProjectMini key={p.id} project={p} onOpen={() => onOpen(p.id)} />
+                ))}
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       {creating ? <ProjectFormModal onClose={() => setCreating(false)} onSaved={(p) => onOpen(p.id)} /> : null}
     </div>
-  );
-}
-
-function ProjectCard({ project, onOpen }: { project: WorkProject; onOpen: () => void }) {
-  const { t, lang } = useT();
-  const { memberById } = useWorkspace();
-  const status = PROJECT_STATUS_META[project.status];
-  const client = memberById(project.clientId);
-  const { done, total } = project.taskCounts;
-  const pkg = packageName(project.packageId, lang);
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="ec-project-card"
-      style={{ textAlign: "left", color: "inherit", font: "inherit", borderTop: `3px solid ${project.color}` }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.25 }}>{project.name}</div>
-          <div style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginTop: 3 }}>
-            {client ? client.name : t("Interno", "Internal")}
-          </div>
-        </div>
-        <span className={`ec-badge ${status.badge}`}>{status[lang]}</span>
-      </div>
-      {pkg ? (
-        <div>
-          <span className="ec-badge ec-badge-neutral">📦 {pkg}</span>
-        </div>
-      ) : null}
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ec-text-muted)", marginBottom: 6 }}>
-          <span>
-            {done}/{total} {t("tareas", "tasks")}
-          </span>
-          <span>{total ? Math.round((done / total) * 100) : 0}%</span>
-        </div>
-        <ProgressBar done={done} total={total} color={project.color} />
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <AvatarStack ids={project.memberIds} max={5} />
-        <DueDate date={project.dueDate} done={project.status === "completed"} />
-      </div>
-    </button>
   );
 }

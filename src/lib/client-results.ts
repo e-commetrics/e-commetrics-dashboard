@@ -15,7 +15,25 @@ export type ResultMetric = {
   prev?: string;
 };
 
-export type ClientResults = { metrics: ResultMetric[]; appSlug: string };
+/** One figure per week, oldest first. Built from the same list the metrics come from. */
+export type ResultSeries = { es: string; en: string; unitEs: string; unitEn: string; labels: string[]; values: number[] };
+
+export type ClientResults = { metrics: ResultMetric[]; appSlug: string; series?: ResultSeries };
+
+/** Counts per week for the last `weeks` weeks (Monday to Sunday), ending with the current week. */
+function weekly(days: string[], weeks = 12, now = new Date()): { labels: string[]; values: number[] } {
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+  const labels: string[] = [];
+  const values: number[] = [];
+  for (let i = weeks - 1; i >= 0; i--) {
+    const from = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - i * 7);
+    const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6);
+    const a = ymd(from), b = ymd(to);
+    labels.push(from.toLocaleDateString("es-MX", { day: "numeric", month: "short" }));
+    values.push(days.filter((d) => d >= a && d <= b).length);
+  }
+  return { labels, values };
+}
 
 const ym = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 const ymd = (d: Date) => `${ym(d)}-${String(d.getDate()).padStart(2, "0")}`;
@@ -77,6 +95,7 @@ async function palmas(): Promise<ClientResults> {
       },
       { key: "messages", es: "Mensajes este mes", en: "Messages this month", value: count(msgCur), prev: count(msgPrev) },
     ],
+    series: { es: "Reservas por semana", en: "Bookings per week", unitEs: "reservas", unitEn: "bookings", ...weekly(live.map((b) => day(b.created_at))) },
   };
 }
 
@@ -99,6 +118,7 @@ function appointments(url: string, appSlug: string) {
         { key: "next7", es: "Próximos 7 días", en: "Next 7 days", value: count(next7) },
         { key: "booked", es: "Agendadas este mes", en: "Booked this month", value: count(booked), prev: count(bookedPrev) },
       ],
+      series: { es: "Citas por semana", en: "Appointments per week", unitEs: "citas", unitEn: "appointments", ...weekly(list.map(on)) },
     };
   };
 }

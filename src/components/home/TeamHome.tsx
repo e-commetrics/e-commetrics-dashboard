@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientDot } from "@/components/client-identity";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useAuth } from "@/app/context/AuthContext";
@@ -9,7 +10,8 @@ import { PRIORITY_META, TASK_STATUS_META, useT } from "@/app/dashboard/workspace
 import { packageName } from "@/app/dashboard/workspace/lib/packages";
 import type { InboxItem, TaskWithProject } from "@/app/dashboard/workspace/lib/types";
 import { progressPct } from "@/lib/apps";
-import { completionStats, isOverdue, projectHealth, todayYMD } from "./stats";
+import { completionStats, isOverdue, projectHealth, todayYMD, weeklyCompleted, workload } from "./stats";
+import { Chart } from "@/components/charts";
 
 const ws = (view: string) => `/dashboard/workspace?view=${view}`;
 const taskHref = (t: { projectId: string; id: string }) => `/dashboard/workspace?view=project&id=${t.projectId}&task=${t.id}`;
@@ -59,6 +61,9 @@ function Home() {
   );
   const myNext = useMemo(() => [...mine].sort(byDue).slice(0, 6), [mine]);
   const stats = useMemo(() => completionStats(tasks), [tasks]);
+  const weekly = useMemo(() => weeklyCompleted(tasks), [tasks]);
+  const load = useMemo(() => workload(tasks, todayYMD()), [tasks]);
+  const loadMax = Math.max(1, ...load.map((w) => w.open));
   const openProjects = useMemo(
     () => (projects.data ?? []).filter((p) => p.status !== "archived" && p.status !== "completed"),
     [projects.data]
@@ -150,7 +155,7 @@ function Home() {
                 return (
                   <Link key={x.id} href={taskHref(x)} className="ec-hrow">
                     <span className="ec-hrow-when" style={late ? { color: "var(--ec-danger)", fontWeight: 600 } : undefined}>{shortDay(x.dueDate as string)}</span>
-                    <span className="ec-dot" style={{ background: x.projectColor }} aria-hidden />
+                    <ClientDot name={x.projectName} color={x.projectColor} />
                     <span className="ec-hrow-main">
                       {x.title}
                       <small>{x.projectName}</small>
@@ -188,7 +193,7 @@ function Home() {
                         <tr key={p.id}>
                           <td>
                             <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                              <span className="ec-dot" style={{ background: p.color }} aria-hidden />
+                              <ClientDot name={p.name} color={p.color} />
                               <span>
                                 <Link href={projectHref(p.id)}>{p.name}</Link>
                                 {packageName(p.packageId, lang) ? <small style={{ display: "block", color: "var(--ec-text-muted)", fontSize: 12 }}>{packageName(p.packageId, lang)}</small> : null}
@@ -237,8 +242,53 @@ function Home() {
               </div>
               <div className="ec-kpi">
                 <small>{t("Vencidas abiertas", "Open and overdue")}</small>
-                <b style={stats.overdueOpen > 0 ? { color: "var(--ec-danger)" } : undefined}>{stats.overdueOpen}</b>
-                <span>{t("En todos los proyectos, ahora", "Across all projects, right now")}</span>
+                <b>{stats.overdueOpen}</b>
+                {stats.overdueOpen > 0 ? (
+                  <span className="ec-pill ec-pill-bad" style={{ alignSelf: "flex-start", marginTop: 2 }}>
+                    <span className="ec-glyph ec-glyph-bad" aria-hidden />
+                    {t("Necesitan atención", "Need attention")}
+                  </span>
+                ) : (
+                  <span>{t("En todos los proyectos, ahora", "Across all projects, right now")}</span>
+                )}
+              </div>
+            </div>
+            <div className="ec-analytics">
+              <div>
+                <h3>{t("Tareas completadas por semana", "Tasks completed per week")}</h3>
+                <small>{t("Últimas 8 semanas, todos los proyectos", "Last 8 weeks, all projects")}</small>
+                <Chart
+                  type="bar"
+                  height={170}
+                  labels={weekly.starts.map((d) => d.toLocaleDateString(locale, { day: "numeric", month: "short" }))}
+                  unit={t("tareas", "tasks")}
+                  ariaLabel={t("Tareas completadas por semana", "Tasks completed per week")}
+                  series={[{ name: t("Tareas", "Tasks"), values: weekly.values, color: "var(--ec-d2)" }]}
+                />
+              </div>
+              <div>
+                <h3>{t("Carga por persona", "Workload by person")}</h3>
+                <small>{t("Tareas abiertas hoy", "Open tasks today")}</small>
+                <div className="ec-legend">
+                  <span><i style={{ background: "var(--ec-d2)" }} />{t("En plazo", "On time")}</span>
+                  <span><i style={{ background: "var(--ec-danger)" }} />{t("Vencidas", "Overdue")}</span>
+                </div>
+                {load.length === 0 ? (
+                  <div className="ec-hempty" style={{ padding: "18px 0" }}>{t("Nadie tiene tareas abiertas.", "Nobody has open tasks.")}</div>
+                ) : (
+                  <div className="ec-workload">
+                    {load.slice(0, 8).map((w) => (
+                      <div key={w.memberId} title={`${memberById(w.memberId)?.name ?? "—"}: ${w.open - w.overdue} ${t("en plazo", "on time")}, ${w.overdue} ${t("vencidas", "overdue")}`}>
+                        <span>{memberById(w.memberId)?.name ?? "—"}</span>
+                        <span className="ec-workload-track">
+                          {w.open - w.overdue > 0 ? <i style={{ width: `${((w.open - w.overdue) / loadMax) * 100}%`, background: "var(--ec-d2)" }} /> : null}
+                          {w.overdue > 0 ? <i style={{ width: `${(w.overdue / loadMax) * 100}%`, background: "var(--ec-danger)" }} /> : null}
+                        </span>
+                        <b className="ec-num">{w.open}</b>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>

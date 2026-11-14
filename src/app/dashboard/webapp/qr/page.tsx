@@ -545,7 +545,7 @@ export default function QRCodeGenerator() {
                       padding: 12,
                       borderRadius: 12,
                       border: qrType === key ? "2px solid var(--ec-brand)" : "2px solid var(--ec-border)",
-                      background: qrType === key ? "rgba(189,21,92,0.08)" : "transparent",
+                      background: qrType === key ? "rgba(134,20,83,0.08)" : "transparent",
                       color: qrType === key ? "var(--ec-brand)" : "var(--ec-text-muted)",
                       cursor: "pointer",
                       transition: "all 160ms",
@@ -848,7 +848,7 @@ export default function QRCodeGenerator() {
               </button>
 
               {qrValue && (
-                <div style={{ padding: "12px 16px", background: "rgba(189,21,92,0.06)", border: "1px solid rgba(189,21,92,0.2)", borderRadius: 10 }}>
+                <div style={{ padding: "12px 16px", background: "rgba(134,20,83,0.06)", border: "1px solid rgba(134,20,83,0.2)", borderRadius: 10 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                     <Info size={15} style={{ color: "var(--ec-brand)", marginTop: 1, flexShrink: 0 }} />
                     <div>

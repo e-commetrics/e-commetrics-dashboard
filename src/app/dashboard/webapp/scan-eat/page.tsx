@@ -9,11 +9,11 @@ const ADMIN_KEY = process.env.NEXT_PUBLIC_SCANEAT_ADMIN_KEY || "";
 const adminHeaders: Record<string, string> = ADMIN_KEY ? { Authorization: `Bearer ${ADMIN_KEY}` } : {};
 const BRAND = "#059669";
 const STATUS_STYLES: Record<string, { label: string; color: string; bg: string }> = {
-  pending:   { label: "Pendiente",  color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
-  approved:  { label: "Aprobado",   color: "#10B981", bg: "rgba(16,185,129,0.12)" },
-  rejected:  { label: "Rechazado",  color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
-  completed: { label: "Completado", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  failed:    { label: "Fallido",    color: "#6B7280", bg: "rgba(107,114,128,0.12)" },
+  pending:   { label: "Pendiente",  color: "var(--ec-warning)", bg: "rgba(245,158,11,0.12)" },
+  approved:  { label: "Aprobado",   color: "var(--ec-success)", bg: "rgba(16,185,129,0.12)" },
+  rejected:  { label: "Rechazado",  color: "var(--ec-danger)", bg: "rgba(239,68,68,0.12)" },
+  completed: { label: "Completado", color: "var(--ec-info)", bg: "rgba(59,130,246,0.12)" },
+  failed:    { label: "Fallido",    color: "var(--ec-text-dim)", bg: "rgba(107,114,128,0.12)" },
 };
 
 interface DemoRequest {
@@ -104,10 +104,10 @@ export default function ScanEatPage() {
   };
 
   const statCards = [
-    { icon: Mail,      color: "#6B7280", label: "Total",       value: stats.total },
-    { icon: Clock,     color: "#F59E0B", label: "Pendientes",  value: stats.pending },
-    { icon: CheckCircle, color: "#10B981", label: "Aprobados", value: stats.approved },
-    { icon: XCircle,   color: "#EF4444", label: "Rechazados",  value: stats.rejected },
+    { icon: Mail,      color: "var(--ec-text-dim)", label: "Total",       value: stats.total },
+    { icon: Clock,     color: "var(--ec-warning)", label: "Pendientes",  value: stats.pending },
+    { icon: CheckCircle, color: "var(--ec-success)", label: "Aprobados", value: stats.approved },
+    { icon: XCircle,   color: "var(--ec-danger)", label: "Rechazados",  value: stats.rejected },
   ];
 
   const statusOptions = [
@@ -127,7 +127,7 @@ export default function ScanEatPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${BRAND}1a`, color: BRAND, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `color-mix(in srgb, ${BRAND} 10%, transparent)`, color: BRAND, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><circle cx="12" cy="12" r="1" />
               </svg>
@@ -150,7 +150,7 @@ export default function ScanEatPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
         {statCards.map(({ icon: Icon, color, label, value }) => (
           <div key={label} className="ec-project-card" style={{ padding: 18, display: "flex", alignItems: "center", gap: 14, borderRadius: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: `${color}1a`, color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: `color-mix(in srgb, ${color} 10%, transparent)`, color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Icon size={18} />
             </div>
             <div>
@@ -221,7 +221,7 @@ export default function ScanEatPage() {
                   onClick={() => setExpandedId(isExpanded ? null : req.id)}
                   style={{ padding: "16px 18px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", flexWrap: "wrap" }}
                 >
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: `${st.color}1a`, color: st.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: `color-mix(in srgb, ${st.color} 10%, transparent)`, color: st.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <User size={18} />
                   </div>
                   <div style={{ flex: 1, minWidth: 160 }}>
@@ -255,7 +255,7 @@ export default function ScanEatPage() {
                           onClick={(e) => { e.stopPropagation(); handleStatusChange(req.id, "approved"); }}
                           disabled={updatingId === req.id}
                           title="Aprobar"
-                          style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: "1px solid rgba(16,185,129,0.3)", color: "#10B981", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: "1px solid rgba(16,185,129,0.3)", color: "var(--ec-success)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         >
                           {updatingId === req.id ? <Loader2 size={14} style={{ animation: "spin 0.8s linear infinite" }} /> : <CheckCircle size={15} />}
                         </button>
@@ -263,7 +263,7 @@ export default function ScanEatPage() {
                           onClick={(e) => { e.stopPropagation(); handleStatusChange(req.id, "rejected"); }}
                           disabled={updatingId === req.id}
                           title="Rechazar"
-                          style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          style={{ width: 34, height: 34, borderRadius: 8, background: "none", border: "1px solid rgba(239,68,68,0.3)", color: "var(--ec-danger)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         >
                           {updatingId === req.id ? <Loader2 size={14} style={{ animation: "spin 0.8s linear infinite" }} /> : <XCircle size={15} />}
                         </button>

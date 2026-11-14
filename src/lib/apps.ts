@@ -80,13 +80,14 @@ export const appBySlug = (slug: string) => APPS.find((a) => a.slug === slug);
  * `match` links the client to its project (project_name or title) by name,
  * because the backend has no client↔app relation yet.
  */
+/** `color` is a raw hex used only when the client has no logo; src/lib/client-identity.ts turns it into a readable step per theme. */
 export type ClientGroup = { id: string; name: string; color: string; match: RegExp; apps: string[] };
 
 export const CLIENT_GROUPS: ClientGroup[] = [
-  { id: "palmas", name: "Palmas Recovery", color: "#D97706", match: /palmas/i, apps: ["calendario-palmas", "promo-palmas"] },
-  { id: "reforma", name: "Reforma Dental", color: "#2563EB", match: /reforma/i, apps: ["calendar-reforma", "crm"] },
-  { id: "monge", name: "Monge Ortopedia", color: "#059669", match: /monge/i, apps: ["calendar-monge", "blogs"] },
-  { id: "scaneat", name: "Scan & Eat", color: "#7C3AED", match: /scan\s*&?\s*-?\s*eat|scaneat/i, apps: ["scan-eat"] },
+  { id: "palmas", name: "Palmas Recovery", color: "#1BAF7A", match: /palmas/i, apps: ["calendario-palmas", "promo-palmas"] },
+  { id: "reforma", name: "Reforma Dental", color: "#9CCC0C", match: /reforma/i, apps: ["calendar-reforma", "crm"] },
+  { id: "monge", name: "Monge Ortopedia", color: "#2A78D6", match: /monge/i, apps: ["calendar-monge", "blogs"] },
+  { id: "scaneat", name: "Scan & Eat", color: "#6250D6", match: /scan\s*&?\s*-?\s*eat|scaneat/i, apps: ["scan-eat"] },
 ];
 
 /** Apps that belong to no client in particular. */

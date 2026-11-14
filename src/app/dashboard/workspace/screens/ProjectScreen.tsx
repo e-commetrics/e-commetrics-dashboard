@@ -1,5 +1,9 @@
 "use client";
 
+import { ClientTile } from "@/components/client-identity";
+import { Chart } from "@/components/charts";
+import { isOverdue, projectHealth, todayYMD } from "@/components/home/stats";
+import { HealthPill, useProjectIdentity } from "../components/ProjectCard";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ChevronDown, ChevronRight, ExternalLink, KanbanSquare, List, Pencil, Plus, Trash2 } from "lucide-react";
@@ -8,7 +12,7 @@ import { ErrorNotice, Loading } from "../../webapp/crm/components/ui";
 import { CalendarView } from "../components/CalendarView";
 import { ProjectFormModal } from "../components/ProjectFormModal";
 import { TaskCard } from "../components/TaskCard";
-import { AvatarStack, CompleteToggle, DueDate, LabelChip, LabelList, PriorityFlag, ProgressBar, StatusDot } from "../components/shared";
+import { AvatarStack, CompleteToggle, DueDate, LabelChip, LabelList, PriorityFlag, StatusDot } from "../components/shared";
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
 import { PROJECT_STATUS_META, TASK_STATUS_META, useT } from "../lib/i18n";
 import { packageName } from "../lib/packages";
@@ -66,6 +70,29 @@ export function ProjectScreen({
     [allTasks, onlyMine, meId, labelFilter]
   );
 
+  // Weekly burn-up from the tasks themselves: done by that date against tasks that existed by that date.
+  const burn = useMemo(() => {
+    const top = allTasks.filter((task) => task.parentId === null);
+    const start = project?.startDate ?? project?.createdAt ?? null;
+    const labels: string[] = [];
+    const done: number[] = [];
+    const total: number[] = [];
+    if (!start) return { labels, done, total };
+    const end = new Date();
+    const first = new Date(`${start.slice(0, 10)}T12:00:00`);
+    const weeks = Math.max(1, Math.min(12, Math.ceil((end.getTime() - first.getTime()) / (7 * 86_400_000))));
+    for (let i = weeks; i >= 0; i--) {
+      const day = new Date(end.getTime() - i * 7 * 86_400_000);
+      const key = day.toISOString();
+      labels.push(day.toLocaleDateString(lang === "es" ? "es-MX" : "en-US", { day: "numeric", month: "short" }));
+      total.push(top.filter((task) => task.createdAt <= key).length);
+      done.push(top.filter((task) => task.completedAt && task.completedAt <= key).length);
+    }
+    return { labels, done, total };
+  }, [allTasks, project?.startDate, project?.createdAt, lang]);
+
+  const { client, identity } = useProjectIdentity(project ?? { name: "", color: "", clientId: null });
+
   const projectLabels = Array.from(new Set(allTasks.flatMap((task) => task.labels ?? []))).sort((a, b) => a.localeCompare(b));
 
   if (detail.loading && !detail.data) return <Loading />;
@@ -78,10 +105,15 @@ export function ProjectScreen({
   if (!project) return null;
 
   const status = PROJECT_STATUS_META[project.status];
-  const client = memberById(project.clientId);
   const owner = memberById(project.ownerId);
   const pkg = packageName(project.packageId, lang);
   const clientGroup = clientGroupFor(project.name, project.clientProjectName, client?.name);
+  const today = todayYMD();
+  const openTop = allTasks.filter((task) => task.parentId === null && task.status !== "done");
+  const overdueCount = openTop.filter((task) => isOverdue(task, today)).length;
+  const nextDue = openTop
+    .filter((task) => task.dueDate && task.dueDate.slice(0, 10) >= today)
+    .sort((x, y) => (x.dueDate as string).localeCompare(y.dueDate as string))[0];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, flex: 1 }}>
@@ -95,23 +127,22 @@ export function ProjectScreen({
           {t("Proyectos", "Projects")}
         </button>
 
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span style={{ width: 12, height: 12, borderRadius: 4, background: project.color }} />
-              <h1 className="ec-page-title" style={{ margin: 0 }}>
-                {project.name}
-              </h1>
+        {/* Workbench header: compact on purpose. The work below is what matters here. */}
+        <div className="ec-wb-head">
+          <ClientTile identity={identity} size={36} />
+          <div style={{ minWidth: 0, flex: "1 1 280px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <h1 className="ec-wb-title">{project.name}</h1>
               <span className={`ec-badge ${status.badge}`}>{status[lang]}</span>
-              {pkg ? <span className="ec-badge ec-badge-neutral">📦 {pkg}</span> : null}
+              {pkg ? <span className="ec-badge ec-badge-neutral">{pkg}</span> : null}
             </div>
-            <div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: 13, color: "var(--ec-text-muted)", flexWrap: "wrap", alignItems: "center" }}>
+            <div className="ec-wb-meta">
               <span>
-                {t("Cliente", "Client")}: <strong style={{ color: "var(--ec-text)", fontWeight: 500 }}>{client?.name ?? t("Interno", "Internal")}</strong>
+                {t("Cliente", "Client")}: <strong>{client?.name ?? t("Interno", "Internal")}</strong>
               </span>
               {owner ? (
                 <span>
-                  {t("Responsable", "Owner")}: <strong style={{ color: "var(--ec-text)", fontWeight: 500 }}>{owner.name}</strong>
+                  {t("Responsable", "Owner")}: <strong>{owner.name}</strong>
                 </span>
               ) : null}
               {project.dueDate ? (
@@ -120,38 +151,61 @@ export function ProjectScreen({
                 </span>
               ) : null}
               {project.clientProjectName ? (
-                <Link href={`/dashboard/${project.clientProjectName}`} style={{ color: "var(--ec-brand)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <Link href={`/dashboard/${project.clientProjectName}`} style={{ color: "var(--ec-brand)", display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 500 }}>
                   {t("Página del cliente", "Client page")} <ExternalLink size={12} />
                 </Link>
               ) : null}
             </div>
-            {project.description ? (
-              <p style={{ fontSize: 13.5, color: "var(--ec-text-muted)", marginTop: 8, maxWidth: "70ch" }}>{project.description}</p>
-            ) : null}
           </div>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, minWidth: 220 }}>
-            <AvatarStack ids={project.memberIds} max={6} size={28} />
-            <div style={{ width: 220 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ec-text-muted)", marginBottom: 5 }}>
-                <span>{t("Avance", "Progress")}</span>
-                <span>
-                  {progressPct(project.taskCounts)}% · {project.taskCounts.done}/{project.taskCounts.total}
-                </span>
-              </div>
-              <ProgressBar done={project.taskCounts.done} total={project.taskCounts.total} />
-            </div>
+          <div className="ec-wb-pulse">
+            <span className="ec-num">
+              <strong>
+                {project.taskCounts.done} / {project.taskCounts.total}
+              </strong>{" "}
+              {t("hechas", "done")} · {progressPct(project.taskCounts)}%
+            </span>
+            <span className="ec-bar" role="img" aria-label={`${progressPct(project.taskCounts)}%`} style={{ width: 120, flex: "none", minWidth: 0 }}>
+              <i style={{ width: `${progressPct(project.taskCounts)}%` }} />
+            </span>
+            <HealthPill health={projectHealth(project, overdueCount, todayYMD())} />
+            {nextDue ? (
+              <span>
+                {t("Próxima entrega", "Next delivery")}: <strong>{nextDue.title}</strong>
+              </span>
+            ) : null}
+            <AvatarStack ids={project.memberIds} max={5} size={26} />
           </div>
         </div>
+        {project.description ? <p style={{ fontSize: 13, color: "var(--ec-text-muted)", marginTop: 8, maxWidth: "80ch" }}>{project.description}</p> : null}
 
-        {/* Resultados del cliente (reservas, citas, ingresos): viven dentro del proyecto. */}
-        {clientGroup ? (
-          <div style={{ marginTop: 18 }}>
-            <ClientResults group={clientGroup} />
-          </div>
-        ) : null}
+        {/* Analytics stay one click away so they inform without taking room from the tasks. */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+          <details className="ec-wb-details">
+            <summary>{t("Avance del proyecto", "Project progress")}</summary>
+            <div style={{ padding: "4px 14px 12px", maxWidth: 720 }}>
+              <Chart
+                type="line"
+                height={170}
+                labels={burn.labels}
+                ariaLabel={t("Tareas hechas frente al total planeado, por semana", "Tasks done against total planned, by week")}
+                series={[
+                  { name: t("Hechas", "Done"), values: burn.done, color: "var(--ec-d1)" },
+                  { name: t("Total planeado", "Total planned"), values: burn.total, color: "var(--ec-text-dim)", dashed: true },
+                ]}
+              />
+            </div>
+          </details>
+          {clientGroup ? (
+            <details className="ec-wb-details">
+              <summary>{t("Resultados del cliente", "Client results")}</summary>
+              <div style={{ padding: "4px 14px 14px" }}>
+                <ClientResults group={clientGroup} />
+              </div>
+            </details>
+          ) : null}
+        </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 16px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "14px 0 12px", flexWrap: "wrap" }}>
           <nav className="ec-segmented">
             <button type="button" className={mode === "board" ? "active" : ""} onClick={() => setMode("board")} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
               <KanbanSquare size={13} /> {t("Tablero", "Board")}
@@ -255,7 +309,7 @@ function Board({
 
   return (
     <div style={{ flex: 1, overflowX: "auto", padding: "0 28px 28px" }}>
-      <div style={{ display: "flex", gap: 14, minWidth: "min-content", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 10, minWidth: "min-content", alignItems: "flex-start" }}>
         {TASK_STATUSES.map((s) => {
           const meta = TASK_STATUS_META[s];
           const inCol = tasks.filter((task) => task.status === s);
@@ -279,21 +333,21 @@ function Board({
                 if (task && task.status !== s) onMove(task.id, s);
               }}
               style={{
-                width: 280,
+                width: 268,
                 flexShrink: 0,
-                borderRadius: 12,
+                borderRadius: 10,
                 background: over === s ? "var(--ec-brand-softer)" : "var(--ec-surface-2)",
                 border: `1px solid ${over === s ? "var(--ec-brand)" : "transparent"}`,
-                padding: 10,
+                padding: 8,
                 display: "flex",
                 flexDirection: "column",
-                gap: 8,
+                gap: 6,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 6px" }}>
                 {/* Columnas neutras: el color queda para lo que necesita atencion (vencidas). */}
                 <StatusDot status={s} />
-                <span style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ec-text)" }}>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--ec-text)" }}>
                   {meta[lang]}
                 </span>
                 <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>{inCol.length}</span>
