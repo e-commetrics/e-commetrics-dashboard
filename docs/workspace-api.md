@@ -66,6 +66,7 @@ CREATE TABLE pm_tasks (
   parent_id INT NULL REFERENCES pm_tasks(id) ON DELETE CASCADE, -- subtasks: one level only
   title VARCHAR(300) NOT NULL,
   description TEXT NULL,
+  link_url VARCHAR(2048) NULL, -- optional external link
   status ENUM('todo','in_progress','review','done') NOT NULL DEFAULT 'todo',
   priority ENUM('urgent','high','normal','low') NOT NULL DEFAULT 'normal',
   due_date DATE NULL,
@@ -158,6 +159,12 @@ CREATE TABLE pm_task_activity_reads (
 );
 ```
 
+Existing databases created before the task link field need:
+
+```sql
+ALTER TABLE pm_tasks ADD COLUMN link_url VARCHAR(2048) NULL AFTER description;
+```
+
 ### What writes activity
 
 | Route | Kinds written |
@@ -175,12 +182,15 @@ Base: `${NEXT_PUBLIC_URL}/api/pm`. JSON in and out. Errors: `{ "error": "message
 a 4xx/5xx status. Ids go out as strings, dates as ISO strings (`YYYY-MM-DD` for
 `startDate`, `dueDate`). Field names are camelCase in JSON.
 
+`TaskInput` = `title`, `parentId?`, `description?`, `linkUrl?`, `status?`, `priority?`, `assigneeIds?`, `dueDate?`, `labels?`. `linkUrl` is an optional external link; the API accepts it with or without scheme and stores it as `http(s)://…` (max 2048 chars).
+
 | Method & path | Body | Response |
 |---|---|---|
 | `GET /me` | | `{ member: Member }` |
 | `GET /members` | | `{ members: Member[] }` — admins, employees and clients (clients are needed to link projects). Never send password hashes. |
 | `GET /projects` | | `{ projects: WorkProject[] }` with `memberIds` and `taskCounts` (top-level tasks only) |
 | `POST /projects` (admin) | `ProjectInput` | `{ project }`. If `templateTasks` is present, insert one `todo` task per item in the same transaction. |
+| `POST /projects/with-dashboard` (admin) | `{ id_user, title, project_name, content? }` for an existing client, or `{ newClient: { email, password, userName?, jobTitle? }, title, project_name, content? }` | Creates the client account when requested, its legacy client page and a linked Workspace project atomically. Response is `{ clientId, legacyProjectId, project }`. |
 | `GET /projects/:id` | | `{ project, tasks: Task[] }` — all tasks and subtasks of the project |
 | `PATCH /projects/:id` (admin) | `Partial<ProjectInput>` | `{ project }`. `memberIds` replaces the member list. |
 | `DELETE /projects/:id` (admin) | | 204 |

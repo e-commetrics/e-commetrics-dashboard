@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus, Send, Trash2 } from "lucide-react";
+import { ExternalLink, Loader2, Plus, Send, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Loading, Modal, ErrorNotice } from "../../webapp/crm/components/ui";
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
@@ -115,6 +115,7 @@ function TaskBody(props: {
   const { task, subtasks, comments, pool, memberById, lang, t, onPatch } = props;
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
+  const [linkUrl, setLinkUrl] = useState(task.linkUrl ?? "");
   const isSubtask = task.parentId !== null;
 
   return (
@@ -170,6 +171,32 @@ function TaskBody(props: {
 
       <Prop label={t("Etiquetas", "Labels")}>
         <LabelPicker value={task.labels ?? []} onChange={(labels) => onPatch({ labels })} suggestions={props.labelSuggestions} />
+      </Prop>
+
+      <Prop label="Link">
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            type="text"
+            inputMode="url"
+            className="ec-field-input"
+            value={linkUrl}
+            placeholder="https://…"
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onBlur={() => linkUrl !== (task.linkUrl ?? "") && onPatch({ linkUrl: linkUrl.trim() || null })}
+          />
+          {task.linkUrl ? (
+            <a
+              href={task.linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ec-btn-secondary"
+              style={{ display: "inline-flex", alignItems: "center", padding: "0 12px", textDecoration: "none" }}
+              title={t("Abrir enlace", "Open link")}
+            >
+              <ExternalLink size={14} />
+            </a>
+          ) : null}
+        </div>
       </Prop>
 
       <Prop label={t("Descripción", "Description")}>

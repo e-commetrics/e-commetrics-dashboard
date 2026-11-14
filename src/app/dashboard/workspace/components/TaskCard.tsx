@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, MessageSquare } from "lucide-react";
+import { CheckSquare, Link2, MessageSquare } from "lucide-react";
 import type { Task } from "../lib/types";
 import { PRIORITY_META, useT } from "../lib/i18n";
 import { AvatarStack, DueDate, LabelList } from "./shared";
@@ -94,6 +94,18 @@ export function TaskCard({
             <MessageSquare size={12} />
             {task.commentCount}
           </span>
+        ) : null}
+        {task.linkUrl ? (
+          <a
+            href={task.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title={task.linkUrl}
+            style={{ display: "inline-flex", alignItems: "center", color: "var(--ec-brand)" }}
+          >
+            <Link2 size={12} />
+          </a>
         ) : null}
         <span style={{ marginLeft: "auto" }}>
           <AvatarStack ids={task.assigneeIds} max={3} size={22} />

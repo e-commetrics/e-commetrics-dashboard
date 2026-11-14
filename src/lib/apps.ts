@@ -18,8 +18,7 @@ export const APP_ROUTES: Record<string, string> = {
 /** Dashboard sections only admins may open. */
 export const ADMIN_ONLY_ROUTES = [
   "/dashboard/access-app",
-  "/dashboard/create-client",
-  "/dashboard/update-client",
+  "/dashboard/clients",
   "/dashboard/create-project",
   "/dashboard/update-project",
   "/dashboard/create-project-content",
@@ -41,7 +40,7 @@ export function isAdminOnlyPath(pathname: string): boolean {
 }
 
 /** Sections for the internal team only (admins and employees, never clients). */
-export const TEAM_ONLY_ROUTES = ["/dashboard/workspace"];
+export const TEAM_ONLY_ROUTES = ["/dashboard/workspace", "/dashboard/team", "/dashboard/client-page"];
 
 export function isTeamOnlyPath(pathname: string): boolean {
   return TEAM_ONLY_ROUTES.some(

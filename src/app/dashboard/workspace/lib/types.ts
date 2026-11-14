@@ -61,6 +61,8 @@ export type Task = {
   parentId: string | null;
   title: string;
   description: string | null;
+  /** Enlace externo relacionado con la tarea (documento, diseño, referencia...). */
+  linkUrl?: string | null;
   status: TaskStatus;
   priority: Priority;
   assigneeIds: string[];
@@ -132,12 +134,26 @@ export type ProjectInput = {
    * los paquetes.
    */
   templateTasks?: { title: string; description?: string | null }[];
+  /** Alta rapida del cliente desde el mismo formulario (solo crear proyecto). */
+  newClient?: {
+    email: string;
+    userName?: string;
+    password: string;
+    jobTitle?: string | null;
+  } | null;
+  /** Pagina de entregables que se crea junto con el cliente o se suma a uno existente. */
+  newClientPage?: {
+    title: string;
+    projectName?: string;
+    content?: string | null;
+  } | null;
 };
 
 export type TaskInput = {
   title: string;
   parentId?: string | null;
   description?: string | null;
+  linkUrl?: string | null;
   status?: TaskStatus;
   priority?: Priority;
   assigneeIds?: string[];

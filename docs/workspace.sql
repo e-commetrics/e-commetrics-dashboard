@@ -54,6 +54,7 @@ CREATE TABLE pm_tasks (
   parent_id INT NULL,                 -- subtareas: un solo nivel
   title VARCHAR(300) NOT NULL,
   description TEXT NULL,
+  link_url VARCHAR(2048) NULL,        -- enlace externo opcional (documento, diseño...)
   status ENUM('todo','in_progress','review','done') NOT NULL DEFAULT 'todo',
   priority ENUM('urgent','high','normal','low') NOT NULL DEFAULT 'normal',
   due_date DATE NULL,

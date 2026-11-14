@@ -9,7 +9,6 @@ import {
   ChevronRight,
   FileText,
   FolderKanban,
-  FolderOpen,
   Home,
   Inbox,
   LayoutGrid,
@@ -17,7 +16,6 @@ import {
   QrCode,
   CreditCard,
   Shield,
-  UserCog,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -43,8 +41,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TeamSwitcher } from "./team-switcher";
 import { useAuth } from "@/app/context/AuthContext";
 import { useLang } from "@/app/context/LangContext";
-import { APPS, CLIENT_GROUPS, TOOL_APPS, appBySlug, appUrl, clientGroupFor, type AppDef } from "@/lib/apps";
+import { APPS, CLIENT_GROUPS, TOOL_APPS, appBySlug, appUrl, clientGroupFor, type AppDef, type ClientGroup } from "@/lib/apps";
 import { getApi } from "@/app/dashboard/workspace/lib/api";
+import { apiFetch } from "@/lib/api";
+import type { ClientAccount } from "@/lib/clients";
+
+const CLIENT_COLORS = ["#BD155C", "#D97706", "#2563EB", "#059669", "#7C3AED", "#0891B2", "#DC2626", "#4F46E5"];
 
 // Sidebar organised around how people work, not around the code:
 //   team   → Inicio / Bandeja / Mis tareas / Calendario, then Workspace,
@@ -52,6 +54,9 @@ import { getApi } from "@/app/dashboard/workspace/lib/api";
 //   client → Mi proyecto, its deliverables page(s) and its apps.
 
 type Item = { key: string; href: string; es: string; en: string; icon: LucideIcon; badge?: number };
+
+type SidebarPage = { id: string; title: string; projectName: string };
+type SidebarClient = { key: string; name: string; color: string; apps: AppDef[]; pages: SidebarPage[] };
 
 const TOOL_ICONS: Record<string, LucideIcon> = { qr: QrCode, vcard: CreditCard };
 
@@ -88,7 +93,8 @@ function SidebarNav() {
   const { lang } = useLang();
   const { setOpenMobile, isMobile } = useSidebar();
   const pathname = usePathname() ?? "";
-  const view = useSearchParams().get("view");
+  const searchParams = useSearchParams();
+  const view = searchParams.get("view");
   const t = (es: string, en: string) => (lang === "es" ? es : en);
   const closeMobile = () => {
     if (isMobile) setOpenMobile(false);
@@ -97,6 +103,22 @@ function SidebarNav() {
   const isAdmin = user?.role === "admin";
   const isTeam = isAdmin || user?.role === "employee";
   const unread = useUnreadInbox(isTeam);
+
+  const [clients, setClients] = React.useState<ClientAccount[]>([]);
+  React.useEffect(() => {
+    if (!isTeam) return;
+    let cancelled = false;
+    apiFetch("/api/clients")
+      .then(async (res) => {
+        if (!res.ok) throw new Error("clients");
+        return (await res.json()) as ClientAccount[];
+      })
+      .then((rows) => !cancelled && setClients(Array.isArray(rows) ? rows : []))
+      .catch(() => !cancelled && setClients([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [isTeam, pathname]);
 
   const canOpen = (app: AppDef) =>
     isAdmin || permissions.some((p) => p.component === app.component && p.can_view);
@@ -169,35 +191,85 @@ function SidebarNav() {
     [{ key: "inbox", href: ws("inbox"), es: "Bandeja", en: "Inbox", icon: Inbox, badge: unread }, wsActive("inbox")],
     [{ key: "my-tasks", href: ws("my-tasks"), es: "Mis tareas", en: "My tasks", icon: CheckSquare }, wsActive("my-tasks")],
     [{ key: "calendar", href: ws("calendar"), es: "Calendario", en: "Calendar", icon: CalendarDays }, wsActive("calendar")],
+    [{ key: "team", href: "/dashboard/team", es: "Equipo", en: "Team", icon: Users }, pathname.startsWith("/dashboard/team")],
   ];
   const workspace: [Item, boolean][] = [
     [{ key: "projects", href: ws("projects"), es: "Proyectos", en: "Projects", icon: FolderKanban }, wsActive("projects")],
     [{ key: "wall", href: ws("wall"), es: "Muro", en: "Wall", icon: Megaphone }, wsActive("wall")],
-    [{ key: "team", href: ws("team"), es: "Equipo", en: "Team", icon: Users }, wsActive("team")],
   ];
 
-  // Client pages (the deliverables page each client sees), matched to a client by name.
-  const pageOf = new Map<string, (typeof projects)[number][]>();
-  const otherPages: typeof projects = [];
-  projects.forEach((p) => {
-    const g = clientGroupFor(p.project_name, p.title);
-    if (g) pageOf.set(g.id, [...(pageOf.get(g.id) ?? []), p]);
-    else otherPages.push(p);
+  const appsFromComponents = (components: string[]) =>
+    components
+      .map((component) => APPS.find((app) => app.component === component))
+      .filter((app): app is AppDef => Boolean(app))
+      .filter(canOpen);
+
+  const appsFromSlugs = (slugs: string[]) =>
+    slugs.map(appBySlug).filter((app): app is AppDef => Boolean(app)).filter(canOpen);
+
+  const pagesOf = (group: ClientGroup, client?: ClientAccount): SidebarPage[] => {
+    const real = client
+      ? client.pages.map((page) => ({ id: page.id, title: page.title, projectName: page.projectName }))
+      : [];
+    const legacy = projects
+      .filter((project) => group.match.test(project.project_name) || group.match.test(project.title ?? ""))
+      .map((project) => ({ id: String(project.id), title: project.title, projectName: project.project_name }));
+    const seen = new Set(real.map((page) => page.projectName));
+    return [...real, ...legacy.filter((page) => !seen.has(page.projectName))];
+  };
+
+  // Match real client accounts to the known client groups, so their colour and
+  // fallback apps survive while permissions are being assigned in the DB.
+  const clientsByGroup = new Map<string, ClientAccount>();
+  const usedClientIds = new Set<string>();
+  for (const group of CLIENT_GROUPS) {
+    const match = clients.find(
+      (client) =>
+        !usedClientIds.has(client.id) &&
+        clientGroupFor(client.name, client.email, ...client.pages.flatMap((page) => [page.title, page.projectName])) === group
+    );
+    if (match) {
+      clientsByGroup.set(group.id, match);
+      usedClientIds.add(match.id);
+    }
+  }
+
+  const knownClients: SidebarClient[] = CLIENT_GROUPS.map((group) => {
+    const client = clientsByGroup.get(group.id);
+    const realApps = client ? appsFromComponents(client.apps.filter((app) => app.canView).map((app) => app.component)) : [];
+    return {
+      key: client ? `client-${client.id}` : `group-${group.id}`,
+      name: group.name,
+      color: group.color,
+      apps: realApps.length ? realApps : appsFromSlugs(group.apps),
+      pages: pagesOf(group, client),
+    };
   });
 
-  const groups = CLIENT_GROUPS.map((g) => {
-    const apps = g.apps.map(appBySlug).filter((a): a is AppDef => Boolean(a)).filter(canOpen);
-    const pages = isAdmin ? pageOf.get(g.id) ?? [] : [];
-    return { g, apps, pages };
-  }).filter((x) => x.apps.length > 0 || x.pages.length > 0);
+  const extraClients: SidebarClient[] = clients
+    .filter((client) => !usedClientIds.has(client.id))
+    .map((client, index) => ({
+      key: `client-${client.id}`,
+      name: client.name,
+      color: CLIENT_COLORS[(CLIENT_GROUPS.length + index) % CLIENT_COLORS.length],
+      apps: appsFromComponents(client.apps.filter((app) => app.canView).map((app) => app.component)),
+      pages: client.pages.map((page) => ({ id: page.id, title: page.title, projectName: page.projectName })),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const clientGroups: SidebarClient[] = [...knownClients, ...extraClients];
+
+  // Legacy pages that do not belong to any client shown above.
+  const shownPages = new Set(clientGroups.flatMap((group) => group.pages.map((page) => page.projectName)));
+  const otherPages = projects
+    .filter((project) => !shownPages.has(project.project_name))
+    .map((project) => ({ id: String(project.id), title: project.title, projectName: project.project_name }));
 
   const tools = TOOL_APPS.map(appBySlug).filter((a): a is AppDef => Boolean(a)).filter(canOpen);
 
   const admin: [Item, boolean][] = [
-    [{ key: "users", href: "/dashboard/update-client", es: "Usuarios", en: "Users", icon: UserCog }, pathname.startsWith("/dashboard/update-client") || pathname.startsWith("/dashboard/create-client")],
+    [{ key: "clients", href: "/dashboard/clients", es: "Clientes", en: "Clients", icon: Users }, pathname.startsWith("/dashboard/clients")],
     [{ key: "perms", href: "/dashboard/access-app", es: "Permisos", en: "Permissions", icon: Shield }, pathname.startsWith("/dashboard/access-app")],
-    [{ key: "pages", href: "/dashboard/update-project", es: "Páginas de cliente", en: "Client pages", icon: FolderOpen }, pathname === "/dashboard/update-project" || pathname === "/dashboard/create-project"],
-    [{ key: "content", href: "/dashboard/update-project-content", es: "Entregables", en: "Deliverables", icon: FileText }, pathname.includes("project-content")],
   ];
 
   return (
@@ -211,16 +283,23 @@ function SidebarNav() {
         <SidebarMenu>{workspace.map(([item, active]) => link(item, active))}</SidebarMenu>
       </SidebarGroup>
 
-      {(groups.length > 0 || (isAdmin && otherPages.length > 0)) && (
+      {clientGroups.length > 0 && (
         <SidebarGroup>
           <SidebarGroupLabel>{t("Clientes", "Clients")}</SidebarGroupLabel>
           <SidebarMenu>
-            {groups.map(({ g, apps, pages }) => {
-              const urls = [...apps.map((a) => appUrl(a.slug)), ...pages.map((p) => `/dashboard/${p.project_name}`)];
+            {clientGroups.map(({ key, name, apps, pages, color }) => {
+              const pageUrls = pages.map((page) => `/dashboard/${page.projectName}`);
+              const urls = [...apps.map((a) => appUrl(a.slug)), ...pageUrls];
               return (
-                <ClientEntry key={g.id} name={g.name} color={g.color} active={urls.includes(pathname)}>
+                <ClientEntry
+                  key={key}
+                  name={name}
+                  color={color}
+                  active={urls.includes(pathname)}
+                  emptyLabel={t("Sin apps asignadas", "No apps assigned")}
+                >
                   {pages.map((p) => (
-                    <SubLink key={`p-${p.id}`} href={`/dashboard/${p.project_name}`} active={pathname === `/dashboard/${p.project_name}`} onClick={closeMobile}>
+                    <SubLink key={`p-${p.id}`} href={`/dashboard/${p.projectName}`} active={pathname === `/dashboard/${p.projectName}`} onClick={closeMobile}>
                       {t("Página del cliente", "Client page")}
                     </SubLink>
                   ))}
@@ -229,22 +308,32 @@ function SidebarNav() {
                       {t(a.es, a.en)}
                     </SubLink>
                   ))}
+                  {isAdmin && pages.length === 0 && apps.length === 0 ? (
+                    <SubLink href="/dashboard/clients" active={pathname.startsWith("/dashboard/clients")} onClick={closeMobile}>
+                      {t("Gestionar cliente", "Manage client")}
+                    </SubLink>
+                  ) : null}
                 </ClientEntry>
               );
             })}
-            {isAdmin && otherPages.length > 0 && (
+            {isAdmin && otherPages.length > 0 ? (
               <ClientEntry
                 name={t("Otros clientes", "Other clients")}
                 color="var(--ec-text-faint)"
-                active={otherPages.some((p) => pathname === `/dashboard/${p.project_name}`)}
+                active={otherPages.some((page) => pathname === `/dashboard/${page.projectName}`)}
               >
-                {otherPages.map((p) => (
-                  <SubLink key={p.id} href={`/dashboard/${p.project_name}`} active={pathname === `/dashboard/${p.project_name}`} onClick={closeMobile}>
-                    {p.title ?? p.project_name}
+                {otherPages.map((page) => (
+                  <SubLink
+                    key={page.id}
+                    href={`/dashboard/${page.projectName}`}
+                    active={pathname === `/dashboard/${page.projectName}`}
+                    onClick={closeMobile}
+                  >
+                    {page.title ?? page.projectName}
                   </SubLink>
                 ))}
               </ClientEntry>
-            )}
+            ) : null}
           </SidebarMenu>
         </SidebarGroup>
       )}
@@ -274,9 +363,22 @@ function SidebarNav() {
 }
 
 /** One client: a collapsible row with a colour dot, open when one of its pages is active. */
-function ClientEntry({ name, color, active, children }: { name: string; color: string; active: boolean; children: React.ReactNode }) {
+function ClientEntry({
+  name,
+  color,
+  active,
+  emptyLabel,
+  children,
+}: {
+  name: string;
+  color: string;
+  active: boolean;
+  emptyLabel?: string;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = React.useState(active);
   const [wasActive, setWasActive] = React.useState(active);
+  const hasChildren = React.Children.toArray(children).length > 0;
   // Open the client whose page was just navigated to (state adjusted during render, no effect needed).
   if (active !== wasActive) {
     setWasActive(active);
@@ -298,7 +400,17 @@ function ClientEntry({ name, color, active, children }: { name: string; color: s
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <SidebarMenuSub>{children}</SidebarMenuSub>
+          <SidebarMenuSub>
+            {hasChildren ? (
+              children
+            ) : (
+              <SidebarMenuSubItem>
+                <span style={{ display: "block", padding: "6px 8px", fontSize: 12, color: "var(--ec-text-muted)" }}>
+                  {emptyLabel ?? "—"}
+                </span>
+              </SidebarMenuSubItem>
+            )}
+          </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuItem>
     </Collapsible>

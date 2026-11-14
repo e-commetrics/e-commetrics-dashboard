@@ -317,13 +317,13 @@ export default function ProjectContentByProjectEditor() {
                                 </td>
                                 <td>
                                   <div style={{ display: "flex", gap: 8 }}>
-                                    <button
+                                    {/* <button
                                       style={{ width: 30, height: 30, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "none", background: "var(--ec-brand)", color: "#fff", cursor: "pointer", transition: "opacity 150ms" }}
                                       onClick={() => { setEditingContent(content); setImageFile(null); setImagePreview(null); }}
                                       title="Editar"
                                     >
                                       <Edit size={13} />
-                                    </button>
+                                    </button> */}
                                     <button
                                       style={{ width: 30, height: 30, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--ec-hairline-strong)", background: "transparent", color: "var(--ec-text-muted)", cursor: "pointer", transition: "color 150ms" }}
                                       onClick={() => setDeleteConfirm(content)}

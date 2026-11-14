@@ -381,6 +381,7 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
         id: `t-${db.seq++}`, projectId, parentId: input.parentId ?? null, title: input.title,
         description: input.description ?? null, status, priority: input.priority ?? "normal",
         assigneeIds: input.assigneeIds ?? [], labels: input.labels ?? [], dueDate: input.dueDate ?? null,
+        linkUrl: input.linkUrl ?? null,
         position: siblings.reduce((max, t) => Math.max(max, t.position), -1) + 1,
         createdBy: meId(), createdAt: now(), updatedAt: now(), completedAt: status === "done" ? now() : null,
       };

@@ -7,9 +7,10 @@ import { Briefcase, Users, FileText, Hash, Plus } from "lucide-react";
 import { motion } from "motion/react";
 import { apiFetch } from "@/lib/api";
 
-type User = {
-  id: number;
-  userName: string;
+type Client = {
+  id: string;
+  name: string;
+  email: string;
 };
 
 function slugify(s: string) {
@@ -23,12 +24,12 @@ function slugify(s: string) {
 
 export default function CreateProject() {
   const { fetchProjects } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientMode, setClientMode] = useState<"existing" | "new">("existing");
+  const [clientId, setClientId] = useState("");
+  const [newClient, setNewClient] = useState({ userName: "", email: "", jobTitle: "", password: "" });
   const [form, setForm] = useState({
-    id: "",
-    id_user: "",
     title: "",
-    percentage: 0,
     content: "",
     project_name: "",
     nameManual: false,
@@ -36,10 +37,15 @@ export default function CreateProject() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    apiFetch(`/api/users`)
-      .then((res) => res.json())
-      .then((data) => setUsers(data))
-      .catch(() => toast.error("Error cargando usuarios"));
+    apiFetch("/api/clients")
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Error cargando clientes");
+        const data = (await res.json()) as { clients?: Client[] };
+        const rows = Array.isArray(data.clients) ? data.clients : [];
+        setClients(rows);
+        if (rows.length === 0) setClientMode("new");
+      })
+      .catch((error) => toast.error(error instanceof Error ? error.message : "Error cargando clientes"));
   }, []);
 
   const handleChange = (
@@ -53,7 +59,7 @@ export default function CreateProject() {
         project_name: f.nameManual ? f.project_name : slugify(value),
       }));
     } else if (name === "project_name") {
-      setForm((f) => ({ ...f, project_name: value.replace(/\s+/g, "-"), nameManual: true }));
+      setForm((f) => ({ ...f, project_name: slugify(value), nameManual: true }));
     } else {
       setForm((f) => ({ ...f, [name]: value }));
     }
@@ -62,33 +68,57 @@ export default function CreateProject() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.id_user || !form.title || !form.project_name) {
-      toast.error("Por favor completa los campos obligatorios");
+    if ((!clientId && clientMode === "existing") || !form.title.trim() || !form.project_name.trim()) {
+      toast.error("Selecciona un cliente y completa los campos obligatorios");
+      return;
+    }
+    if (clientMode === "new") {
+      if (!newClient.email.trim()) {
+        toast.error("El email del cliente es obligatorio");
+        return;
+      }
+      if (newClient.password.length < 6) {
+        toast.error("La contraseña necesita al menos 6 caracteres");
+        return;
+      }
+    }
+
+    if (!slugify(form.project_name)) {
+      toast.error("El nombre de la página debe incluir letras o números");
       return;
     }
 
     try {
       setLoading(true);
-      const res = await apiFetch(`/api/projects`, {
+      const res = await apiFetch(`/api/pm/projects/with-dashboard`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: form.id ? Number(form.id) : null,
-          id_user: Number(form.id_user),
-          title: form.title,
-          percentage: form.percentage,
+          ...(clientMode === "new"
+            ? {
+                newClient: {
+                  userName: newClient.userName.trim(),
+                  email: newClient.email.trim(),
+                  jobTitle: newClient.jobTitle.trim() || null,
+                  password: newClient.password,
+                },
+              }
+            : { id_user: Number(clientId) }),
+          title: form.title.trim(),
           content: form.content,
-          project_name: form.project_name,
+          project_name: form.project_name.trim(),
         }),
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Error al crear el proyecto");
+        const error = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+        throw new Error(error?.error ?? error?.message ?? "Error al crear el proyecto");
       }
 
-      toast.success("Proyecto creado correctamente");
-      setForm({ id: "", id_user: "", title: "", percentage: 0, content: "", project_name: "", nameManual: false });
+      toast.success("Página del cliente y proyecto de Workspace creados correctamente");
+      setForm({ title: "", content: "", project_name: "", nameManual: false });
+      setClientId("");
+      setNewClient({ userName: "", email: "", jobTitle: "", password: "" });
       await fetchProjects();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al crear el proyecto");
@@ -97,7 +127,10 @@ export default function CreateProject() {
     }
   };
 
-  const isValid = !!form.id_user && !!form.title && !!form.project_name;
+  const isValid =
+    (clientMode === "existing" ? !!clientId : !!newClient.email.trim() && newClient.password.length >= 6) &&
+    !!form.title.trim() &&
+    !!form.project_name.trim();
 
   return (
     <div className="circuit-bg fade-in-up" style={{ padding: "32px 24px", minHeight: "100%" }}>
@@ -121,7 +154,7 @@ export default function CreateProject() {
             Crear Proyecto
           </h1>
           <p style={{ fontSize: 14, color: "var(--ec-text-muted)", maxWidth: 440, margin: "0 auto" }}>
-            Configura un nuevo proyecto con todos los detalles necesarios para comenzar.
+            Se creará la página del cliente y su proyecto en Workspace en una sola acción.
           </p>
         </div>
 
@@ -146,30 +179,100 @@ export default function CreateProject() {
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* User select */}
+            {/* Client selection and optional simplified client registration */}
             <div>
               <label className="ec-field-label" style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-                <Users size={11} /> Usuario Asignado <span style={{ color: "var(--ec-danger)" }}>*</span>
+                <Users size={11} /> Cliente <span style={{ color: "var(--ec-danger)" }}>*</span>
               </label>
-              <div style={{ position: "relative" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+                <button
+                  type="button"
+                  aria-pressed={clientMode === "existing"}
+                  onClick={() => setClientMode("existing")}
+                  className={clientMode === "existing" ? "ec-btn-primary" : "ec-btn-secondary"}
+                  style={{ minHeight: 40 }}
+                >
+                  Elegir cliente existente
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={clientMode === "new"}
+                  onClick={() => {
+                    setClientMode("new");
+                    setClientId("");
+                  }}
+                  className={clientMode === "new" ? "ec-btn-primary" : "ec-btn-secondary"}
+                  style={{ minHeight: 40 }}
+                >
+                  <Plus size={14} style={{ verticalAlign: "middle", marginRight: 5 }} />
+                  Registrar cliente nuevo
+                </button>
+              </div>
+              {clientMode === "existing" ? (
                 <select
                   className="ec-field-input"
-                  name="id_user"
-                  value={form.id_user}
-                  onChange={handleChange}
-                  style={{ appearance: "none", paddingRight: 36 }}
+                  value={clientId}
+                  onChange={(event) => setClientId(event.target.value)}
                   required
                 >
-                  <option value="">Selecciona un usuario</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>{user.userName}</option>
+                  <option value="">Selecciona un cliente</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>{client.name} · {client.email}</option>
                   ))}
                 </select>
-                <svg style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ec-text-dim)", pointerEvents: "none" }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              ) : null}
             </div>
+
+            {clientMode === "new" ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: 14, borderRadius: 10, border: "1px solid var(--ec-hairline)", background: "var(--ec-surface-2)" }}>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <strong style={{ display: "block", fontSize: 14, color: "var(--ec-text)" }}>Datos del cliente nuevo</strong>
+                  <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>La cuenta y la página del cliente se crearán junto con el proyecto de Workspace.</span>
+                </div>
+                <label className="ec-field-label">
+                  Nombre (opcional)
+                  <input
+                    className="ec-field-input"
+                    value={newClient.userName}
+                    onChange={(event) => setNewClient((current) => ({ ...current, userName: event.target.value }))}
+                    placeholder="Nombre del cliente"
+                    style={{ marginTop: 6 }}
+                  />
+                </label>
+                <label className="ec-field-label">
+                  Email *
+                  <input
+                    className="ec-field-input"
+                    type="email"
+                    value={newClient.email}
+                    onChange={(event) => setNewClient((current) => ({ ...current, email: event.target.value }))}
+                    required
+                    style={{ marginTop: 6 }}
+                  />
+                </label>
+                <label className="ec-field-label">
+                  Empresa / puesto
+                  <input
+                    className="ec-field-input"
+                    value={newClient.jobTitle}
+                    onChange={(event) => setNewClient((current) => ({ ...current, jobTitle: event.target.value }))}
+                    style={{ marginTop: 6 }}
+                  />
+                </label>
+                <label className="ec-field-label">
+                  Contraseña inicial *
+                  <input
+                    className="ec-field-input"
+                    type="password"
+                    minLength={6}
+                    value={newClient.password}
+                    onChange={(event) => setNewClient((current) => ({ ...current, password: event.target.value }))}
+                    required
+                    style={{ marginTop: 6 }}
+                  />
+                </label>
+              </div>
+            ) : null}
 
             {/* Title */}
             <div>
@@ -248,7 +351,11 @@ export default function CreateProject() {
               <button
                 type="button"
                 className="ec-btn-secondary"
-                onClick={() => setForm({ id: "", id_user: "", title: "", percentage: 0, content: "", project_name: "", nameManual: false })}
+                onClick={() => {
+                  setForm({ title: "", content: "", project_name: "", nameManual: false });
+                  setClientId("");
+                  setNewClient({ userName: "", email: "", jobTitle: "", password: "" });
+                }}
               >
                 Limpiar
               </button>

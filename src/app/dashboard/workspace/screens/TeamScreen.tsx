@@ -8,7 +8,7 @@ import { useT } from "../lib/i18n";
 
 /**
  * El equipo: admins y empleados, con los proyectos en que participa cada uno.
- * Las altas se hacen donde ya se crean usuarios (create-client), con rol employee.
+ * Las altas se hacen en /dashboard/team, con rol employee o admin.
  */
 export function TeamScreen({ onOpenProject }: { onOpenProject: (id: string) => void }) {
   const { t } = useT();

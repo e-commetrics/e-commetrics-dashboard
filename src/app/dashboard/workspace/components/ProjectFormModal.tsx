@@ -11,6 +11,15 @@ import { packageOptions, packageTemplateTasks } from "../lib/packages";
 import { PROJECT_STATUSES, type PackageId, type ProjectInput, type WorkProject } from "../lib/types";
 import { MemberPicker, clientsOf, employeesOf } from "./shared";
 
+function pageSlugFromName(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 /** Alta y edicion de proyecto. Solo admins. */
 export function ProjectFormModal({
   project,
@@ -23,8 +32,13 @@ export function ProjectFormModal({
 }) {
   const { t, lang } = useT();
   const { members, meId } = useWorkspace();
-  const { projects: clientProjects } = useAuth();
+  const { projects: clientProjects, fetchProjects } = useAuth();
   const editing = Boolean(project);
+  const [creatingClient, setCreatingClient] = useState(false);
+  const [newClient, setNewClient] = useState({ userName: "", email: "", jobTitle: "", password: "" });
+  const [createClientPage, setCreateClientPage] = useState(false);
+  const [pageSlug, setPageSlug] = useState(() => pageSlugFromName(project?.name ?? ""));
+  const [pageSlugManual, setPageSlugManual] = useState(false);
 
   const [form, setForm] = useState<ProjectInput>(() => ({
     name: project?.name ?? "",
@@ -41,6 +55,11 @@ export function ProjectFormModal({
   }));
   const [seedTasks, setSeedTasks] = useState(true);
   const set = <K extends keyof ProjectInput>(key: K, value: ProjectInput[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const selectedClientPages = clientProjects.filter((page) => String(page.id_user) === form.clientId);
+  const setProjectName = (name: string) => {
+    set("name", name);
+    if (!pageSlugManual) setPageSlug(pageSlugFromName(name));
+  };
 
   const template = useMemo(
     () => (form.packageId ? packageTemplateTasks(form.packageId, lang) : []),
@@ -52,6 +71,7 @@ export function ProjectFormModal({
     {
       onSuccess: (saved) => {
         toast.success(editing ? t("Proyecto actualizado", "Project updated") : t("Proyecto creado", "Project created"));
+        if (!editing && (creatingClient || createClientPage)) void fetchProjects();
         onSaved?.(saved);
         onClose();
       },
@@ -64,11 +84,40 @@ export function ProjectFormModal({
       toast.error(t("Ponle un nombre al proyecto", "Give the project a name"));
       return;
     }
+    if (creatingClient && (!newClient.email.trim() || newClient.password.length < 6)) {
+      toast.error(t("Ingresa el email y una contraseña de al menos 6 caracteres", "Enter an email and a password of at least 6 characters"));
+      return;
+    }
+    if (!creatingClient && createClientPage && !form.clientId) {
+      toast.error(t("Selecciona un cliente para crear su página", "Select a client to create its page"));
+      return;
+    }
+    const pageName = pageSlug.trim();
+    if ((creatingClient || createClientPage) && !pageName) {
+      toast.error(t("El nombre no genera un identificador válido para la página", "The name does not produce a valid page identifier"));
+      return;
+    }
     void save.run({
       ...form,
       name: form.name.trim(),
       description: form.description || null,
       templateTasks: !editing && seedTasks ? template : undefined,
+      newClient: !editing && creatingClient
+        ? {
+            userName: newClient.userName.trim() || undefined,
+            email: newClient.email.trim(),
+            jobTitle: newClient.jobTitle.trim() || null,
+            password: newClient.password,
+          }
+        : undefined,
+      newClientPage: !editing && (creatingClient || createClientPage)
+        ? {
+            title: form.name.trim(),
+            projectName: pageName,
+            content: form.description?.slice(0, 500) || null,
+          }
+        : undefined,
+      clientProjectName: !editing && (creatingClient || createClientPage) ? pageName : form.clientProjectName,
     });
   };
 
@@ -93,7 +142,7 @@ export function ProjectFormModal({
       }
     >
       <Field label={t("Nombre", "Name") + " *"}>
-        <input className="ec-field-input" autoFocus value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Reforma Dental · Tracción" />
+        <input className="ec-field-input" autoFocus value={form.name} onChange={(e) => setProjectName(e.target.value)} placeholder="Reforma Dental · Tracción" />
       </Field>
 
       <Grid>
@@ -118,32 +167,128 @@ export function ProjectFormModal({
           </select>
         </Field>
         <Field label={t("Cliente", "Client")}>
-          <select className="ec-field-input" value={form.clientId ?? ""} onChange={(e) => set("clientId", e.target.value || null)}>
+          <select
+            className="ec-field-input"
+            value={creatingClient ? "__new__" : form.clientId ?? ""}
+            disabled={editing}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "__new__") {
+                setCreatingClient(true);
+                setCreateClientPage(false);
+                setPageSlug(pageSlugFromName(form.name));
+                setPageSlugManual(false);
+                set("clientId", null);
+                set("clientProjectName", null);
+              } else {
+                setCreatingClient(false);
+                setCreateClientPage(false);
+                setPageSlug(pageSlugFromName(form.name));
+                setPageSlugManual(false);
+                set("clientId", value || null);
+                set("clientProjectName", null);
+              }
+            }}
+          >
             <option value="">{t("Interno / sin cliente", "Internal / no client")}</option>
             {clientsOf(members).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
+            {!editing ? <option value="__new__">{t("+ Registrar nuevo cliente", "+ Register new client")}</option> : null}
           </select>
         </Field>
-        <Field label={t("Página del cliente", "Client project page")}>
-          <select
-            className="ec-field-input"
-            value={form.clientProjectName ?? ""}
-            onChange={(e) => set("clientProjectName", e.target.value || null)}
-          >
-            <option value="">{t("Ninguna", "None")}</option>
-            {clientProjects.map((p) => (
-              <option key={p.id} value={p.project_name}>
-                {p.title || p.project_name}
-              </option>
-            ))}
-            {form.clientProjectName && !clientProjects.some((p) => p.project_name === form.clientProjectName) ? (
-              <option value={form.clientProjectName}>{form.clientProjectName}</option>
+        {creatingClient ? (
+          <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, border: "1px solid var(--ec-hairline)", borderRadius: 10, padding: 14, background: "var(--ec-surface-2)" }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <strong style={{ display: "block", fontSize: 13.5 }}>{t("Registrar cliente nuevo", "Register a new client")}</strong>
+              <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>
+                {t("También se creará su página de entregables.", "A deliverables page will also be created.")}
+              </span>
+            </div>
+            <Field label={t("Nombre", "Name")}>
+              <input className="ec-field-input" value={newClient.userName} onChange={(e) => setNewClient((c) => ({ ...c, userName: e.target.value }))} />
+            </Field>
+            <Field label="Email *">
+              <input className="ec-field-input" type="email" required value={newClient.email} onChange={(e) => setNewClient((c) => ({ ...c, email: e.target.value }))} />
+            </Field>
+            <Field label={t("Empresa / puesto", "Company / job title")}>
+              <input className="ec-field-input" value={newClient.jobTitle} onChange={(e) => setNewClient((c) => ({ ...c, jobTitle: e.target.value }))} />
+            </Field>
+            <Field label={t("Contraseña inicial *", "Initial password *")}>
+              <input className="ec-field-input" type="password" minLength={6} required value={newClient.password} onChange={(e) => setNewClient((c) => ({ ...c, password: e.target.value }))} />
+            </Field>
+            <Field label={t("Identificador de la página *", "Page identifier *")}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <span className="font-mono-ec" style={{ fontSize: 11, color: "var(--ec-text-dim)", whiteSpace: "nowrap" }}>/dashboard/</span>
+                <input
+                  className="ec-field-input"
+                  required
+                  maxLength={200}
+                  value={pageSlug}
+                  onChange={(e) => {
+                    setPageSlug(pageSlugFromName(e.target.value));
+                    setPageSlugManual(true);
+                  }}
+                  placeholder="nombre-del-proyecto"
+                />
+              </div>
+            </Field>
+          </div>
+        ) : null}
+        {!editing && !creatingClient && form.clientId ? (
+          <div style={{ gridColumn: "1 / -1" }}>
+            <Field label={t("Página del cliente", "Client project page")}>
+              <select
+                className="ec-field-input"
+                value={createClientPage ? "__new_page__" : form.clientProjectName ?? ""}
+                onChange={(e) => {
+                  if (e.target.value === "__new_page__") {
+                    setCreateClientPage(true);
+                    setPageSlug(pageSlugFromName(form.name));
+                    setPageSlugManual(false);
+                    set("clientProjectName", null);
+                  } else {
+                    setCreateClientPage(false);
+                    set("clientProjectName", e.target.value || null);
+                  }
+                }}
+              >
+                <option value="">{t("Ninguna", "None")}</option>
+                {selectedClientPages.map((p) => (
+                  <option key={p.id} value={p.project_name}>
+                    {p.title || p.project_name}
+                  </option>
+                ))}
+                {form.clientProjectName && !selectedClientPages.some((p) => p.project_name === form.clientProjectName) ? (
+                  <option value={form.clientProjectName}>{form.clientProjectName}</option>
+                ) : null}
+                <option value="__new_page__">{t("+ Crear página con el nombre del proyecto", "+ Create page using project name")}</option>
+              </select>
+            </Field>
+            {createClientPage ? (
+              <div style={{ marginTop: 10 }}>
+                <Field label={t("Identificador de la página *", "Page identifier *")}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span className="font-mono-ec" style={{ fontSize: 11, color: "var(--ec-text-dim)", whiteSpace: "nowrap" }}>/dashboard/</span>
+                    <input
+                      className="ec-field-input"
+                      required
+                      maxLength={200}
+                      value={pageSlug}
+                      onChange={(e) => {
+                        setPageSlug(pageSlugFromName(e.target.value));
+                        setPageSlugManual(true);
+                      }}
+                      placeholder="nombre-del-proyecto"
+                    />
+                  </div>
+                </Field>
+              </div>
             ) : null}
-          </select>
-        </Field>
+          </div>
+        ) : null}
         <Field label={t("Responsable", "Owner")}>
           <select className="ec-field-input" value={form.ownerId ?? ""} onChange={(e) => set("ownerId", e.target.value || null)}>
             {staff.map((m) => (

@@ -42,7 +42,8 @@ export function ProjectScreen({
     onError: (m) => toast.error(m),
   });
   const create = useMutation(
-    (api, input: { title: string; status: TaskStatus }) => api.createTask(projectId, { ...input, assigneeIds: [meId] }),
+    (api, input: { title: string; status: TaskStatus; linkUrl?: string | null }) =>
+      api.createTask(projectId, { ...input, assigneeIds: [meId] }),
     { onError: (m) => toast.error(m) }
   );
   const removeProject = useMutation((api) => api.deleteProject(projectId), {
@@ -210,7 +211,7 @@ export function ProjectScreen({
       </div>
 
       {mode === "board" ? (
-        <Board tasks={topLevel} onOpenTask={onOpenTask} onMove={(id, s) => void move.run(id, { status: s })} onCreate={(title, s) => create.run({ title, status: s })} />
+        <Board tasks={topLevel} onOpenTask={onOpenTask} onMove={(id, s) => void move.run(id, { status: s })} onCreate={(title, s, linkUrl) => create.run({ title, status: s, linkUrl })} />
       ) : mode === "calendar" ? (
         <div style={{ padding: "0 28px 28px" }}>
           <CalendarView
@@ -228,7 +229,7 @@ export function ProjectScreen({
           allTasks={allTasks}
           onOpenTask={onOpenTask}
           onToggle={(task) => void move.run(task.id, { status: task.status === "done" ? "todo" : "done" })}
-          onCreate={(title, s) => create.run({ title, status: s })}
+          onCreate={(title, s, linkUrl) => create.run({ title, status: s, linkUrl })}
         />
       )}
 
@@ -246,7 +247,7 @@ function Board({
   tasks: Task[];
   onOpenTask: (id: string) => void;
   onMove: (id: string, status: TaskStatus) => void;
-  onCreate: (title: string, status: TaskStatus) => Promise<unknown>;
+  onCreate: (title: string, status: TaskStatus, linkUrl?: string | null) => Promise<unknown>;
 }) {
   const { lang } = useT();
   const [dragId, setDragId] = useState<string | null>(null);
@@ -307,7 +308,7 @@ function Board({
                   onDragEnd={() => setDragId(null)}
                 />
               ))}
-              <QuickAdd onCreate={(title) => onCreate(title, s)} />
+              <QuickAdd onCreate={(title, linkUrl) => onCreate(title, s, linkUrl)} />
             </div>
           );
         })}
@@ -316,10 +317,17 @@ function Board({
   );
 }
 
-function QuickAdd({ onCreate, inline }: { onCreate: (title: string) => Promise<unknown>; inline?: boolean }) {
+function QuickAdd({
+  onCreate,
+  inline,
+}: {
+  onCreate: (title: string, linkUrl?: string | null) => Promise<unknown>;
+  inline?: boolean;
+}) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
   if (!open)
     return (
       <button
@@ -347,10 +355,11 @@ function QuickAdd({ onCreate, inline }: { onCreate: (title: string) => Promise<u
         e.preventDefault();
         const value = title.trim();
         if (!value) return;
-        await onCreate(value);
+        await onCreate(value, linkUrl.trim() || null);
         setTitle("");
+        setLinkUrl("");
       }}
-      style={{ padding: inline ? "6px 12px" : 0 }}
+      style={{ padding: inline ? "6px 12px" : 0, display: "flex", flexDirection: "column", gap: 6 }}
     >
       <input
         autoFocus
@@ -358,9 +367,19 @@ function QuickAdd({ onCreate, inline }: { onCreate: (title: string) => Promise<u
         style={{ fontSize: 13, padding: "8px 10px" }}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        onBlur={() => !title && setOpen(false)}
         onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
         placeholder={t("Nombre de la tarea y Enter", "Task name, then Enter")}
+      />
+      <input
+        type="text"
+        inputMode="url"
+        className="ec-field-input"
+        style={{ fontSize: 12, padding: "6px 10px" }}
+        value={linkUrl}
+        onChange={(e) => setLinkUrl(e.target.value)}
+        onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+        placeholder={t("Link (opcional)", "Link (optional)")}
+        aria-label={t("Link de la tarea", "Task link")}
       />
     </form>
   );
@@ -377,7 +396,7 @@ function ListView({
   allTasks: Task[];
   onOpenTask: (id: string) => void;
   onToggle: (task: Task) => void;
-  onCreate: (title: string, status: TaskStatus) => Promise<unknown>;
+  onCreate: (title: string, status: TaskStatus, linkUrl?: string | null) => Promise<unknown>;
 }) {
   const { t, lang } = useT();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -482,7 +501,7 @@ function ListView({
               <>
                 {group.map((task) => row(task, 0))}
                 <div style={{ borderTop: "1px solid var(--ec-hairline)" }}>
-                  <QuickAdd inline onCreate={(title) => onCreate(title, s)} />
+                  <QuickAdd inline onCreate={(title, linkUrl) => onCreate(title, s, linkUrl)} />
                 </div>
               </>
             ) : null}

@@ -97,12 +97,13 @@ export default function Bread(): JSX.Element {
   // Mapeo de nombres para mostrar
   const routeNames: Record<string, string> = {
     account: lang === "es" ? "Cuenta" : "Account",
-    "create-client": lang === "es" ? "Crear Cliente" : "Create Client",
     qr: lang === "es" ? "Generador de QR" : "QR Generator",
     vcard: lang === "es" ? "Generador de Contactos" : "Contact Generator",
     "access-app": lang === "es" ? "Permisos" : "Permission",
     workspace: "Workspace",
-    "update-client": lang === "es" ? "Usuarios" : "Users",
+    team: lang === "es" ? "Equipo" : "Team",
+    clients: lang === "es" ? "Clientes" : "Clients",
+    "client-page": lang === "es" ? "Pagina del cliente" : "Client page",
     "update-project": lang === "es" ? "Páginas de cliente" : "Client pages",
     "update-project-content": lang === "es" ? "Entregables" : "Deliverables",
     "create-project": lang === "es" ? "Nueva página de cliente" : "New client page",
