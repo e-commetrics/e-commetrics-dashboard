@@ -2,6 +2,7 @@
 
 import { ClientTile } from "@/components/client-identity";
 import { clientIdentity } from "@/lib/client-identity";
+import { API_URL } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, FileText, Loader2, Pencil, Plus, Search, Shield, Trash2, UserRound } from "lucide-react";
@@ -253,7 +254,7 @@ export default function ClientsPage() {
             return (
               <div key={client.id} className="ec-project-card" style={{ borderRadius: 14, overflow: "hidden", padding: 0 }}>
                 <div style={{ padding: "16px 18px", display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--ec-hairline)" }}>
-                  <ClientTile identity={clientIdentity(client.name, { logoUrl: client.avatarUrl })} size={40} />
+                  <ClientTile identity={clientIdentity(client.name, { logoUrl: client.avatarUrl ? `${API_URL}${client.avatarUrl}` : null })} size={40} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 600, color: "var(--ec-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.name}</div>
                     <div style={{ fontSize: 12, color: "var(--ec-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.email}</div>

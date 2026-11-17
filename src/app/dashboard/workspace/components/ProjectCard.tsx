@@ -7,6 +7,7 @@
 import { ClientDot, ClientTile } from "@/components/client-identity";
 import { projectHealth, todayYMD, type ProjectHealth } from "@/components/home/stats";
 import { progressPct } from "@/lib/apps";
+import { API_URL } from "@/lib/api";
 import { clientIdentity, identityVars, initialsOf } from "@/lib/client-identity";
 import { useWorkspace } from "../lib/hooks";
 import { useT } from "../lib/i18n";
@@ -30,7 +31,7 @@ export function HealthPill({ health }: { health: ProjectHealth }) {
 export function useProjectIdentity(project: Pick<WorkProject, "name" | "color" | "clientId">) {
   const { memberById } = useWorkspace();
   const client = project.clientId ? memberById(project.clientId) : undefined;
-  const identity = clientIdentity(`${client?.name ?? ""} ${project.name}`.trim(), { color: project.color, logoUrl: client?.avatarUrl });
+  const identity = clientIdentity(`${client?.name ?? ""} ${project.name}`.trim(), { color: project.color, logoUrl: client?.avatarUrl ? `${API_URL}${client.avatarUrl}` : null });
   return { client, identity: { ...identity, initials: initialsOf(client?.name ?? project.name) } };
 }
 

@@ -6,8 +6,18 @@ interface Project {
 }
 
 export async function generateStaticParams() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/projects`);
-  const projects: Project[] = await res.json();
+  const url = `${process.env.NEXT_PUBLIC_URL}/api/projects`;
+  const res = await fetch(url);
+  const body = await res.text();
+  let projects: Project[];
+  try {
+    projects = JSON.parse(body);
+  } catch {
+    // Without this the build only says "Unexpected token '<'" and hides which URL answered HTML.
+    throw new Error(
+      `generateStaticParams: ${url} returned ${res.status} (${res.headers.get("content-type")}), not JSON: ${body.slice(0, 300)}`
+    );
+  }
 
   return projects.map((project) => ({
     project_name: project.project_name,

@@ -52,7 +52,7 @@ const Packages = ({ locale }: { locale: Locale }) => {
     setSendError(null);
     setSent(false);
     try {
-      await axios.post("https://e-commetrics.com/send-package-email", {
+      await axios.post(`${process.env.NEXT_PUBLIC_URL}/send-package-email`, {
         locale,
         region,
         package: isCustom

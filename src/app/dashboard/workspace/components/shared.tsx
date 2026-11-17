@@ -5,6 +5,7 @@
 // modulo las necesita, conviene moverlas a src/components.
 
 import { useEffect, useRef, useState } from "react";
+import { API_URL } from "@/lib/api";
 import { Calendar, Check, Flag, Plus, Tag, UserPlus, X } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,7 +61,7 @@ export function Avatar({ member, size = 26 }: { member: Member | undefined; size
     >
       {member.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={member.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={`${API_URL}${member.avatarUrl}`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
         initials(member.name)
       )}
