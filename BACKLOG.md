@@ -4,6 +4,15 @@
 
 Orden de prioridad: de arriba hacia abajo. No empezar un punto hasta cerrar el anterior.
 
+> **Para el 2026-11-19:** calendario del Workspace en Google Calendar. Se eligió la opción A
+> (suscripción .ics, solo lectura). Antes de programar hay que confirmar el correo, qué tareas
+> entran y si es un calendario por equipo o uno por persona. Ver `docs/workspace-calendar-ics.md`.
+>
+> **Para el 2026-11-19:** "tarjeta de resguardo" arriba a la derecha en la página del cliente,
+> con los accesos de Meta (Partner, Business ID `140581703333742`), los de Google para
+> `ecommetrica@gmail.com` y los opcionales. Falta definir qué es "el documento". Ver
+> `docs/tarjeta-resguardo.md`.
+
 ## 1. Cerrar el módulo CRM (en curso)
 
 El frontend del CRM (`src/app/dashboard/webapp/crm/`) está **desplegado y en uso** (validado
