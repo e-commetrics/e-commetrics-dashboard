@@ -39,14 +39,14 @@ export function ProjectScreen({
   const [labelFilter, setLabelFilter] = useState<string>("");
   const [editing, setEditing] = useState(false);
 
-  const move = useMutation((api, id: string, patch: { status?: TaskStatus; position?: number }) => api.updateTask(id, patch), {
+  const move = useMutation((api, id: string, patch: { status?: TaskStatus; stageId?: string | null; position?: number }) => api.updateTask(id, patch), {
     onError: (m) => toast.error(m),
   });
   const reschedule = useMutation((api, id: string, dueDate: string) => api.updateTask(id, { dueDate }), {
     onError: (m) => toast.error(m),
   });
   const create = useMutation(
-    (api, input: { title: string; status: TaskStatus; linkUrl?: string | null }) =>
+    (api, input: { title: string; status?: TaskStatus; stageId?: string | null; linkUrl?: string | null }) =>
       api.createTask(projectId, { ...input, assigneeIds: [meId] }),
     { onError: (m) => toast.error(m) }
   );
@@ -105,6 +105,7 @@ export function ProjectScreen({
   if (!project) return null;
 
   const status = PROJECT_STATUS_META[project.status];
+  const stages = project.stages ?? [];
   const owner = memberById(project.ownerId);
   const pkg = packageName(project.packageId, lang);
   const clientGroup = clientGroupFor(project.name, project.clientProjectName, client?.name);
@@ -265,7 +266,33 @@ export function ProjectScreen({
       </div>
 
       {mode === "board" ? (
-        <Board tasks={topLevel} onOpenTask={onOpenTask} onMove={(id, s) => void move.run(id, { status: s })} onCreate={(title, s, linkUrl) => create.run({ title, status: s, linkUrl })} />
+        <Board
+          tasks={topLevel}
+          onOpenTask={onOpenTask}
+          columns={
+            stages.length
+              ? [
+                  ...stages.map((st, i) => ({ key: st.id, name: st.name, color: STAGE_COLORS[i % STAGE_COLORS.length], stageId: st.id as string | null })),
+                  // Tareas sin etapa (nuevas, o de una etapa borrada): solo aparece si hay alguna.
+                  ...(topLevel.some((task) => !stages.some((st) => st.id === task.stageId))
+                    ? [{ key: "none", name: t("Sin etapa", "No stage"), color: "var(--ec-text-faint)", stageId: null }]
+                    : []),
+                ].map((c) => ({
+                  ...c,
+                  match: (task: Task) => (c.stageId ? task.stageId === c.stageId : !stages.some((st) => st.id === task.stageId)),
+                  onDrop: (task: Task) => void move.run(task.id, { stageId: c.stageId }),
+                  onCreate: (title: string, linkUrl?: string | null) => create.run({ title, stageId: c.stageId, linkUrl }),
+                }))
+              : TASK_STATUSES.map((s) => ({
+                  key: s,
+                  name: TASK_STATUS_META[s][lang],
+                  color: TASK_STATUS_META[s].color,
+                  match: (task: Task) => task.status === s,
+                  onDrop: (task: Task) => void move.run(task.id, { status: s }),
+                  onCreate: (title: string, linkUrl?: string | null) => create.run({ title, status: s, linkUrl }),
+                }))
+          }
+        />
       ) : mode === "calendar" ? (
         <div style={{ padding: "0 28px 28px" }}>
           <CalendarView
@@ -292,27 +319,28 @@ export function ProjectScreen({
   );
 }
 
-function Board({
-  tasks,
-  onOpenTask,
-  onMove,
-  onCreate,
-}: {
-  tasks: Task[];
-  onOpenTask: (id: string) => void;
-  onMove: (id: string, status: TaskStatus) => void;
-  onCreate: (title: string, status: TaskStatus, linkUrl?: string | null) => Promise<unknown>;
-}) {
-  const { lang } = useT();
+const STAGE_COLORS = ["var(--ec-d1)", "var(--ec-d2)", "var(--ec-d3)", "var(--ec-d4)", "var(--ec-d5)", "var(--ec-d6)"];
+
+type BoardColumn = {
+  key: string;
+  name: string;
+  color: string;
+  match: (task: Task) => boolean;
+  onDrop: (task: Task) => void;
+  onCreate: (title: string, linkUrl?: string | null) => Promise<unknown>;
+};
+
+/** Columnas por estado (por defecto) o por etapa del proyecto; ProjectScreen decide cuáles. */
+function Board({ tasks, columns, onOpenTask }: { tasks: Task[]; columns: BoardColumn[]; onOpenTask: (id: string) => void }) {
   const [dragId, setDragId] = useState<string | null>(null);
-  const [over, setOver] = useState<TaskStatus | null>(null);
+  const [over, setOver] = useState<string | null>(null);
 
   return (
     <div style={{ flex: 1, overflowX: "auto", padding: "0 28px 28px" }}>
       <div style={{ display: "flex", gap: 10, minWidth: "min-content", alignItems: "flex-start" }}>
-        {TASK_STATUSES.map((s) => {
-          const meta = TASK_STATUS_META[s];
-          const inCol = tasks.filter((task) => task.status === s);
+        {columns.map((col) => {
+          const s = col.key;
+          const inCol = tasks.filter(col.match);
           return (
             <div
               key={s}
@@ -330,7 +358,7 @@ function Board({
                 setOver(null);
                 const task = tasks.find((x) => x.id === dragId);
                 setDragId(null);
-                if (task && task.status !== s) onMove(task.id, s);
+                if (task && !col.match(task)) col.onDrop(task);
               }}
               style={{
                 width: 268,
@@ -346,10 +374,8 @@ function Board({
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 6px" }}>
                 {/* Columnas neutras: el color queda para lo que necesita atencion (vencidas). */}
-                <StatusDot status={s} />
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--ec-text)" }}>
-                  {meta[lang]}
-                </span>
+                <span style={{ width: 9, height: 9, borderRadius: 3, background: col.color, display: "inline-block", flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--ec-text)" }}>{col.name}</span>
                 <span style={{ fontSize: 12, color: "var(--ec-text-muted)" }}>{inCol.length}</span>
               </div>
               {inCol.map((task) => (
@@ -362,7 +388,7 @@ function Board({
                   onDragEnd={() => setDragId(null)}
                 />
               ))}
-              <QuickAdd onCreate={(title, linkUrl) => onCreate(title, s, linkUrl)} />
+              <QuickAdd onCreate={col.onCreate} />
             </div>
           );
         })}

@@ -41,6 +41,8 @@ export interface WorkspaceApi {
   createProject(input: ProjectInput): Promise<WorkProject>;
   updateProject(id: string, patch: Partial<ProjectInput>): Promise<WorkProject>;
   deleteProject(id: string): Promise<void>;
+  /** Reemplaza las etapas (columnas) del proyecto, en orden. Sin id = nueva; las que faltan se borran. */
+  setProjectStages(id: string, stages: { id?: string; name: string }[]): Promise<WorkProject>;
 
   listMyTasks(): Promise<TaskWithProject[]>;
   /** Todas las tareas de primer nivel visibles para el usuario (inicio del equipo: vencidas, en revision, avance del mes). */
@@ -103,6 +105,8 @@ export const httpApi: WorkspaceApi = {
   updateProject: (id, patch) =>
     call<{ project: WorkProject }>("PATCH", `/projects/${enc(id)}`, patch).then((d) => d.project),
   deleteProject: (id) => call<void>("DELETE", `/projects/${enc(id)}`),
+  setProjectStages: (id, stages) =>
+    call<{ project: WorkProject }>("PUT", `/projects/${enc(id)}/stages`, { stages }).then((d) => d.project),
 
   listMyTasks: () => call<{ tasks: TaskWithProject[] }>("GET", "/tasks?assignee=me").then((d) => d.tasks),
   listTasks: () => call<{ tasks: TaskWithProject[] }>("GET", "/tasks").then((d) => d.tasks),

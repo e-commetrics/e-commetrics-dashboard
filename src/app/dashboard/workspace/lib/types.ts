@@ -26,6 +26,8 @@ export type PackageId = "simple" | "advanced" | "grower" | "high-profile" | "cus
 export const PROJECT_STATUSES = ["planning", "active", "on_hold", "completed", "archived"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
+export type ProjectStage = { id: string; name: string };
+
 export type WorkProject = {
   id: string;
   name: string;
@@ -40,6 +42,8 @@ export type WorkProject = {
   color: string;
   ownerId: string | null;
   memberIds: string[];
+  /** Columnas propias del tablero, en orden (estilo ClickUp). Vacio o ausente (backend viejo) = tablero por estado. */
+  stages?: ProjectStage[];
   startDate: string | null;
   dueDate: string | null;
   createdAt: string;
@@ -70,6 +74,8 @@ export type Task = {
   projectId: string;
   /** null = tarea; id de otra tarea = subtarea. Solo un nivel de anidado. */
   parentId: string | null;
+  /** Etapa del proyecto (columna del tablero) o null. Solo aplica si el proyecto tiene etapas. */
+  stageId?: string | null;
   title: string;
   description: string | null;
   /** Enlace externo relacionado con la tarea (documento, diseño, referencia...). */
@@ -163,6 +169,7 @@ export type ProjectInput = {
 export type TaskInput = {
   title: string;
   parentId?: string | null;
+  stageId?: string | null;
   description?: string | null;
   linkUrl?: string | null;
   status?: TaskStatus;

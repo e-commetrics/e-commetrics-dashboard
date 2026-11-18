@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, Plus, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/app/context/AuthContext";
 import { Modal } from "../../webapp/crm/components/ui";
@@ -54,6 +54,8 @@ export function ProjectFormModal({
     dueDate: project?.dueDate ?? null,
   }));
   const [seedTasks, setSeedTasks] = useState(true);
+  const [stages, setStages] = useState<{ id?: string; name: string }[]>(() => project?.stages ?? []);
+  const stagesChanged = JSON.stringify(stages) !== JSON.stringify(project?.stages ?? []);
   const set = <K extends keyof ProjectInput>(key: K, value: ProjectInput[K]) => setForm((f) => ({ ...f, [key]: value }));
   const selectedClientPages = clientProjects.filter((page) => String(page.id_user) === form.clientId);
   const setProjectName = (name: string) => {
@@ -67,7 +69,11 @@ export function ProjectFormModal({
   );
 
   const save = useMutation(
-    (api, input: ProjectInput) => (project ? api.updateProject(project.id, input) : api.createProject(input)),
+    async (api, input: ProjectInput) => {
+      if (!project) return api.createProject(input);
+      const saved = await api.updateProject(project.id, input);
+      return stagesChanged ? api.setProjectStages(project.id, stages) : saved;
+    },
     {
       onSuccess: (saved) => {
         toast.success(editing ? t("Proyecto actualizado", "Project updated") : t("Proyecto creado", "Project created"));
@@ -93,6 +99,10 @@ export function ProjectFormModal({
       return;
     }
     const pageName = pageSlug.trim();
+    if (stages.some((s) => !s.name.trim())) {
+      toast.error(t("Ponle nombre a todas las etapas o quita las vacías", "Name every stage or remove the empty ones"));
+      return;
+    }
     if ((creatingClient || createClientPage) && !pageName) {
       toast.error(t("El nombre no genera un identificador válido para la página", "The name does not produce a valid page identifier"));
       return;
@@ -334,6 +344,49 @@ export function ProjectFormModal({
         <textarea className="ec-field-input" rows={2} value={form.description ?? ""} onChange={(e) => set("description", e.target.value)} />
       </Field>
 
+      {editing ? (
+        <Field label={t("Etapas del tablero", "Board stages")}>
+          <div style={{ fontSize: 12, color: "var(--ec-text-muted)", marginBottom: 8 }}>
+            {t(
+              "Columnas propias, como en ClickUp. Sin etapas, el tablero usa los estados de tarea. Si quitas una etapa, sus tareas quedan en «Sin etapa».",
+              "Custom columns, like ClickUp. With no stages the board uses task statuses. Removing a stage moves its tasks to “No stage”."
+            )}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {stages.map((s, i) => (
+              <div key={s.id ?? `new-${i}`} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input
+                  className="ec-field-input"
+                  style={{ padding: "6px 10px", fontSize: 13 }}
+                  maxLength={80}
+                  value={s.name}
+                  aria-label={t(`Etapa ${i + 1}`, `Stage ${i + 1}`)}
+                  onChange={(e) => setStages((cur) => cur.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                />
+                <StageBtn label={t("Subir", "Move up")} disabled={i === 0} onClick={() => setStages((cur) => swap(cur, i, i - 1))}>
+                  <ArrowUp size={13} />
+                </StageBtn>
+                <StageBtn label={t("Bajar", "Move down")} disabled={i === stages.length - 1} onClick={() => setStages((cur) => swap(cur, i, i + 1))}>
+                  <ArrowDown size={13} />
+                </StageBtn>
+                <StageBtn label={t("Quitar etapa", "Remove stage")} onClick={() => setStages((cur) => cur.filter((_, j) => j !== i))}>
+                  <X size={13} />
+                </StageBtn>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="ec-btn-secondary"
+              style={{ alignSelf: "flex-start", padding: "6px 12px", fontSize: 12.5 }}
+              onClick={() => setStages((cur) => [...cur, { name: "" }])}
+              disabled={stages.length >= 30}
+            >
+              <Plus size={13} /> {t("Agregar etapa", "Add stage")}
+            </button>
+          </div>
+        </Field>
+      ) : null}
+
       {!editing && template.length > 0 ? (
         <div style={{ border: "1px solid var(--ec-hairline)", borderRadius: 10, padding: 14, background: "var(--ec-surface-2)" }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 500, cursor: "pointer" }}>
@@ -353,6 +406,20 @@ export function ProjectFormModal({
         </div>
       ) : null}
     </Modal>
+  );
+}
+
+function swap<T>(list: T[], a: number, b: number) {
+  const next = [...list];
+  [next[a], next[b]] = [next[b], next[a]];
+  return next;
+}
+
+function StageBtn({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" className="ec-btn-secondary" style={{ padding: "6px 8px" }} aria-label={label} title={label} disabled={disabled} onClick={onClick}>
+      {children}
+    </button>
   );
 }
 

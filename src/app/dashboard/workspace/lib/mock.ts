@@ -336,6 +336,18 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
       save(db);
       return delay(withCounts(db, project));
     },
+    async setProjectStages(id: string, stages: { id?: string; name: string }[]) {
+      requireAdmin();
+      const db = load();
+      const project = db.projects.find((p) => p.id === id) ?? notFound("Project");
+      project.stages = stages.map((s) => ({ id: s.id ?? `s-${db.seq++}`, name: s.name }));
+      const keep = new Set(project.stages.map((s) => s.id));
+      db.tasks.forEach((t) => {
+        if (t.projectId === id && t.stageId && !keep.has(t.stageId)) t.stageId = null;
+      });
+      save(db);
+      return delay(withCounts(db, project));
+    },
     async deleteProject(id: string) {
       requireAdmin();
       const db = load();
@@ -406,7 +418,7 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
         id: `t-${db.seq++}`, projectId, parentId: input.parentId ?? null, title: input.title,
         description: input.description ?? null, status, priority: input.priority ?? "normal",
         assigneeIds: input.assigneeIds ?? [], labels: input.labels ?? [], dueDate: input.dueDate ?? null,
-        linkUrl: input.linkUrl ?? null,
+        linkUrl: input.linkUrl ?? null, stageId: input.stageId ?? null,
         position: siblings.reduce((max, t) => Math.max(max, t.position), -1) + 1,
         createdBy: meId(), createdAt: now(), updatedAt: now(), completedAt: isDone(status) ? now() : null,
       };
