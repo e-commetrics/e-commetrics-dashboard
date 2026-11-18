@@ -8,7 +8,7 @@ import { Avatar } from "@/app/dashboard/workspace/components/shared";
 import { useResource, useWorkspace, WorkspaceProvider } from "@/app/dashboard/workspace/lib/hooks";
 import { PRIORITY_META, TASK_STATUS_META, useT } from "@/app/dashboard/workspace/lib/i18n";
 import { packageName } from "@/app/dashboard/workspace/lib/packages";
-import type { InboxItem, TaskWithProject } from "@/app/dashboard/workspace/lib/types";
+import { isDone, type InboxItem, type TaskWithProject } from "@/app/dashboard/workspace/lib/types";
 import { progressPct } from "@/lib/apps";
 import { completionStats, isOverdue, projectHealth, todayYMD, weeklyCompleted, workload } from "./stats";
 import { Chart } from "@/components/charts";
@@ -45,7 +45,7 @@ function Home() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }, []);
 
-  const mine = useMemo(() => (myTasks.data ?? []).filter((x) => x.status !== "done"), [myTasks.data]);
+  const mine = useMemo(() => (myTasks.data ?? []).filter((x) => !isDone(x.status)), [myTasks.data]);
   const tasks = useMemo(() => allTasks.data ?? [], [allTasks.data]);
   const news = useMemo(() => (inbox.data ?? []).filter((i) => i.actorId !== meId), [inbox.data, meId]);
 
@@ -56,7 +56,7 @@ function Home() {
 
   const byDue = (a: TaskWithProject, b: TaskWithProject) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999");
   const deadlines = useMemo(
-    () => tasks.filter((x) => x.status !== "done" && x.dueDate && x.dueDate.slice(0, 10) <= in7).sort(byDue).slice(0, 7),
+    () => tasks.filter((x) => !isDone(x.status) && x.dueDate && x.dueDate.slice(0, 10) <= in7).sort(byDue).slice(0, 7),
     [tasks, in7]
   );
   const myNext = useMemo(() => [...mine].sort(byDue).slice(0, 6), [mine]);
@@ -108,6 +108,7 @@ function Home() {
       comment: t("comentó", "commented"),
       subtask: t("agregó una subtarea", "added a subtask"),
       deleted: t("eliminó la tarea", "deleted the task"),
+      mention: i.to === meId ? t("te mencionó en el muro", "mentioned you on the wall") : t("mencionó a alguien en el muro", "mentioned someone on the wall"),
     };
     return `${who} ${what[i.kind] ?? i.kind}`;
   };
@@ -332,11 +333,11 @@ function Home() {
               <div className="ec-hempty">{inbox.loading ? t("Cargando…", "Loading…") : t("Sin novedades.", "Nothing new.")}</div>
             ) : (
               news.slice(0, 5).map((i) => (
-                <Link key={i.id} href={i.kind === "deleted" ? ws("inbox") : taskHref({ projectId: i.projectId, id: i.parentTaskId ?? i.taskId })} className="ec-hrow">
+                <Link key={i.id} href={i.kind === "mention" ? ws("wall") : i.kind === "deleted" || !i.taskId || !i.projectId ? ws("inbox") : taskHref({ projectId: i.projectId, id: i.parentTaskId ?? i.taskId })} className="ec-hrow">
                   {i.read ? <span style={{ width: 8, flexShrink: 0 }} /> : <span className="ec-unread" aria-label={t("Sin leer", "Unread")} />}
                   <span className="ec-hrow-main" style={i.read ? { color: "var(--ec-text-muted)" } : undefined}>
                     {describe(i)}
-                    <small>{i.taskTitle} · {i.projectName}</small>
+                    <small>{i.taskTitle}{i.projectName ? ` · ${i.projectName}` : ""}</small>
                   </span>
                 </Link>
               ))

@@ -4,7 +4,7 @@ import { clientIdentity, identityVars } from "@/lib/client-identity";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, CornerDownRight } from "lucide-react";
 import { TASK_STATUS_META, useT } from "../lib/i18n";
-import type { Task } from "../lib/types";
+import { isDone, type Task } from "../lib/types";
 
 /** Tarea que el calendario sabe pintar: con el color y nombre de su proyecto. */
 export type CalendarTask = Task & { projectName: string; projectColor: string };
@@ -69,11 +69,11 @@ export function CalendarView({
       list.push(task);
       map.set(key, list);
     });
-    map.forEach((list) => list.sort((a, b) => Number(a.status === "done") - Number(b.status === "done") || a.title.localeCompare(b.title)));
+    map.forEach((list) => list.sort((a, b) => Number(isDone(a.status)) - Number(isDone(b.status)) || a.title.localeCompare(b.title)));
     return map;
   }, [tasks]);
 
-  const undated = useMemo(() => tasks.filter((task) => !task.dueDate && task.status !== "done"), [tasks]);
+  const undated = useMemo(() => tasks.filter((task) => !task.dueDate && !isDone(task.status)), [tasks]);
   const inMonth = useMemo(
     () => tasks.filter((task) => task.dueDate && task.dueDate.slice(0, 7) === ymd(month).slice(0, 7)).length,
     [tasks, month]
@@ -97,7 +97,7 @@ export function CalendarView({
   };
 
   const chip = (task: CalendarTask) => {
-    const done = task.status === "done";
+    const done = isDone(task.status);
     return (
       <button
         key={task.id}

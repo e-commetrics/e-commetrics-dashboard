@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { Loading, Modal, ErrorNotice } from "../../webapp/crm/components/ui";
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
 import { PRIORITY_META, TASK_STATUS_META, useT } from "../lib/i18n";
-import { PRIORITIES, TASK_STATUSES, type Member, type Task, type TaskPatch } from "../lib/types";
+import { PRIORITIES, TASK_STATUSES, isDone, openSubtaskCount, type Member, type Task, type TaskPatch } from "../lib/types";
 import { Avatar, CompleteToggle, LabelPicker, MemberPicker, StatusDot, employeesOf } from "./shared";
 
 /**
@@ -117,6 +117,8 @@ function TaskBody(props: {
   const [description, setDescription] = useState(task.description ?? "");
   const [linkUrl, setLinkUrl] = useState(task.linkUrl ?? "");
   const isSubtask = task.parentId !== null;
+  // Con subtareas abiertas no se puede pasar a un estado terminado (el backend tambien lo rechaza).
+  const openSubs = isSubtask || isDone(task.status) ? 0 : openSubtaskCount(subtasks);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -137,11 +139,16 @@ function TaskBody(props: {
             onChange={(e) => onPatch({ status: e.target.value as Task["status"] })}
           >
             {TASK_STATUSES.map((s) => (
-              <option key={s} value={s}>
+              <option key={s} value={s} disabled={openSubs > 0 && isDone(s)}>
                 {TASK_STATUS_META[s][lang]}
               </option>
             ))}
           </select>
+          {openSubs > 0 ? (
+            <div style={{ fontSize: 11.5, color: "var(--ec-text-muted)", marginTop: 4 }}>
+              {t(`Termina las ${openSubs} subtareas pendientes para completarla.`, `Finish the ${openSubs} open subtasks to complete it.`)}
+            </div>
+          ) : null}
         </Prop>
         <Prop label={t("Prioridad", "Priority")}>
           <select
@@ -213,7 +220,7 @@ function TaskBody(props: {
       {!isSubtask ? (
         <section>
           <div className="h-eyebrow" style={{ marginBottom: 10 }}>
-            {t("Subtareas", "Subtasks")} · {subtasks.filter((s) => s.status === "done").length}/{subtasks.length}
+            {t("Subtareas", "Subtasks")} · {subtasks.filter((s) => isDone(s.status)).length}/{subtasks.length}
           </div>
           <div style={{ display: "flex", flexDirection: "column", border: "1px solid var(--ec-hairline)", borderRadius: 10, overflow: "hidden" }}>
             {subtasks.map((s) => (
@@ -222,15 +229,15 @@ function TaskBody(props: {
                 style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderBottom: "1px solid var(--ec-hairline)" }}
               >
                 <CompleteToggle
-                  done={s.status === "done"}
-                  onToggle={() => props.onPatchSub(s.id, { status: s.status === "done" ? "todo" : "done" })}
+                  done={isDone(s.status)}
+                  onToggle={() => props.onPatchSub(s.id, { status: isDone(s.status) ? "todo" : "done" })}
                 />
                 <span
                   style={{
                     flex: 1,
                     fontSize: 13.5,
-                    textDecoration: s.status === "done" ? "line-through" : "none",
-                    color: s.status === "done" ? "var(--ec-text-muted)" : "var(--ec-text)",
+                    textDecoration: isDone(s.status) ? "line-through" : "none",
+                    color: isDone(s.status) ? "var(--ec-text-muted)" : "var(--ec-text)",
                   }}
                 >
                   {s.title}

@@ -50,8 +50,17 @@ export type WorkProject = {
   nextDue?: { title: string; dueDate: string } | null;
 };
 
-export const TASK_STATUSES = ["todo", "in_progress", "review", "done"] as const;
+/**
+ * Estados estilo ClickUp, en orden de columna. Los valores viejos se conservan
+ * (no se migran filas): todo = Open, done = Completed, review = In review.
+ */
+export const TASK_STATUSES = ["todo", "pending", "in_progress", "done", "review", "accepted", "rejected", "blocked"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+/** Cuentan como terminadas para avance, vencidas y la regla de subtareas. */
+export const DONE_STATUSES: readonly TaskStatus[] = ["done", "review", "accepted"];
+export const isDone = (status: TaskStatus) => DONE_STATUSES.includes(status);
+export const openSubtaskCount = (subtasks: Pick<Task, "status">[]) => subtasks.filter((s) => !isDone(s.status)).length;
 
 export const PRIORITIES = ["urgent", "high", "normal", "low"] as const;
 export type Priority = (typeof PRIORITIES)[number];
@@ -210,6 +219,7 @@ export const ACTIVITY_KINDS = [
   "comment",    // to = extracto del comentario
   "subtask",    // en la tarea padre; to = titulo de la subtarea
   "deleted",
+  "mention",    // muro: from = extracto del texto, to = id de la persona mencionada
 ] as const;
 export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
 
@@ -223,10 +233,14 @@ export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
  */
 export type InboxItem = {
   id: string;
-  taskId: string;
+  /** null en las menciones del muro (kind "mention"). */
+  taskId: string | null;
+  /** Publicacion del muro, solo en kind "mention". Opcional: las filas viejas no lo traen. */
+  postId?: string | null;
   /** Tarea padre si `taskId` es una subtarea. */
   parentTaskId: string | null;
-  projectId: string;
+  /** null en una mencion de un post sin proyecto. */
+  projectId: string | null;
   /** Copias al momento del cambio, para que se lean aunque la tarea se borre. */
   taskTitle: string;
   projectName: string;

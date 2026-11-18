@@ -13,10 +13,14 @@ export function useT() {
 
 /** `color` is for dots and stripes only. Text uses `badge` (ink on a soft surface) plus a `glyph`, so it reads without colour. */
 export const TASK_STATUS_META: Record<TaskStatus, { es: string; en: string; color: string; badge: string; glyph: string }> = {
-  todo: { es: "Por hacer", en: "To do", color: "var(--ec-text-dim)", badge: "ec-badge-neutral", glyph: "ec-glyph-idle" },
+  todo: { es: "Abierta", en: "Open", color: "var(--ec-text-dim)", badge: "ec-badge-neutral", glyph: "ec-glyph-idle" },
+  pending: { es: "Pendiente", en: "Pending", color: "var(--ec-border)", badge: "ec-badge-neutral", glyph: "ec-glyph-idle" },
   in_progress: { es: "En curso", en: "In progress", color: "var(--ec-info)", badge: "ec-badge-info", glyph: "ec-glyph-ok" },
-  review: { es: "En revisión", en: "Review", color: "var(--ec-warning)", badge: "ec-badge-warning", glyph: "ec-glyph-warn" },
-  done: { es: "Hecho", en: "Done", color: "var(--ec-success)", badge: "ec-badge-success", glyph: "ec-glyph-ok" },
+  done: { es: "Completada", en: "Completed", color: "var(--ec-success)", badge: "ec-badge-success", glyph: "ec-glyph-ok" },
+  review: { es: "En revisión", en: "In review", color: "var(--ec-warning)", badge: "ec-badge-warning", glyph: "ec-glyph-warn" },
+  accepted: { es: "Aceptada", en: "Accepted", color: "var(--ec-success)", badge: "ec-badge-success", glyph: "ec-glyph-ok" },
+  rejected: { es: "Rechazada", en: "Rejected", color: "var(--ec-danger)", badge: "ec-badge-danger", glyph: "ec-glyph-bad" },
+  blocked: { es: "Bloqueada", en: "Blocked", color: "var(--ec-danger)", badge: "ec-badge-danger", glyph: "ec-glyph-bad" },
 };
 
 export const PROJECT_STATUS_META: Record<ProjectStatus, { es: string; en: string; badge: string }> = {

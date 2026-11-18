@@ -6,7 +6,7 @@ import { isOverdue, projectHealth, todayYMD } from "@/components/home/stats";
 import { HealthPill, useProjectIdentity } from "../components/ProjectCard";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, ChevronDown, ChevronRight, ExternalLink, KanbanSquare, List, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronDown, ChevronRight, ExternalLink, KanbanSquare, List, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { ErrorNotice, Loading } from "../../webapp/crm/components/ui";
 import { CalendarView } from "../components/CalendarView";
@@ -16,7 +16,7 @@ import { AvatarStack, CompleteToggle, DueDate, LabelChip, LabelList, PriorityFla
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
 import { PROJECT_STATUS_META, TASK_STATUS_META, useT } from "../lib/i18n";
 import { packageName } from "../lib/packages";
-import { TASK_STATUSES, type Task, type TaskStatus } from "../lib/types";
+import { TASK_STATUSES, isDone, type Task, type TaskStatus } from "../lib/types";
 import { ClientResults } from "@/components/home/ClientResults";
 import { clientGroupFor, progressPct } from "@/lib/apps";
 
@@ -109,7 +109,7 @@ export function ProjectScreen({
   const pkg = packageName(project.packageId, lang);
   const clientGroup = clientGroupFor(project.name, project.clientProjectName, client?.name);
   const today = todayYMD();
-  const openTop = allTasks.filter((task) => task.parentId === null && task.status !== "done");
+  const openTop = allTasks.filter((task) => task.parentId === null && !isDone(task.status));
   const overdueCount = openTop.filter((task) => isOverdue(task, today)).length;
   const nextDue = openTop
     .filter((task) => task.dueDate && task.dueDate.slice(0, 10) >= today)
@@ -282,7 +282,7 @@ export function ProjectScreen({
           tasks={topLevel}
           allTasks={allTasks}
           onOpenTask={onOpenTask}
-          onToggle={(task) => void move.run(task.id, { status: task.status === "done" ? "todo" : "done" })}
+          onToggle={(task) => void move.run(task.id, { status: isDone(task.status) ? "todo" : "done" })}
           onCreate={(title, s, linkUrl) => create.run({ title, status: s, linkUrl })}
         />
       )}
@@ -382,6 +382,7 @@ function QuickAdd({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  const [saving, setSaving] = useState(false);
   if (!open)
     return (
       <button
@@ -408,8 +409,12 @@ function QuickAdd({
       onSubmit={async (e) => {
         e.preventDefault();
         const value = title.trim();
-        if (!value) return;
-        await onCreate(value, linkUrl.trim() || null);
+        if (!value || saving) return;
+        setSaving(true);
+        const created = await onCreate(value, linkUrl.trim() || null);
+        setSaving(false);
+        // useMutation devuelve null si falló: se conserva lo escrito.
+        if (created === null) return;
         setTitle("");
         setLinkUrl("");
       }}
@@ -435,6 +440,16 @@ function QuickAdd({
         placeholder={t("Link (opcional)", "Link (optional)")}
         aria-label={t("Link de la tarea", "Task link")}
       />
+      {/* Con dos campos el navegador no envía con Enter si no hay botón de envío. */}
+      <div style={{ display: "flex", gap: 6 }}>
+        <button type="submit" className="ec-btn-primary" style={{ padding: "6px 12px", fontSize: 12.5 }} disabled={saving || !title.trim()}>
+          {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+          {t("Agregar", "Add")}
+        </button>
+        <button type="button" className="ec-btn-secondary" style={{ padding: "6px 12px", fontSize: 12.5 }} onClick={() => setOpen(false)}>
+          {t("Cancelar", "Cancel")}
+        </button>
+      </div>
     </form>
   );
 }
@@ -498,14 +513,14 @@ function ListView({
                 </button>
               ) : null}
             </span>
-            <CompleteToggle done={task.status === "done"} onToggle={() => onToggle(task)} size={16} />
+            <CompleteToggle done={isDone(task.status)} onToggle={() => onToggle(task)} size={16} />
             <span
               style={{
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
-                textDecoration: task.status === "done" ? "line-through" : "none",
-                color: task.status === "done" ? "var(--ec-text-muted)" : "var(--ec-text)",
+                textDecoration: isDone(task.status) ? "line-through" : "none",
+                color: isDone(task.status) ? "var(--ec-text-muted)" : "var(--ec-text)",
               }}
             >
               {task.title}
@@ -518,7 +533,7 @@ function ListView({
             ) : null}
           </div>
           <AvatarStack ids={task.assigneeIds} max={3} size={22} />
-          <DueDate date={task.dueDate} done={task.status === "done"} />
+          <DueDate date={task.dueDate} done={isDone(task.status)} />
           <PriorityFlag priority={task.priority} />
         </div>
         {isOpen ? subs.map((s) => row(s, 1)) : null}

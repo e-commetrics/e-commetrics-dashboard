@@ -7,6 +7,7 @@ import { ErrorNotice, Loading, PageHeader } from "../../webapp/crm/components/ui
 import { CalendarView, type CalendarTask } from "../components/CalendarView";
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
 import { useT } from "../lib/i18n";
+import { isDone } from "../lib/types";
 
 /**
  * Calendario de todos los proyectos, con filtro por proyecto.
@@ -47,7 +48,7 @@ export function CalendarScreen({
     });
     return all
       .filter((task) => !onlyMine || task.assigneeIds.includes(meId))
-      .filter((task) => showDone || task.status !== "done");
+      .filter((task) => showDone || !isDone(task.status));
   }, [data.data, projectId, onlyMine, showDone, meId]);
 
   const selected = projects.find((p) => p.id === projectId);

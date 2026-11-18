@@ -19,7 +19,7 @@ type Filter = "unread" | "all";
  *   esta pantalla solo la explica.
  * Por defecto oculta los cambios que hiciste tu.
  */
-export function InboxScreen({ onOpenTask }: { onOpenTask: (id: string) => void }) {
+export function InboxScreen({ onOpenTask, onOpenWall }: { onOpenTask: (id: string) => void; onOpenWall: () => void }) {
   const { t, lang } = useT();
   const { isAdmin, meId, memberById } = useWorkspace();
   const inbox = useResource("inbox", (api) => api.listInbox());
@@ -37,7 +37,7 @@ export function InboxScreen({ onOpenTask }: { onOpenTask: (id: string) => void }
   const items = useMemo(() => {
     return (inbox.data ?? [])
       .filter((i) => includeMine || i.actorId !== meId)
-      .filter((i) => !isAdmin || scope === "team" || mineIds.has(i.taskId) || (i.kind.endsWith("assigned") && i.to === meId))
+      .filter((i) => !isAdmin || scope === "team" || (i.taskId !== null && mineIds.has(i.taskId)) || ((i.kind.endsWith("assigned") || i.kind === "mention") && i.to === meId))
       .filter((i) => filter === "all" || !i.read);
   }, [inbox.data, includeMine, meId, isAdmin, scope, mineIds, filter]);
 
@@ -98,6 +98,8 @@ export function InboxScreen({ onOpenTask }: { onOpenTask: (id: string) => void }
         return <>{t("agregó la subtarea", "added the subtask")} {b(i.to)}</>;
       case "deleted":
         return b(t("eliminó la tarea", "deleted the task"));
+      case "mention":
+        return <>{i.to === meId ? b(t("te mencionó en el muro", "mentioned you on the wall")) : <>{t("mencionó a", "mentioned")} {b(name(i.to))} {t("en el muro", "on the wall")}</>}: “{i.from}”</>;
       default:
         return i.kind;
     }
@@ -114,7 +116,8 @@ export function InboxScreen({ onOpenTask }: { onOpenTask: (id: string) => void }
 
   const open = (i: InboxItem) => {
     if (!i.read) void markRead.run([i.id]);
-    if (i.kind !== "deleted") onOpenTask(i.taskId);
+    if (i.kind === "mention") onOpenWall();
+    else if (i.kind !== "deleted" && i.taskId) onOpenTask(i.taskId);
   };
 
   return (
@@ -213,10 +216,12 @@ export function InboxScreen({ onOpenTask }: { onOpenTask: (id: string) => void }
                       <strong style={{ fontWeight: 600, color: "var(--ec-text)" }}>{memberById(i.actorId)?.name ?? "—"}</strong>{" "}
                       {describe(i)}
                     </span>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                      <ClientDot name={i.projectName} color={i.projectColor} size={8} square />
-                      {i.projectName}
-                    </span>
+                    {i.projectName ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                        <ClientDot name={i.projectName} color={i.projectColor} size={8} square />
+                        {i.projectName}
+                      </span>
+                    ) : null}
                   </span>
                   <span style={{ fontSize: 12, color: "var(--ec-text-faint)", whiteSpace: "nowrap", paddingTop: 2 }}>{ago(i.createdAt)}</span>
                 </button>

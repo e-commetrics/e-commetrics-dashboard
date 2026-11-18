@@ -8,19 +8,24 @@ import Link from "next/link";
 import { ExternalLink, FileText, Loader2, Pencil, Plus, Search, Shield, Trash2, UserRound } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { useLang } from "@/app/context/LangContext";
+import { useAuth } from "@/app/context/AuthContext";
 import { Modal } from "@/app/dashboard/webapp/crm/components/ui";
 import { AppPermissionsEditor } from "@/components/app-permissions-editor";
 import {
   clientInitials,
   createClient,
+  assignPage,
   createClientPage,
   deleteClient,
   deleteClientPage,
+  deleteUnassignedPage,
+  listUnassignedPages,
   listClients,
   updateClient,
   updateClientPage,
   type ClientAccount,
   type ClientPage,
+  type UnassignedPage,
 } from "@/lib/clients";
 
 type ClientForm = {
@@ -64,6 +69,9 @@ export default function ClientsPage() {
   const [permissionsFor, setPermissionsFor] = useState<ClientAccount | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<ClientAccount | null>(null);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const [orphans, setOrphans] = useState<UnassignedPage[]>([]);
 
   const load = () => {
     setLoading(true);
@@ -71,11 +79,40 @@ export default function ClientsPage() {
       .then(setClients)
       .catch((error) => toast.error(error instanceof Error ? error.message : "Error al cargar clientes"))
       .finally(() => setLoading(false));
+    // Las rutas de paginas sin cliente son solo para admin.
+    if (isAdmin)
+      listUnassignedPages()
+        .then(setOrphans)
+        .catch((error) => toast.error(error instanceof Error ? error.message : "Error al cargar paginas sin cliente"));
   };
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
+
+  const removeOrphan = async (page: UnassignedPage) => {
+    const ok = window.confirm(es ? `Eliminar la pagina "${page.title}" y sus entregables?` : `Delete the page "${page.title}" and its deliverables?`);
+    if (!ok) return;
+    try {
+      await deleteUnassignedPage(page.id);
+      toast.success(es ? "Pagina eliminada" : "Page deleted");
+      load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al eliminar pagina");
+    }
+  };
+
+  const assignOrphan = async (page: UnassignedPage, clientId: string) => {
+    if (!clientId) return;
+    try {
+      await assignPage(page.id, clientId);
+      toast.success(es ? "Pagina asignada" : "Page assigned");
+      load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al asignar pagina");
+    }
+  };
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -310,6 +347,50 @@ export default function ClientsPage() {
           })}
         </div>
       )}
+
+      {isAdmin && orphans.length > 0 ? (
+        <section style={{ marginTop: 28, border: "1px solid var(--ec-hairline-strong)", borderRadius: 14, background: "var(--ec-surface-1)" }}>
+          <header style={{ padding: "13px 18px", borderBottom: "1px solid var(--ec-hairline)" }}>
+            <div className="h-eyebrow">
+              {es ? "Paginas sin cliente" : "Unassigned pages"}{" "}
+              <span className="font-mono-ec" style={{ color: "var(--ec-text-dim)" }}>{orphans.length}</span>
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginTop: 4 }}>
+              {es ? "Paginas de entregables que no pertenecen a ningun cliente. Asignalas o eliminalas." : "Deliverable pages that belong to no client. Assign or delete them."}
+            </div>
+          </header>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {orphans.map((page) => (
+              <div key={page.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", borderTop: "1px solid var(--ec-hairline)", flexWrap: "wrap" }}>
+                <FileText size={13} style={{ color: "var(--ec-text-dim)", flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <Link href={`/dashboard/client-page?p=${encodeURIComponent(page.projectName)}`} style={{ fontSize: 13, color: "var(--ec-text)", fontWeight: 600 }}>
+                    {page.title}
+                  </Link>
+                  <div className="font-mono-ec" style={{ fontSize: 10.5, color: "var(--ec-text-dim)" }}>
+                    /{page.projectName} · {page.deliverableCount} ent. · {page.ownerEmail ?? (es ? "Sin dueño" : "No owner")}
+                  </div>
+                </div>
+                <select
+                  className="ec-field-input"
+                  style={{ width: 200, padding: "6px 10px", fontSize: 12.5 }}
+                  value=""
+                  onChange={(e) => void assignOrphan(page, e.target.value)}
+                  aria-label={es ? `Asignar "${page.title}" a un cliente` : `Assign "${page.title}" to a client`}
+                >
+                  <option value="">{es ? "Asignar a…" : "Assign to…"}</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+                <IconButton title={es ? "Eliminar pagina" : "Delete page"} danger onClick={() => removeOrphan(page)}><Trash2 size={11} /></IconButton>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <Modal
         open={Boolean(clientModal)}

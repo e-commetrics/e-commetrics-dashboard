@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckSquare, Link2, MessageSquare } from "lucide-react";
-import type { Task } from "../lib/types";
+import { isDone, type Task } from "../lib/types";
 import { PRIORITY_META, useT } from "../lib/i18n";
 import { AvatarStack, DueDate, LabelList } from "./shared";
 
@@ -20,7 +20,7 @@ export function TaskCard({
   dragging?: boolean;
 }) {
   const { lang } = useT();
-  const done = task.status === "done";
+  const done = isDone(task.status);
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const overdue = !done && !!task.dueDate && task.dueDate.slice(0, 10) < todayKey;

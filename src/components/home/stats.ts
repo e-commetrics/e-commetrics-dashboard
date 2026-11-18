@@ -1,4 +1,4 @@
-import type { TaskWithProject, WorkProject } from "@/app/dashboard/workspace/lib/types";
+import { isDone, type TaskStatus, type TaskWithProject, type WorkProject } from "@/app/dashboard/workspace/lib/types";
 
 // Pure helpers behind the team home. No React, no fetching: easy to unit test.
 
@@ -10,8 +10,8 @@ export function localDay(iso: string): string {
   return iso.length <= 10 ? iso : ymd(new Date(iso));
 }
 
-export function isOverdue(task: { status: string; dueDate: string | null }, today: string): boolean {
-  return task.status !== "done" && !!task.dueDate && task.dueDate.slice(0, 10) < today;
+export function isOverdue(task: { status: TaskStatus; dueDate: string | null }, today: string): boolean {
+  return !isDone(task.status) && !!task.dueDate && task.dueDate.slice(0, 10) < today;
 }
 
 export type CompletionStats = {
@@ -40,7 +40,7 @@ export function completionStats(tasks: TaskWithProject[], now: Date = new Date()
   const monthStart = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
   const prevStart = ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 
-  const done = tasks.filter((t) => t.status === "done" && t.completedAt);
+  const done = tasks.filter((t) => isDone(t.status) && t.completedAt);
   const thisMonth = done.filter((t) => localDay(t.completedAt as string) >= monthStart);
   const prevMonth = done.filter((t) => {
     const d = localDay(t.completedAt as string);
@@ -95,7 +95,7 @@ export function weeklyCompleted(tasks: TaskWithProject[], weeks = 8, now: Date =
     const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6);
     const a = ymd(from), b = ymd(to);
     starts.push(from);
-    values.push(tasks.filter((t) => t.status === "done" && t.completedAt && localDay(t.completedAt) >= a && localDay(t.completedAt) <= b).length);
+    values.push(tasks.filter((t) => isDone(t.status) && t.completedAt && localDay(t.completedAt) >= a && localDay(t.completedAt) <= b).length);
   }
   return { starts, values };
 }
@@ -106,7 +106,7 @@ export type Workload = { memberId: string; open: number; overdue: number };
 export function workload(tasks: TaskWithProject[], today: string): Workload[] {
   const byMember = new Map<string, Workload>();
   for (const task of tasks) {
-    if (task.status === "done") continue;
+    if (isDone(task.status)) continue;
     for (const memberId of task.assigneeIds) {
       const row = byMember.get(memberId) ?? { memberId, open: 0, overdue: 0 };
       row.open += 1;

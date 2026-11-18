@@ -67,7 +67,7 @@ CREATE TABLE pm_tasks (
   title VARCHAR(300) NOT NULL,
   description TEXT NULL,
   link_url VARCHAR(2048) NULL, -- optional external link
-  status ENUM('todo','in_progress','review','done') NOT NULL DEFAULT 'todo',
+  status ENUM('todo','pending','in_progress','done','review','accepted','rejected','blocked') NOT NULL DEFAULT 'todo',
   priority ENUM('urgent','high','normal','low') NOT NULL DEFAULT 'normal',
   due_date DATE NULL,
   position INT NOT NULL DEFAULT 0,
@@ -129,13 +129,14 @@ CREATE TABLE pm_task_labels (
 -- same transaction as the change.
 CREATE TABLE pm_task_activity (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  task_id INT NOT NULL,              -- no FK: rows survive task deletion
+  task_id INT NULL,                  -- no FK; NULL for wall mentions
+  post_id INT NULL,                  -- wall post, mentions only
   parent_task_id INT NULL,
-  project_id INT NOT NULL,
+  project_id INT NULL,
   task_title VARCHAR(255) NOT NULL,  -- snapshot at the time of the change
   actor_id INT NOT NULL REFERENCES users(id),
   kind ENUM('created','assigned','unassigned','status','priority','due_date','title',
-            'description','labels','comment','subtask','deleted') NOT NULL,
+            'description','labels','comment','subtask','deleted','mention') NOT NULL,
   from_value TEXT NULL,
   to_value TEXT NULL,               -- user id for assigned/unassigned; comment excerpt for comment
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -196,21 +197,21 @@ a 4xx/5xx status. Ids go out as strings, dates as ISO strings (`YYYY-MM-DD` for
 | `DELETE /projects/:id` (admin) | | 204 |
 | `GET /tasks?assignee=me` | | `{ tasks: TaskWithProject[] }` — tasks and subtasks assigned to the caller, with `projectName`, `projectColor` |
 | `GET /tasks` | | `{ tasks: TaskWithProject[] }` — every **top-level** task the caller can see (same visibility as `GET /projects`), with `projectName`, `projectColor`. Feeds the team home: overdue, in review, and tasks completed this month vs last month (`completedAt`). |
-| `GET /client/summary` | | `{ projects: ClientProjectSummary[] }` — **the only route clients may call.** Projects where `client_id` = caller. Per project: `taskCounts`, and three short lists of top-level tasks reduced to `{ title, status, dueDate, completedAt }`: `inProgress` (in_progress or review, max 5), `upNext` (todo, max 3), `delivered` (done, newest first, max 5). Never include comments, labels, assignees, descriptions or subtasks. |
+| `GET /client/summary` | | `{ projects: ClientProjectSummary[] }` — **the only route clients may call.** Projects where `client_id` = caller. Per project: `taskCounts`, and three short lists of top-level tasks reduced to `{ title, status, dueDate, completedAt }`: `inProgress` (in_progress, rejected or blocked, max 5), `upNext` (todo or pending, max 3), `delivered` (done group: done, review, accepted; newest first, max 5). Never include comments, labels, assignees, descriptions or subtasks. |
 | `POST /projects/:id/tasks` | `TaskInput` | `{ task }`. `position` = last in its group. Reject `parentId` that is itself a subtask. |
 | `GET /tasks/:id` | | `{ task, subtasks: Task[], comments: TaskComment[] }` |
-| `PATCH /tasks/:id` | `TaskPatch` | `{ task }`. Set `completedAt` when status becomes `done`, clear it otherwise. `assigneeIds` replaces the list. |
+| `PATCH /tasks/:id` | `TaskPatch` | `{ task }`. Done group = `done`, `review`, `accepted`. Set `completedAt` when status enters the done group, clear it when it leaves, keep it when moving inside the group. **409** `{ error: "Tiene N subtareas pendientes" }` if a top-level task enters the done group with open subtasks. `assigneeIds` replaces the list. |
 | `DELETE /tasks/:id` | | 204 (cascades subtasks and comments) |
 | `POST /tasks/:id/comments` | `{ body }` | `{ comment }` |
 | `GET /labels` | | `{ labels: string[] }` — distinct labels in use, sorted. Used to suggest labels in the task picker. |
 | `GET /inbox` | | `{ items: InboxItem[] }` newest first, max 200. **Admin: all rows. Employee: only rows where they are in `pm_task_activity_audience`.** `read` = a row exists in `pm_task_activity_reads` for the caller. Join `pm_projects` for `projectName`, `projectColor`. |
 | `POST /inbox/read` | `{ ids: string[] }` or `{ all: true }` | 204. Insert read rows for the caller, only for rows they are allowed to see. |
 | `GET /wall` | | `{ posts: WallPost[] }` — pinned first, then newest; include `likedBy` and `comments`. Paginate later with `?before=<iso>`. |
-| `POST /wall` | `{ body, projectId? }` | `{ post }` |
+| `POST /wall` | `{ body, projectId?, mentionIds? }` | `{ post }`. One `mention` activity row per mentioned admin/employee (author excluded, invalid ids ignored): `task_id` NULL, `post_id`, `from_value` = text excerpt, `to_value` = mentioned user id, audience = that user. |
 | `PATCH /wall/:id` (admin) | `{ pinned }` | `{ post }` |
 | `DELETE /wall/:id` | | 204 — author or admin |
 | `POST /wall/:id/like` | | `{ post }` — toggles the caller's like |
-| `POST /wall/:id/comments` | `{ body }` | `{ comment }` |
+| `POST /wall/:id/comments` | `{ body, mentionIds? }` | `{ comment }`. Same mention rows as `POST /wall`. |
 
 Every task returns `subtaskCounts: { total, done }` and `commentCount` (subqueries or
 `LEFT JOIN … GROUP BY`).
@@ -226,6 +227,6 @@ must be in the allowed methods.
 
 ## Not built yet (ClickUp features to consider later)
 
-@mentions and email/push for inbox items (the inbox itself is built), time tracking,
+email/push for inbox items (the inbox itself is built), time tracking,
 file attachments, custom statuses per project, task dependencies, recurring tasks, a
 timeline/Gantt view, and a read-only client view if that decision changes.

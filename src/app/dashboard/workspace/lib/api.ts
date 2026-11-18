@@ -61,11 +61,11 @@ export interface WorkspaceApi {
   markInboxRead(ids: string[] | "all"): Promise<void>;
 
   listWall(): Promise<WallPost[]>;
-  createPost(input: { body: string; projectId?: string | null }): Promise<WallPost>;
+  createPost(input: { body: string; projectId?: string | null; mentionIds?: string[] }): Promise<WallPost>;
   deletePost(id: string): Promise<void>;
   setPinned(id: string, pinned: boolean): Promise<WallPost>;
   toggleLike(id: string): Promise<WallPost>;
-  addPostComment(postId: string, body: string): Promise<WallComment>;
+  addPostComment(postId: string, body: string, mentionIds?: string[]): Promise<WallComment>;
 }
 
 export const IS_MOCK = process.env.NEXT_PUBLIC_PM_API !== "live";
@@ -125,8 +125,8 @@ export const httpApi: WorkspaceApi = {
   setPinned: (id, pinned) =>
     call<{ post: WallPost }>("PATCH", `/wall/${enc(id)}`, { pinned }).then((d) => d.post),
   toggleLike: (id) => call<{ post: WallPost }>("POST", `/wall/${enc(id)}/like`).then((d) => d.post),
-  addPostComment: (postId, body) =>
-    call<{ comment: WallComment }>("POST", `/wall/${enc(postId)}/comments`, { body }).then((d) => d.comment),
+  addPostComment: (postId, body, mentionIds) =>
+    call<{ comment: WallComment }>("POST", `/wall/${enc(postId)}/comments`, { body, mentionIds }).then((d) => d.comment),
 };
 
 let mockSingleton: WorkspaceApi | null = null;

@@ -7,12 +7,12 @@ import { EmptyState, ErrorNotice, Loading, PageHeader } from "../../webapp/crm/c
 import { CompleteToggle, DueDate, PriorityFlag, StatusPill } from "../components/shared";
 import { useMutation, useResource } from "../lib/hooks";
 import { useT } from "../lib/i18n";
-import type { TaskWithProject } from "../lib/types";
+import { isDone, type TaskWithProject } from "../lib/types";
 
 type Bucket = "overdue" | "today" | "week" | "later" | "none" | "done";
 
 function bucketOf(task: TaskWithProject, today: number): Bucket {
-  if (task.status === "done") return "done";
+  if (isDone(task.status)) return "done";
   if (!task.dueDate) return "none";
   const d = new Date(`${task.dueDate.slice(0, 10)}T00:00:00`).getTime();
   const diff = Math.round((d - today) / 86_400_000);
@@ -27,7 +27,7 @@ export function MyTasksScreen({ onOpenTask, onOpenProject }: { onOpenTask: (id: 
   const { t } = useT();
   const tasks = useResource("my-tasks", (api) => api.listMyTasks());
   const [showDone, setShowDone] = useState(false);
-  const toggle = useMutation((api, task: TaskWithProject) => api.updateTask(task.id, { status: task.status === "done" ? "todo" : "done" }), {
+  const toggle = useMutation((api, task: TaskWithProject) => api.updateTask(task.id, { status: isDone(task.status) ? "todo" : "done" }), {
     onError: (m) => toast.error(m),
   });
 
@@ -53,7 +53,7 @@ export function MyTasksScreen({ onOpenTask, onOpenProject }: { onOpenTask: (id: 
     done: t("Completadas", "Done"),
   };
   const order: Bucket[] = showDone ? ["overdue", "today", "week", "later", "none", "done"] : ["overdue", "today", "week", "later", "none"];
-  const open = (tasks.data ?? []).filter((x) => x.status !== "done").length;
+  const open = (tasks.data ?? []).filter((x) => !isDone(x.status)).length;
 
   return (
     <div style={{ padding: 28, maxWidth: 1000 }}>
@@ -94,9 +94,9 @@ export function MyTasksScreen({ onOpenTask, onOpenProject }: { onOpenTask: (id: 
                       cursor: "pointer",
                     }}
                   >
-                    <CompleteToggle done={task.status === "done"} onToggle={() => void toggle.run(task)} size={17} />
+                    <CompleteToggle done={isDone(task.status)} onToggle={() => void toggle.run(task)} size={17} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: task.status === "done" ? "line-through" : "none" }}>
+                      <div style={{ fontSize: 13.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: isDone(task.status) ? "line-through" : "none" }}>
                         {task.parentId ? <span style={{ color: "var(--ec-text-muted)" }}>↳ </span> : null}
                         {task.title}
                       </div>
@@ -115,7 +115,7 @@ export function MyTasksScreen({ onOpenTask, onOpenProject }: { onOpenTask: (id: 
                     <StatusPill status={task.status} />
                     <PriorityFlag priority={task.priority} />
                     <span style={{ width: 70, textAlign: "right" }}>
-                      <DueDate date={task.dueDate} done={task.status === "done"} />
+                      <DueDate date={task.dueDate} done={isDone(task.status)} />
                     </span>
                   </div>
                 ))}

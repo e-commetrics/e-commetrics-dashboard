@@ -126,7 +126,7 @@ function Workspace() {
         {nav.view === "project" && nav.projectId ? (
           <ProjectScreen projectId={nav.projectId} onBack={() => nav.go("projects")} onOpenTask={nav.openTask} />
         ) : null}
-        {nav.view === "inbox" ? <InboxScreen onOpenTask={nav.openTask} /> : null}
+        {nav.view === "inbox" ? <InboxScreen onOpenTask={nav.openTask} onOpenWall={() => nav.go("wall")} /> : null}
         {nav.view === "calendar" ? (
           <CalendarScreen projectId={nav.projectId} onSelectProject={nav.goCalendar} onOpenTask={nav.openTask} />
         ) : null}

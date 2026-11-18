@@ -55,7 +55,7 @@ CREATE TABLE pm_tasks (
   title VARCHAR(300) NOT NULL,
   description TEXT NULL,
   link_url VARCHAR(2048) NULL,        -- enlace externo opcional (documento, diseño...)
-  status ENUM('todo','in_progress','review','done') NOT NULL DEFAULT 'todo',
+  status ENUM('todo','pending','in_progress','done','review','accepted','rejected','blocked') NOT NULL DEFAULT 'todo',
   priority ENUM('urgent','high','normal','low') NOT NULL DEFAULT 'normal',
   due_date DATE NULL,
   position INT NOT NULL DEFAULT 0,
@@ -127,13 +127,14 @@ CREATE TABLE pm_wall_comments (
 -- filas sobreviven al borrado de la tarea (por eso guarda una copia del titulo).
 CREATE TABLE pm_task_activity (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  task_id INT NOT NULL,
+  task_id INT NULL,                   -- NULL en menciones del muro
+  post_id INT NULL,                   -- pm_wall_posts.id, solo en menciones
   parent_task_id INT NULL,
-  project_id INT NOT NULL,
+  project_id INT NULL,
   task_title VARCHAR(255) NOT NULL,
   actor_id INT NOT NULL,              -- users.id
   kind ENUM('created','assigned','unassigned','status','priority','due_date','title',
-            'description','labels','comment','subtask','deleted') NOT NULL,
+            'description','labels','comment','subtask','deleted','mention') NOT NULL,
   from_value TEXT NULL,
   to_value TEXT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

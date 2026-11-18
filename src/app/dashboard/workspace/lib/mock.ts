@@ -25,6 +25,7 @@ import type {
   WallPost,
   WorkProject,
 } from "./types";
+import { isDone } from "./types";
 
 const KEY = "ec-workspace-mock-v1";
 const VIEWER_ID = "me";
@@ -210,13 +211,13 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
   function withCounts(db: Db, p: StoredProject): WorkProject {
     const top = db.tasks.filter((t) => t.projectId === p.id && t.parentId === null);
     const today = new Date().toISOString().slice(0, 10);
-    const open = top.filter((t) => t.status !== "done" && t.dueDate);
+    const open = top.filter((t) => !isDone(t.status) && t.dueDate);
     const next = open.filter((t) => (t.dueDate as string).slice(0, 10) >= today).sort((x, y) => (x.dueDate as string).localeCompare(y.dueDate as string))[0];
     return {
       ...p,
       taskCounts: {
         total: top.length,
-        done: top.filter((t) => t.status === "done").length,
+        done: top.filter((t) => isDone(t.status)).length,
         overdue: open.filter((t) => (t.dueDate as string).slice(0, 10) < today).length,
       },
       nextDue: next ? { title: next.title, dueDate: next.dueDate as string } : null,
@@ -227,7 +228,7 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
     return {
       ...t,
       labels: t.labels ?? [],
-      subtaskCounts: { total: subs.length, done: subs.filter((s) => s.status === "done").length },
+      subtaskCounts: { total: subs.length, done: subs.filter((s) => isDone(s.status)).length },
       commentCount: db.comments.filter((c) => c.taskId === t.id).length,
     };
   }
@@ -246,6 +247,19 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
       id: `a-${db.seq++}`, taskId: task.id, parentTaskId: task.parentId, projectId: task.projectId,
       taskTitle: task.title, projectName: p?.name ?? "—", projectColor: p?.color ?? "#888",
       actorId: meId(), kind, from, to, createdAt: now(), audience: Array.from(audience), readBy: [meId()],
+    });
+  }
+  /** Un aviso "mention" por persona del equipo mencionada (sin el autor), igual que el backend. */
+  function logMentions(db: Db, post: WallPost, text: string, mentionIds: string[] | undefined) {
+    const team = new Set(db.members.filter((m) => m.role !== "client").map((m) => m.id));
+    const p = db.projects.find((x) => x.id === post.projectId);
+    new Set(mentionIds ?? []).forEach((to) => {
+      if (to === meId() || !team.has(to)) return;
+      (db.activity ??= []).unshift({
+        id: `a-${db.seq++}`, taskId: null, postId: post.id, parentTaskId: null, projectId: post.projectId,
+        taskTitle: post.body.slice(0, 80), projectName: p?.name ?? "", projectColor: p?.color ?? "#888",
+        actorId: meId(), kind: "mention", from: text.slice(0, 120), to, createdAt: now(), audience: [to], readBy: [meId()],
+      });
     });
   }
   /** Admin: toda la actividad. Employee: solo la de sus tareas. */
@@ -368,9 +382,9 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
         id: project.id, name: project.name, description: project.description, packageId: project.packageId,
         status: project.status, dueDate: project.dueDate, clientProjectName: project.clientProjectName,
         taskCounts: withCounts(db, project).taskCounts,
-        inProgress: top.filter((t) => t.status === "in_progress" || t.status === "review").sort(byDue).slice(0, 5).map(out),
-        upNext: top.filter((t) => t.status === "todo").sort(byDue).slice(0, 3).map(out),
-        delivered: top.filter((t) => t.status === "done").sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")).slice(0, 5).map(out),
+        inProgress: top.filter((t) => t.status === "in_progress" || t.status === "rejected" || t.status === "blocked").sort(byDue).slice(0, 5).map(out),
+        upNext: top.filter((t) => t.status === "todo" || t.status === "pending").sort(byDue).slice(0, 3).map(out),
+        delivered: top.filter((t) => isDone(t.status)).sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")).slice(0, 5).map(out),
       };
       return delay([summary]);
     },
@@ -394,7 +408,7 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
         assigneeIds: input.assigneeIds ?? [], labels: input.labels ?? [], dueDate: input.dueDate ?? null,
         linkUrl: input.linkUrl ?? null,
         position: siblings.reduce((max, t) => Math.max(max, t.position), -1) + 1,
-        createdBy: meId(), createdAt: now(), updatedAt: now(), completedAt: status === "done" ? now() : null,
+        createdBy: meId(), createdAt: now(), updatedAt: now(), completedAt: isDone(status) ? now() : null,
       };
       db.tasks.push(task);
       const parent = task.parentId ? db.tasks.find((t) => t.id === task.parentId) : undefined;
@@ -408,7 +422,15 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
       const db = load();
       const task = db.tasks.find((t) => t.id === id) ?? notFound("Task");
       if (patch.status && patch.status !== task.status) {
-        task.completedAt = patch.status === "done" ? now() : null;
+        const wasDone = isDone(task.status);
+        const willBeDone = isDone(patch.status);
+        // Misma regla que el backend: no se cierra una tarea con subtareas abiertas.
+        if (!wasDone && willBeDone && task.parentId === null) {
+          const open = db.tasks.filter((s) => s.parentId === task.id && !isDone(s.status)).length;
+          if (open > 0) throw new Error(`Tiene ${open} subtareas pendientes`);
+        }
+        if (willBeDone) task.completedAt ??= now();
+        else if (wasDone) task.completedAt = null;
       }
       const before = { ...task, assigneeIds: [...task.assigneeIds] };
       Object.assign(task, patch, { updatedAt: now() });
@@ -482,13 +504,14 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
         db.posts.slice().sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt))
       );
     },
-    async createPost(input: { body: string; projectId?: string | null }) {
+    async createPost(input: { body: string; projectId?: string | null; mentionIds?: string[] }) {
       const db = load();
       const post: WallPost = {
         id: `w-${db.seq++}`, authorId: meId(), body: input.body, projectId: input.projectId ?? null,
         pinned: false, likedBy: [], comments: [], createdAt: now(),
       };
       db.posts.push(post);
+      logMentions(db, post, post.body, input.mentionIds);
       save(db);
       return delay(post);
     },
@@ -516,11 +539,12 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
       save(db);
       return delay(post);
     },
-    async addPostComment(postId: string, body: string) {
+    async addPostComment(postId: string, body: string, mentionIds?: string[]) {
       const db = load();
       const post = db.posts.find((p) => p.id === postId) ?? notFound("Post");
       const comment: WallComment = { id: `wc-${db.seq++}`, postId, authorId: meId(), body, createdAt: now() };
       post.comments.push(comment);
+      logMentions(db, post, body, mentionIds);
       save(db);
       return delay(comment);
     },

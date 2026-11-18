@@ -31,8 +31,8 @@ type ClientsResponse = { clients: ClientAccount[] };
 type ClientResponse = { client: ClientAccount };
 type PageResponse = { page: ClientPage };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await apiFetch(`/api/clients${path}`, {
+async function request<T>(path: string, init?: RequestInit, base = "/api/clients"): Promise<T> {
+  const res = await apiFetch(`${base}${path}`, {
     ...init,
     headers: init?.body ? { "Content-Type": "application/json", ...(init?.headers ?? {}) } : init?.headers,
   });
@@ -115,4 +115,23 @@ export function clientInitials(name: string): string {
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join("");
+}
+
+/** Pagina cuyo dueño no existe o no es cliente. `ownerEmail` = dueño actual, si lo hay. */
+export type UnassignedPage = ClientPage & { ownerEmail: string | null };
+
+export function listUnassignedPages(): Promise<UnassignedPage[]> {
+  return request<{ pages: UnassignedPage[] }>("/unassigned", undefined, "/api/client-pages").then((data) => data.pages);
+}
+
+export function deleteUnassignedPage(id: string): Promise<void> {
+  return request<void>(`/${encodeURIComponent(id)}`, { method: "DELETE" }, "/api/client-pages");
+}
+
+export function assignPage(pageId: string, clientId: string): Promise<ClientPage> {
+  return request<PageResponse>(
+    `/${encodeURIComponent(pageId)}`,
+    { method: "PATCH", body: JSON.stringify({ clientId }) },
+    "/api/client-pages"
+  ).then((data) => data.page);
 }

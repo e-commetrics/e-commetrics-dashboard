@@ -1,14 +1,16 @@
 "use client";
 
 import { ClientDot } from "@/components/client-identity";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Heart, Loader2, MessageSquare, Pin, PinOff, Send, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { EmptyState, ErrorNotice, Loading, PageHeader } from "../../webapp/crm/components/ui";
+import { MentionField } from "../components/MentionField";
 import { Avatar } from "../components/shared";
+import { mentionIdsIn, splitMentions } from "../lib/mentions";
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
 import { useT } from "../lib/i18n";
-import type { WallPost, WorkProject } from "../lib/types";
+import type { Member, WallPost, WorkProject } from "../lib/types";
 
 function timeAgo(isoDate: string, lang: "es" | "en") {
   const mins = Math.round((Date.now() - new Date(isoDate).getTime()) / 60_000);
@@ -18,24 +20,51 @@ function timeAgo(isoDate: string, lang: "es" | "en") {
   return rtf.format(-Math.round(mins / 1440), "day");
 }
 
+/** Texto con las "@Nombre" del equipo resaltadas. */
+function MentionText({ text, team }: { text: string; team: Member[] }) {
+  return (
+    <>
+      {splitMentions(text, team.map((m) => m.name)).map((part, i) =>
+        part.mention ? (
+          <span key={i} style={{ fontWeight: 600, color: "var(--ec-brand)" }}>
+            {part.text}
+          </span>
+        ) : (
+          part.text
+        )
+      )}
+    </>
+  );
+}
+
 /** Muro general: avisos y conversacion de todo el equipo. */
 export function WallScreen({ onOpenProject }: { onOpenProject: (id: string) => void }) {
   const { t } = useT();
-  const { memberById, meId } = useWorkspace();
+  const { memberById, meId, members } = useWorkspace();
   const posts = useResource("wall", (api) => api.listWall());
   const projects = useResource("projects", (api) => api.listProjects());
   const [body, setBody] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [filter, setFilter] = useState("");
+  const team = useMemo(() => members.filter((m) => m.role !== "client"), [members]);
 
-  const create = useMutation((api, input: { body: string; projectId: string | null }) => api.createPost(input), {
+  const create = useMutation((api, input: { body: string; projectId: string | null; mentionIds: string[] }) => api.createPost(input), {
     onSuccess: () => {
       setBody("");
-      setProjectId("");
+      setProjectId(filter);
     },
     onError: (m) => toast.error(m),
   });
 
   const me = memberById(meId);
+  // Solo proyectos con al menos un post, para que el filtro no ofrezca opciones vacias.
+  // El proyecto filtrado se queda en la lista aunque ya no tenga posts, para poder volver a "Todos".
+  const postedProjects = useMemo(() => {
+    const ids = new Set((posts.data ?? []).map((p) => p.projectId).filter(Boolean));
+    if (filter) ids.add(filter);
+    return (projects.data ?? []).filter((p) => ids.has(p.id)).sort((a, b) => a.name.localeCompare(b.name));
+  }, [posts.data, projects.data, filter]);
+  const visible = (posts.data ?? []).filter((p) => !filter || p.projectId === filter);
 
   return (
     <div style={{ padding: 28, maxWidth: 760 }}>
@@ -49,19 +78,19 @@ export function WallScreen({ onOpenProject }: { onOpenProject: (id: string) => v
         onSubmit={(e) => {
           e.preventDefault();
           if (!body.trim()) return;
-          void create.run({ body: body.trim(), projectId: projectId || null });
+          void create.run({ body: body.trim(), projectId: projectId || null, mentionIds: mentionIdsIn(body, team) });
         }}
         style={{ border: "1px solid var(--ec-hairline-strong)", borderRadius: 14, background: "var(--ec-surface-1)", padding: 14, marginBottom: 22 }}
       >
         <div style={{ display: "flex", gap: 12 }}>
           <Avatar member={me} size={34} />
-          <textarea
-            className="ec-field-input"
-            rows={3}
+          <MentionField
+            multiline
             value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={t("Comparte algo con el equipo…", "Share something with the team…")}
-            aria-label={t("Nueva publicación", "New post")}
+            onChange={setBody}
+            members={team}
+            placeholder={t("Comparte algo con el equipo… usa @ para etiquetar", "Share something with the team… use @ to tag")}
+            ariaLabel={t("Nueva publicación", "New post")}
           />
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
@@ -80,20 +109,45 @@ export function WallScreen({ onOpenProject }: { onOpenProject: (id: string) => v
         </div>
       </form>
 
+      {postedProjects.length > 0 ? (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <select
+            className="ec-field-input"
+            style={{ width: 240, padding: "7px 12px", fontSize: 13 }}
+            value={filter}
+            onChange={(e) => {
+              setFilter(e.target.value);
+              setProjectId(e.target.value);
+            }}
+            aria-label={t("Filtrar por proyecto", "Filter by project")}
+          >
+            <option value="">{t("Todos los proyectos", "All projects")}</option>
+            {postedProjects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
       {posts.loading && !posts.data ? <Loading /> : null}
       {posts.error ? <ErrorNotice message={posts.error} onRetry={posts.reload} /> : null}
       {posts.data && posts.data.length === 0 ? <EmptyState title={t("Aún no hay publicaciones.", "No posts yet.")} /> : null}
+      {posts.data && posts.data.length > 0 && visible.length === 0 ? (
+        <EmptyState title={t("Aún no hay publicaciones en este proyecto.", "No posts in this project yet.")} />
+      ) : null}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {(posts.data ?? []).map((post) => (
-          <PostCard key={post.id} post={post} projects={projects.data ?? []} onOpenProject={onOpenProject} />
+        {visible.map((post) => (
+          <PostCard key={post.id} post={post} projects={projects.data ?? []} team={team} onOpenProject={onOpenProject} />
         ))}
       </div>
     </div>
   );
 }
 
-function PostCard({ post, projects, onOpenProject }: { post: WallPost; projects: WorkProject[]; onOpenProject: (id: string) => void }) {
+function PostCard({ post, projects, team, onOpenProject }: { post: WallPost; projects: WorkProject[]; team: Member[]; onOpenProject: (id: string) => void }) {
   const { t, lang } = useT();
   const { memberById, meId, isAdmin } = useWorkspace();
   const [showComments, setShowComments] = useState(post.comments.length > 0 && post.comments.length <= 2);
@@ -105,7 +159,7 @@ function PostCard({ post, projects, onOpenProject }: { post: WallPost; projects:
   const like = useMutation((api) => api.toggleLike(post.id));
   const pin = useMutation((api) => api.setPinned(post.id, !post.pinned), { onError: (m) => toast.error(m) });
   const remove = useMutation((api) => api.deletePost(post.id), { onError: (m) => toast.error(m) });
-  const addComment = useMutation((api, body: string) => api.addPostComment(post.id, body), {
+  const addComment = useMutation((api, body: string) => api.addPostComment(post.id, body, mentionIdsIn(body, team)), {
     onSuccess: () => setComment(""),
     onError: (m) => toast.error(m),
   });
@@ -148,7 +202,9 @@ function PostCard({ post, projects, onOpenProject }: { post: WallPost; projects:
         ) : null}
       </header>
 
-      <p style={{ fontSize: 14, lineHeight: 1.55, margin: "12px 0", whiteSpace: "pre-wrap" }}>{post.body}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.55, margin: "12px 0", whiteSpace: "pre-wrap" }}>
+        <MentionText text={post.body} team={team} />
+      </p>
 
       {project ? (
         <button
@@ -198,7 +254,9 @@ function PostCard({ post, projects, onOpenProject }: { post: WallPost; projects:
                 <Avatar member={a} size={26} />
                 <div style={{ background: "var(--ec-surface-2)", borderRadius: 10, padding: "7px 11px", fontSize: 13 }}>
                   <strong>{a?.name ?? "—"}</strong> <span style={{ color: "var(--ec-text-muted)", fontSize: 11.5 }}>{timeAgo(c.createdAt, lang)}</span>
-                  <div style={{ marginTop: 2 }}>{c.body}</div>
+                  <div style={{ marginTop: 2 }}>
+                    <MentionText text={c.body} team={team} />
+                  </div>
                 </div>
               </div>
             );
@@ -210,7 +268,14 @@ function PostCard({ post, projects, onOpenProject }: { post: WallPost; projects:
             }}
             style={{ display: "flex", gap: 8 }}
           >
-            <input className="ec-field-input" style={{ padding: "7px 12px", fontSize: 13 }} value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("Escribe un comentario…", "Write a comment…")} />
+            <MentionField
+              value={comment}
+              onChange={setComment}
+              members={team}
+              style={{ padding: "7px 12px", fontSize: 13 }}
+              placeholder={t("Escribe un comentario… usa @ para etiquetar", "Write a comment… use @ to tag")}
+              ariaLabel={t("Comentario", "Comment")}
+            />
             <button type="submit" className="ec-btn-secondary" style={{ padding: "6px 12px" }} disabled={addComment.loading}>
               <Send size={13} />
             </button>
