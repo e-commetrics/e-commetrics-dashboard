@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Loader2, Plus, Send, Trash2 } from "lucide-react";
+import { ExternalLink, Flag, Link2, Loader2, Plus, Send, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "react-hot-toast";
 import { Loading, Modal, ErrorNotice } from "../../webapp/crm/components/ui";
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
@@ -242,6 +243,8 @@ function TaskBody(props: {
                 >
                   {s.title}
                 </span>
+                <SubtaskPriority sub={s} lang={lang} t={t} onPatch={(patch) => props.onPatchSub(s.id, patch)} />
+                <SubtaskLink sub={s} t={t} onPatch={(patch) => props.onPatchSub(s.id, patch)} />
                 <MemberPicker compact value={s.assigneeIds} onChange={(ids) => props.onPatchSub(s.id, { assigneeIds: ids })} pool={pool} />
               </div>
             ))}
@@ -330,5 +333,73 @@ function Prop({ label, children }: { label: string; children: React.ReactNode })
       <span className="ec-field-label">{label}</span>
       {children}
     </div>
+  );
+}
+
+const iconBtn = { display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, border: "none", borderRadius: 6, background: "none", cursor: "pointer", padding: 0, color: "var(--ec-text-muted)" } as const;
+const flagIcon = (p: Task["priority"]) => <Flag size={13} color={PRIORITY_META[p].color} fill={p === "low" || p === "normal" ? "none" : PRIORITY_META[p].color} />;
+
+/** Icono de prioridad de una subtarea: un clic abre las cuatro banderas y elegir una la aplica. */
+function SubtaskPriority({ sub, lang, t, onPatch }: { sub: Task; lang: "es" | "en"; t: (es: string, en: string) => string; onPatch: (patch: TaskPatch) => void }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" style={iconBtn} title={`${t("Prioridad", "Priority")}: ${PRIORITY_META[sub.priority][lang]}`} aria-label={`${t("Prioridad", "Priority")}: ${PRIORITY_META[sub.priority][lang]}`}>
+          {flagIcon(sub.priority)}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="z-[70]">
+        {PRIORITIES.map((p) => (
+          <DropdownMenuItem key={p} onSelect={() => p !== sub.priority && onPatch({ priority: p })}>
+            {flagIcon(p)} {PRIORITY_META[p][lang]}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Icono de enlace de una subtarea: con enlace lo abre; sin enlace muestra un campo para pegarlo (Enter guarda, Esc cancela). */
+function SubtaskLink({ sub, t, onPatch }: { sub: Task; t: (es: string, en: string) => string; onPatch: (patch: TaskPatch) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [url, setUrl] = useState("");
+  if (sub.linkUrl) {
+    return (
+      <a href={sub.linkUrl} target="_blank" rel="noopener noreferrer" style={{ ...iconBtn, color: "var(--ec-brand)" }} title={sub.linkUrl} aria-label={t("Abrir enlace", "Open link")}>
+        <Link2 size={14} />
+      </a>
+    );
+  }
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        type="text"
+        inputMode="url"
+        className="ec-field-input"
+        style={{ width: 200, padding: "3px 8px", fontSize: 12.5 }}
+        placeholder="https://…"
+        aria-label={t("Enlace de la subtarea", "Subtask link")}
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        onBlur={() => setEditing(false)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (url.trim()) onPatch({ linkUrl: url.trim() });
+            setEditing(false);
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation(); // que Esc no cierre el modal
+            setEditing(false);
+          }
+        }}
+      />
+    );
+  }
+  return (
+    <button type="button" style={{ ...iconBtn, opacity: 0.55 }} onClick={() => { setUrl(""); setEditing(true); }} title={t("Agregar enlace", "Add link")} aria-label={t("Agregar enlace", "Add link")}>
+      <Link2 size={14} />
+    </button>
   );
 }
