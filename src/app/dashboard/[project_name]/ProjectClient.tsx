@@ -6,8 +6,10 @@ import axios from "axios";
 import { motion } from "motion/react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useLang } from "@/app/context/LangContext";
-import { Target, Sparkles, Layers, TrendingUp, Zap, ExternalLink, Plus, MoreHorizontal } from "lucide-react";
+import { Target, Sparkles, Layers, TrendingUp, Zap, ExternalLink, Plus, MoreHorizontal, Eye, EyeOff, Trash2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 import ContentModal from "@/components/ContentModal";
+import { BaseCardsModal } from "@/components/BaseCardsModal";
 import { clientGroupFor, progressPct } from "@/lib/apps";
 import { Chart } from "@/components/charts";
 import { ClientTile } from "@/components/client-identity";
@@ -38,6 +40,8 @@ type ProjectContentItem = {
   source: string;
   type: string;
   created_at: string;
+  /** 0 visible; 1 oculta hasta completarla; 2 oculta a mano. Solo llega != 0 a un admin. */
+  hidden?: number;
 };
 
 const CONTENT_TYPES_ES = [
@@ -129,6 +133,54 @@ export default function ProjectContent({ project: initialProject }: { project: P
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [editContent, setEditContent] = useState<ProjectContentItem | null>(null);
+  const [baseCardsOpen, setBaseCardsOpen] = useState(false);
+  // Cambiarlo vuelve a pedir el contenido (despues de agregar cards base).
+  const [reloadKey, setReloadKey] = useState(0);
+  const [visibilityBusy, setVisibilityBusy] = useState<number | null>(null);
+  const [visibilityError, setVisibilityError] = useState("");
+
+  const removeContent = async (item: ProjectContentItem) => {
+    const name = item.content_1 || item.type;
+    const ok = window.confirm(
+      lang === "es"
+        ? `¿Eliminar la card "${name}"? Se borra para siempre, con su link e imagen.`
+        : `Delete the card "${name}"? It is removed for good, with its link and image.`
+    );
+    if (!ok) return;
+    setVisibilityBusy(item.id);
+    setVisibilityError("");
+    try {
+      const res = await apiFetch(`/api/project_content/${item.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+        throw new Error(data?.error ?? data?.message ?? `${res.status}`);
+      }
+      setContents((prev) => prev.filter((c) => c.id !== item.id));
+    } catch (e) {
+      setVisibilityError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setVisibilityBusy(null);
+    }
+  };
+
+  const setVisibility = async (item: ProjectContentItem, hidden: boolean) => {
+    setVisibilityBusy(item.id);
+    setVisibilityError("");
+    try {
+      const res = await apiFetch(`/api/project_content/${item.id}/visibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden }),
+      });
+      const data = (await res.json().catch(() => null)) as { hidden?: number; error?: string; message?: string } | null;
+      if (!res.ok) throw new Error(data?.error ?? data?.message ?? `${res.status}`);
+      setContents((prev) => prev.map((c) => (c.id === item.id ? { ...c, hidden: data?.hidden ?? (hidden ? 2 : 0) } : c)));
+    } catch (e) {
+      setVisibilityError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setVisibilityBusy(null);
+    }
+  };
 
   const types = lang === "es" ? CONTENT_TYPES_ES : CONTENT_TYPES_EN;
 
@@ -190,7 +242,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
       }
     };
     fetchContents();
-  }, [currentProject?.id, canAccess]);
+  }, [currentProject?.id, canAccess, reloadKey]);
 
   // Avance = tareas completadas del proyecto vinculado en Workspace (ya no el porcentaje escrito a mano).
   const taskProgress = useTaskProgress(currentProject?.project_name);
@@ -386,6 +438,15 @@ export default function ProjectContent({ project: initialProject }: { project: P
             >
               <Plus size={14} /> {lang === "es" ? "Crear contenido" : "Create content"}
             </button>
+            {isAdmin ? (
+              <button
+                onClick={() => setBaseCardsOpen(true)}
+                className="ec-btn-secondary"
+                style={{ alignSelf: "flex-start", padding: "8px 14px", fontSize: 12.5 }}
+              >
+                <Layers size={14} /> {lang === "es" ? "Agregar cards base" : "Add base cards"}
+              </button>
+            ) : null}
           </div>
         </section>
       </div>
@@ -584,6 +645,13 @@ export default function ProjectContent({ project: initialProject }: { project: P
           </div>
         )}
 
+        {visibilityError ? (
+          <div role="alert" style={{ fontSize: 13, color: "var(--ec-danger)", marginBottom: 12 }}>
+            {lang === "es" ? "No se pudo completar la acción: " : "Could not complete the action: "}
+            {visibilityError}
+          </div>
+        ) : null}
+
         {/* Content cards grid */}
         {!loading && filteredContents.length > 0 && (
           <div
@@ -679,6 +747,56 @@ export default function ProjectContent({ project: initialProject }: { project: P
                       </div>
                     </div>
                   )}
+
+                  {/* Solo admin: visibilidad para el cliente. La API ya no le manda al cliente las ocultas. */}
+                  {isAdmin ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "8px 20px",
+                        borderBottom: "1px solid var(--ec-hairline)",
+                        background: item.hidden ? "var(--ec-surface-2)" : "transparent",
+                      }}
+                    >
+                      {item.hidden ? (
+                        <span className="ec-badge ec-badge-warning" style={{ fontSize: 10.5 }}>
+                          <EyeOff size={11} />{" "}
+                          {item.hidden === 1
+                            ? lang === "es" ? "Oculta hasta completarla" : "Hidden until complete"
+                            : lang === "es" ? "Oculta para el cliente" : "Hidden from client"}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "var(--ec-text-dim)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Eye size={11} /> {lang === "es" ? "Visible para el cliente" : "Visible to client"}
+                        </span>
+                      )}
+                      <span style={{ flex: 1 }} />
+                      <button
+                        type="button"
+                        className={item.hidden ? "ec-btn-primary" : "ec-btn-secondary"}
+                        style={{ padding: "4px 10px", fontSize: 11.5 }}
+                        disabled={visibilityBusy === item.id}
+                        onClick={() => void setVisibility(item, !item.hidden)}
+                      >
+                        {item.hidden
+                          ? lang === "es" ? "Publicar al cliente" : "Publish to client"
+                          : lang === "es" ? "Ocultar" : "Hide"}
+                      </button>
+                      <button
+                        type="button"
+                        className="ec-btn-secondary"
+                        style={{ padding: "4px 8px", fontSize: 11.5, color: "var(--ec-danger)" }}
+                        disabled={visibilityBusy === item.id}
+                        onClick={() => void removeContent(item)}
+                        aria-label={lang === "es" ? `Eliminar la card "${item.content_1}"` : `Delete card "${item.content_1}"`}
+                        title={lang === "es" ? "Eliminar card" : "Delete card"}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ) : null}
 
                   {/* Card body */}
                   <div
@@ -826,6 +944,16 @@ export default function ProjectContent({ project: initialProject }: { project: P
           fetchContents();
         }}
       />
+
+      {isAdmin ? (
+        <BaseCardsModal
+          open={baseCardsOpen}
+          onClose={() => setBaseCardsOpen(false)}
+          pageId={currentProject.id}
+          lang={lang}
+          onAdded={() => setReloadKey((k) => k + 1)}
+        />
+      ) : null}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

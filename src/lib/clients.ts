@@ -135,3 +135,20 @@ export function assignPage(pageId: string, clientId: string): Promise<ClientPage
     "/api/client-pages"
   ).then((data) => data.page);
 }
+
+/** Card de la plantilla base. `index` = posicion en la plantilla del backend. */
+export type BaseCard = { index: number; type: string; content_1: string; content_2: string; content_3: string; href: string };
+
+export function listMissingBaseCards(pageId: string | number): Promise<BaseCard[]> {
+  return request<{ missing: BaseCard[] }>(`/${encodeURIComponent(String(pageId))}/base-cards`, undefined, "/api/client-pages").then(
+    (data) => data.missing
+  );
+}
+
+export function addBaseCards(pageId: string | number, indexes: number[]): Promise<number> {
+  return request<{ added: number }>(
+    `/${encodeURIComponent(String(pageId))}/base-cards`,
+    { method: "POST", body: JSON.stringify({ indexes }) },
+    "/api/client-pages"
+  ).then((data) => data.added);
+}
