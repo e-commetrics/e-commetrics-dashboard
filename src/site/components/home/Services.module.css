@@ -1,0 +1,66 @@
+/* Featured lead service */
+.feature {
+  display: grid; gap: var(--s-7);
+  padding: clamp(var(--s-5), 4vw, var(--s-8));
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(40rem 20rem at 0% 0%, rgb(134 20 83 / 0.35), transparent 60%),
+    var(--indigo);
+}
+@media (min-width: 64rem) { .feature { grid-template-columns: 1.3fr 1fr; gap: var(--s-9); align-items: center; } }
+.feature__badge {
+  display: inline-block; padding: 0.3rem 0.7rem; border-radius: var(--r-pill);
+  background: rgb(236 92 143 / 0.16); color: var(--magenta-bright); font-size: var(--fs-micro);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.feature__title {
+  display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-5);
+  font-family: var(--font-display); font-size: clamp(2rem, 1.5rem + 2vw, 3.25rem); line-height: 1.05;
+}
+.feature__title :global(svg) { color: var(--magenta-bright); flex: none; }
+.feature__tags { margin-top: var(--s-3); color: var(--text-on-dark-muted); }
+.feature__aud { margin-top: var(--s-6); font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: 0.12em; text-transform: uppercase; color: var(--magenta-bright); }
+.feature__promise { margin-top: var(--s-2); font-size: var(--fs-lead); line-height: 1.45; max-width: 34rem; }
+.feature__outcome { margin-top: var(--s-3); max-width: 34rem; }
+.feature__ctas { display: flex; flex-wrap: wrap; gap: var(--s-4); margin-top: var(--s-6); align-items: center; }
+.feature__prices { border-top: 1px solid var(--line-dark-strong); }
+.feature__prices div {
+  display: flex; justify-content: space-between; gap: var(--s-4);
+  padding-block: var(--s-3); border-bottom: 1px solid var(--line-dark);
+  font-size: var(--fs-small);
+}
+.feature__prices dt { color: var(--text-on-dark-muted); }
+.feature__prices dd { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Editorial grid: 1px gaps over a line-colored background draw the hairlines between cells */
+.grid { display: grid; gap: 1px; margin-top: var(--s-5); background: var(--line-strong); border-block: 1px solid var(--line-strong); }
+@media (min-width: 48rem) { .grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 80rem) { .grid { grid-template-columns: repeat(3, 1fr); } }
+.cell { background: var(--paper-2); }
+.cell__link {
+  position: relative; display: grid; gap: var(--s-2); height: 100%;
+  padding: var(--s-7) var(--s-5) var(--s-6);
+  text-decoration: none;
+  transition: background-color var(--dur-2) var(--ease-out);
+}
+@media (min-width: 48rem) { .cell__link { padding: var(--s-8) var(--s-7) var(--s-6); } }
+.cell__link:hover { background: rgb(255 255 255 / 0.55); }
+.cell__icon {
+  display: grid; place-items: center; width: 3rem; height: 3rem; margin-bottom: var(--s-4);
+  border: 1px solid var(--line-strong); border-radius: var(--r-md); color: var(--magenta);
+  transition: background-color var(--dur-2), color var(--dur-2), border-color var(--dur-2);
+}
+.cell__link:hover .cell__icon { background: var(--magenta); border-color: var(--magenta); color: var(--white); }
+.cell__aud { color: var(--magenta); font-size: var(--fs-micro); letter-spacing: 0.12em; text-transform: uppercase; }
+.cell__title { font-family: var(--font-display); font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem); line-height: 1.05; }
+.cell__tags { font-size: var(--fs-small); color: var(--text-muted); }
+.cell__promise { margin-top: var(--s-3); max-width: 30rem; }
+.cell__foot { display: flex; justify-content: space-between; align-items: center; margin-top: var(--s-6); }
+.cell__price { font-size: var(--fs-small); color: var(--text-muted); }
+.cell__price strong { color: var(--ink); font-size: 1.125rem; }
+.cell__arrow {
+  display: grid; place-items: center; width: 2.75rem; height: 2.75rem;
+  border: 1px solid var(--line-strong); border-radius: 50%;
+  transition: transform var(--dur-2) var(--ease-out), background-color var(--dur-2), color var(--dur-2);
+}
+.cell__link:hover .cell__arrow { transform: translateX(4px); background: var(--ink); color: var(--white); }

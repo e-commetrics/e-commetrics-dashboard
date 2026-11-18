@@ -38,8 +38,9 @@ Two roles exist: `admin` and `client`. Clients have per-component permissions st
 
 | Path | Description |
 |---|---|
-| `/` | Entry screen — modal to choose login or landing page |
-| `/dashboard` | Project list, redirects to `/` if unauthenticated |
+| `/` | Public E-commetrics site (home); other marketing pages live in `src/app/(site)` |
+| `/login` | Dashboard sign-in (navbar "Dashboard" button) |
+| `/dashboard` | Project list, redirects to `/login` if unauthenticated |
 | `/dashboard/[project_name]` | Project detail (static params generated at build) |
 | `/dashboard/webapp/*` | Gated web apps (QR, VCard, Calendar, Blogs, Reforma, Monge) |
 | `/dashboard/access-app` | Admin: manage client app permissions |

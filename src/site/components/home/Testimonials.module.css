@@ -1,0 +1,12 @@
+.quotes__list { display: grid; gap: var(--s-8); margin-top: var(--s-7); }
+@media (min-width: 64rem) { .quotes__list { grid-template-columns: 1.4fr 1fr; align-items: end; } }
+.quote { position: relative; display: grid; gap: var(--s-6); }
+.quote blockquote p {
+  font-family: var(--font-display); font-size: clamp(1.625rem, 1.2rem + 1.6vw, 2.75rem); line-height: 1.15;
+  letter-spacing: -0.01em; text-indent: -0.4em;
+}
+.quotes__list li:nth-child(2) .quote blockquote p { font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem); }
+.quote figcaption { display: grid; gap: var(--s-1); padding-top: var(--s-4); border-top: 1px solid var(--line-strong); max-width: 24rem; }
+.quote__name { font-weight: 600; }
+.quote--draft { outline: 2px dashed var(--magenta); outline-offset: var(--s-4); }
+.quote__draft { color: var(--magenta); font-size: var(--fs-micro); letter-spacing: 0.1em; }

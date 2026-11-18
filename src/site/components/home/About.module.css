@@ -1,0 +1,33 @@
+.about { background: radial-gradient(50rem 30rem at 100% 0%, rgb(65 91 135 / 0.35), transparent 70%), var(--indigo); }
+.about__grid { display: grid; gap: var(--s-8); }
+@media (min-width: 64rem) { .about__grid { grid-template-columns: 0.8fr 1.2fr; gap: var(--s-10); align-items: start; } }
+.about__visual { position: sticky; top: calc(var(--nav-h) + var(--s-6)); }
+@media (max-width: 64rem) { .about__visual { position: static; max-width: 26rem; } }
+
+.frame { aspect-ratio: 4 / 5; border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--line-dark-strong); background: var(--ink); }
+.frame__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.founder__quote { margin-top: var(--s-5); }
+.founder__quote p { font-size: 1.0625rem; line-height: 1.55; color: var(--text-on-dark); }
+.frame__cap { display: grid; gap: var(--s-1); margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--line-dark); }
+.frame__name { font-weight: 600; }
+.frame__cap :global(.mono) { color: var(--magenta-bright); font-size: var(--fs-micro); }
+
+.about__intro { margin-top: var(--s-6); max-width: 40rem; font-size: var(--fs-lead); line-height: 1.55; color: var(--text-on-dark); }
+
+.cmp { margin-top: var(--s-8); overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--line-dark-strong); }
+.cmp table { width: 100%; min-width: 34rem; border-collapse: collapse; font-size: var(--fs-small); }
+.cmp caption { text-align: left; padding: var(--s-4) var(--s-5); font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-on-dark-muted); border-bottom: 1px solid var(--line-dark); }
+.cmp th, .cmp td { padding: var(--s-4) var(--s-5); text-align: left; vertical-align: top; border-bottom: 1px solid var(--line-dark); }
+.cmp tbody tr:last-child th, .cmp tbody tr:last-child td { border-bottom: 0; }
+.cmp thead th { font-weight: 600; font-size: var(--fs-small); color: var(--text-on-dark-muted); }
+.cmp thead th:nth-child(2) { color: var(--magenta-bright); }
+.cmp tbody th { font-weight: 500; color: var(--text-on-dark-muted); width: 28%; }
+.cmp__us { color: var(--white); font-weight: 600; background: rgb(236 92 143 / 0.07); }
+.cmp__them { color: var(--text-on-dark-muted); }
+
+.principles { display: grid; gap: var(--s-5); margin-top: var(--s-8); }
+@media (min-width: 48rem) { .principles { grid-template-columns: repeat(3, 1fr); } }
+.principles li { padding-top: var(--s-4); border-top: 1px solid var(--line-dark-strong); }
+.principles h3 { font-weight: 600; font-size: 1.0625rem; margin-bottom: var(--s-2); }
+.principles p { font-size: var(--fs-small); }
+.stack { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-7); }

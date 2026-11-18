@@ -1,0 +1,18 @@
+.value { overflow: hidden; }
+.value__grid { display: grid; gap: var(--s-8); position: relative; z-index: 1; }
+@media (min-width: 64rem) { .value__grid { grid-template-columns: 1.25fr 1fr; gap: var(--s-10); align-items: end; } }
+.value__statement :global(.eyebrow) { margin-bottom: var(--s-5); }
+.value__inherent { margin-top: var(--s-6); max-width: 34rem; font-size: var(--fs-lead); line-height: 1.5; color: var(--text-muted); }
+.value__points { display: grid; gap: 0; }
+.value__points li {
+  display: grid; grid-template-columns: 3rem 1fr; column-gap: var(--s-4); row-gap: var(--s-2);
+  padding-block: var(--s-5); border-top: 1px solid var(--line);
+}
+.value__points li:last-child { border-bottom: 1px solid var(--line); }
+.value__n { grid-row: span 2; color: var(--magenta); padding-top: 0.2em; }
+.value__t { font-weight: 600; font-size: 1.125rem; }
+.value__mark {
+  position: absolute; left: -10rem; bottom: -12rem; width: 30rem; height: 30rem;
+  color: var(--line-strong); opacity: 0.45; pointer-events: none;
+}
+@media (max-width: 80rem) { .value__mark { display: none; } }

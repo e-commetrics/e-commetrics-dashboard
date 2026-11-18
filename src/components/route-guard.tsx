@@ -26,7 +26,7 @@ export default function RouteGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (user === null) router.replace("/");
+    if (user === null) router.replace("/login");
   }, [user, router]);
 
   // Still restoring the session (or redirecting away).

@@ -1,0 +1,43 @@
+.btn {
+  --btn-bg: var(--ink);
+  --btn-fg: var(--white);
+  --btn-bd: transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-3);
+  min-height: 3rem;
+  padding: 0.75rem 1.25rem 0.75rem 1.4rem;
+  border: 1px solid var(--btn-bd);
+  border-radius: var(--r-pill);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.005em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out),
+    border-color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.btn--lg { min-height: 3.5rem; padding: 1rem 1.5rem 1rem 1.75rem; font-size: 1rem; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.6; cursor: progress; }
+.btn__icon {
+  display: inline-grid; place-items: center;
+  width: 1.75rem; height: 1.75rem; margin-right: -0.4rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--btn-fg) 14%, transparent);
+  overflow: hidden;
+}
+.btn__icon :global(svg) { transition: transform var(--dur-2) var(--ease-out); }
+.btn:hover .btn__icon :global(svg) { transform: translateX(3px); }
+
+.btn--primary { --btn-bg: var(--magenta); --btn-fg: var(--white); }
+.btn--primary:hover { --btn-bg: #9d1862; }
+.btn--secondary { --btn-bg: transparent; --btn-fg: var(--ink); --btn-bd: var(--line-strong); }
+.btn--secondary:hover { --btn-bd: var(--ink); }
+.btn--ghost { --btn-bg: transparent; --btn-fg: currentColor; padding-inline: 0.25rem; min-height: 2.75rem; }
+.btn--ghost:hover .btn__label { text-decoration: underline; text-underline-offset: 0.25em; }
+.btn--light { --btn-bg: var(--white); --btn-fg: var(--ink); }
+.btn--light:hover { --btn-bg: var(--paper-2); }
+
+:global(.on-dark) .btn--secondary, :global(.on-indigo) .btn--secondary { --btn-fg: var(--white); --btn-bd: var(--line-dark-strong); }
+:global(.on-dark) .btn--secondary:hover, :global(.on-indigo) .btn--secondary:hover { --btn-bd: var(--white); }
