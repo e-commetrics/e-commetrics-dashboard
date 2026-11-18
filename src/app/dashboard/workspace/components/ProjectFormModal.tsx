@@ -55,6 +55,9 @@ export function ProjectFormModal({
   }));
   const [seedTasks, setSeedTasks] = useState(true);
   const [stages, setStages] = useState<{ id?: string; name: string }[]>(() => project?.stages ?? []);
+  // Tipo solo al crear: un proyecto CRM es simplemente uno con etapas.
+  const [kind, setKind] = useState<"normal" | "crm">("normal");
+  const showStages = editing || kind === "crm";
   const stagesChanged = JSON.stringify(stages) !== JSON.stringify(project?.stages ?? []);
   const set = <K extends keyof ProjectInput>(key: K, value: ProjectInput[K]) => setForm((f) => ({ ...f, [key]: value }));
   const selectedClientPages = clientProjects.filter((page) => String(page.id_user) === form.clientId);
@@ -70,7 +73,10 @@ export function ProjectFormModal({
 
   const save = useMutation(
     async (api, input: ProjectInput) => {
-      if (!project) return api.createProject(input);
+      if (!project) {
+        const created = await api.createProject(input);
+        return kind === "crm" && stages.length ? api.setProjectStages(created.id, stages) : created;
+      }
       const saved = await api.updateProject(project.id, input);
       return stagesChanged ? api.setProjectStages(project.id, stages) : saved;
     },
@@ -99,7 +105,11 @@ export function ProjectFormModal({
       return;
     }
     const pageName = pageSlug.trim();
-    if (stages.some((s) => !s.name.trim())) {
+    if (!editing && kind === "crm" && !stages.length) {
+      toast.error(t("Un CRM necesita al menos una etapa", "A CRM needs at least one stage"));
+      return;
+    }
+    if (showStages && stages.some((s) => !s.name.trim())) {
       toast.error(t("Ponle nombre a todas las etapas o quita las vacías", "Name every stage or remove the empty ones"));
       return;
     }
@@ -111,7 +121,7 @@ export function ProjectFormModal({
       ...form,
       name: form.name.trim(),
       description: form.description || null,
-      templateTasks: !editing && seedTasks ? template : undefined,
+      templateTasks: !editing && kind === "normal" && seedTasks ? template : undefined,
       newClient: !editing && creatingClient
         ? {
             userName: newClient.userName.trim() || undefined,
@@ -154,6 +164,26 @@ export function ProjectFormModal({
       <Field label={t("Nombre", "Name") + " *"}>
         <input className="ec-field-input" autoFocus value={form.name} onChange={(e) => setProjectName(e.target.value)} placeholder="Reforma Dental · Tracción" />
       </Field>
+
+      {!editing ? (
+        <Field label={t("Tipo de tablero", "Board type")}>
+          <nav className="ec-segmented">
+            <button type="button" className={kind === "normal" ? "active" : ""} onClick={() => setKind("normal")}>
+              {t("Normal · por estado", "Normal · by status")}
+            </button>
+            <button
+              type="button"
+              className={kind === "crm" ? "active" : ""}
+              onClick={() => {
+                setKind("crm");
+                if (!stages.length) setStages(CRM_STAGES.map((name) => ({ name })));
+              }}
+            >
+              {t("CRM · por etapas", "CRM · by stages")}
+            </button>
+          </nav>
+        </Field>
+      ) : null}
 
       <Grid>
         <Field label={t("Paquete Ecommetrica", "Ecommetrica package")}>
@@ -344,7 +374,7 @@ export function ProjectFormModal({
         <textarea className="ec-field-input" rows={2} value={form.description ?? ""} onChange={(e) => set("description", e.target.value)} />
       </Field>
 
-      {editing ? (
+      {showStages ? (
         <Field label={t("Etapas del tablero", "Board stages")}>
           <div style={{ fontSize: 12, color: "var(--ec-text-muted)", marginBottom: 8 }}>
             {t(
@@ -387,7 +417,7 @@ export function ProjectFormModal({
         </Field>
       ) : null}
 
-      {!editing && template.length > 0 ? (
+      {!editing && kind === "normal" && template.length > 0 ? (
         <div style={{ border: "1px solid var(--ec-hairline)", borderRadius: 10, padding: 14, background: "var(--ec-surface-2)" }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 500, cursor: "pointer" }}>
             <input type="checkbox" checked={seedTasks} onChange={(e) => setSeedTasks(e.target.checked)} />
@@ -408,6 +438,9 @@ export function ProjectFormModal({
     </Modal>
   );
 }
+
+/** Etapas iniciales de un CRM (las del CRM de ventas en ClickUp); se pueden editar antes de crear. */
+const CRM_STAGES = ["Open Lead", "Presentation/Quotation", "Negotiation", "Client", "Partner (<1yr)", "Complete Old CX (>1yr)"];
 
 function swap<T>(list: T[], a: number, b: number) {
   const next = [...list];

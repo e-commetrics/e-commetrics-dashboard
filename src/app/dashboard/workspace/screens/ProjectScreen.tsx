@@ -158,6 +158,18 @@ export function ProjectScreen({
               ) : null}
             </div>
           </div>
+          {stages.length ? (
+            // CRM: nadie "completa" leads, asi que en vez de avance y salud se ve cuantos hay por etapa.
+            <div className="ec-wb-pulse" style={{ flexWrap: "wrap" }}>
+              {stages.map((st, i) => (
+                <span key={st.id} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span aria-hidden style={{ width: 9, height: 9, borderRadius: 3, background: STAGE_COLORS[i % STAGE_COLORS.length] }} />
+                  {st.name} <strong className="ec-num">{allTasks.filter((task) => task.parentId === null && task.stageId === st.id).length}</strong>
+                </span>
+              ))}
+              <AvatarStack ids={project.memberIds} max={5} size={26} />
+            </div>
+          ) : (
           <div className="ec-wb-pulse">
             <span className="ec-num">
               <strong>
@@ -176,6 +188,7 @@ export function ProjectScreen({
             ) : null}
             <AvatarStack ids={project.memberIds} max={5} size={26} />
           </div>
+          )}
         </div>
         {project.description ? <p style={{ fontSize: 13, color: "var(--ec-text-muted)", marginTop: 8, maxWidth: "80ch" }}>{project.description}</p> : null}
 
