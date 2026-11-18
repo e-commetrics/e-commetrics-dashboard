@@ -13,6 +13,8 @@ import {
   Inbox,
   LayoutGrid,
   Megaphone,
+  Pin,
+  PinOff,
   QrCode,
   CreditCard,
   Shield,
@@ -28,6 +30,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -58,7 +61,8 @@ const CLIENT_COLORS = ["#EB6834", "#EDA100", "#C2185B", "#6250D6", "#1BAF7A", "#
 type Item = { key: string; href: string; es: string; en: string; icon: LucideIcon; badge?: number };
 
 type SidebarPage = { id: string; title: string; projectName: string };
-type SidebarClient = { key: string; name: string; color: string; apps: AppDef[]; pages: SidebarPage[] };
+/** `pinKey` es estable (no cambia si la cuenta del cliente tarda en cargar): "group-<id>" o "client-<id>". */
+type SidebarClient = { key: string; pinKey: string; name: string; color: string; apps: AppDef[]; pages: SidebarPage[] };
 
 const TOOL_ICONS: Record<string, LucideIcon> = { qr: QrCode, vcard: CreditCard };
 
@@ -113,14 +117,45 @@ function SidebarNav() {
     apiFetch("/api/clients")
       .then(async (res) => {
         if (!res.ok) throw new Error("clients");
-        return (await res.json()) as ClientAccount[];
+        // El backend responde { clients: [...] }; antes se esperaba la lista directa y nunca cargaba.
+        const data = (await res.json()) as ClientAccount[] | { clients?: ClientAccount[] };
+        return Array.isArray(data) ? data : data.clients ?? [];
       })
-      .then((rows) => !cancelled && setClients(Array.isArray(rows) ? rows : []))
+      .then((rows) => !cancelled && setClients(rows))
       .catch(() => !cancelled && setClients([]));
     return () => {
       cancelled = true;
     };
   }, [isTeam, pathname]);
+
+  // Clientes fijados: preferencia de la cuenta (GET/PUT /api/me/sidebar-pins), te sigue en cualquier equipo.
+  const [pins, setPins] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    apiFetch("/api/me/sidebar-pins")
+      .then(async (res) => (res.ok ? ((await res.json()) as { pins?: string[] }).pins ?? [] : []))
+      .then((rows) => !cancelled && setPins(rows))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const togglePin = (pinKey: string) => {
+    const prev = pins;
+    const next = prev.includes(pinKey) ? prev.filter((k) => k !== pinKey) : [...prev, pinKey];
+    setPins(next);
+    apiFetch("/api/me/sidebar-pins", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pins: next }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("pins");
+      })
+      .catch(() => setPins(prev)); // si falla, regresa como estaba
+  };
 
   const canOpen = (app: AppDef) =>
     isAdmin || permissions.some((p) => p.component === app.component && p.can_view);
@@ -241,6 +276,7 @@ function SidebarNav() {
     const realApps = client ? appsFromComponents(client.apps.filter((app) => app.canView).map((app) => app.component)) : [];
     return {
       key: client ? `client-${client.id}` : `group-${group.id}`,
+      pinKey: `group-${group.id}`,
       name: group.name,
       color: group.color,
       apps: realApps.length ? realApps : appsFromSlugs(group.apps),
@@ -252,6 +288,7 @@ function SidebarNav() {
     .filter((client) => !usedClientIds.has(client.id))
     .map((client, index) => ({
       key: `client-${client.id}`,
+      pinKey: `client-${client.id}`,
       name: client.name,
       color: CLIENT_COLORS[(CLIENT_GROUPS.length + index) % CLIENT_COLORS.length],
       apps: appsFromComponents(client.apps.filter((app) => app.canView).map((app) => app.component)),
@@ -259,7 +296,15 @@ function SidebarNav() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const clientGroups: SidebarClient[] = [...knownClients, ...extraClients];
+  // Fijados primero (en el orden en que se fijaron), luego el resto en su orden de siempre.
+  const pinRank = (c: SidebarClient) => {
+    const i = pins.indexOf(c.pinKey);
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  const clientGroups: SidebarClient[] = [...knownClients, ...extraClients]
+    .map((c, order) => ({ c, order }))
+    .sort((a, b) => pinRank(a.c) - pinRank(b.c) || a.order - b.order)
+    .map(({ c }) => c);
 
   // Legacy pages that do not belong to any client shown above.
   const shownPages = new Set(clientGroups.flatMap((group) => group.pages.map((page) => page.projectName)));
@@ -289,9 +334,10 @@ function SidebarNav() {
         <SidebarGroup>
           <SidebarGroupLabel>{t("Clientes", "Clients")}</SidebarGroupLabel>
           <SidebarMenu>
-            {clientGroups.map(({ key, name, apps, pages, color }) => {
+            {clientGroups.map(({ key, pinKey, name, apps, pages, color }) => {
               const pageUrls = pages.map((page) => `/dashboard/${page.projectName}`);
               const urls = [...apps.map((a) => appUrl(a.slug)), ...pageUrls];
+              const pinned = pins.includes(pinKey);
               return (
                 <ClientEntry
                   key={key}
@@ -299,6 +345,9 @@ function SidebarNav() {
                   color={color}
                   active={urls.includes(pathname)}
                   emptyLabel={t("Sin apps asignadas", "No apps assigned")}
+                  pinned={pinned}
+                  onTogglePin={() => togglePin(pinKey)}
+                  pinLabel={pinned ? t(`Desfijar ${name}`, `Unpin ${name}`) : t(`Fijar ${name} arriba`, `Pin ${name} to top`)}
                 >
                   {pages.map((p) => (
                     <SubLink key={`p-${p.id}`} href={`/dashboard/${p.projectName}`} active={pathname === `/dashboard/${p.projectName}`} onClick={closeMobile}>
@@ -371,12 +420,18 @@ function ClientEntry({
   active,
   emptyLabel,
   children,
+  pinned,
+  onTogglePin,
+  pinLabel,
 }: {
   name: string;
   color: string;
   active: boolean;
   emptyLabel?: string;
   children: React.ReactNode;
+  pinned?: boolean;
+  onTogglePin?: () => void;
+  pinLabel?: string;
 }) {
   const [open, setOpen] = React.useState(active);
   const [wasActive, setWasActive] = React.useState(active);
@@ -405,6 +460,18 @@ function ClientEntry({
             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
+        {onTogglePin ? (
+          // Fijado: el pin se ve siempre. Sin fijar: aparece al pasar el mouse (o con el teclado).
+          <SidebarMenuAction
+            showOnHover={!pinned}
+            onClick={onTogglePin}
+            aria-label={pinLabel}
+            aria-pressed={!!pinned}
+            title={pinLabel}
+          >
+            {pinned ? <PinOff /> : <Pin />}
+          </SidebarMenuAction>
+        ) : null}
         <CollapsibleContent>
           <SidebarMenuSub>
             {hasChildren ? (
