@@ -69,6 +69,10 @@ export const openSubtaskCount = (subtasks: Pick<Task, "status">[]) => subtasks.f
 export const PRIORITIES = ["urgent", "high", "normal", "low"] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
+/** Urgente primero, baja al final; empate = orden manual (position). */
+export const byPriority = (a: Pick<Task, "priority" | "position">, b: Pick<Task, "priority" | "position">) =>
+  PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority) || a.position - b.position;
+
 export type Task = {
   id: string;
   projectId: string;

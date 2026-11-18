@@ -16,11 +16,14 @@ import { AvatarStack, CompleteToggle, DueDate, LabelChip, LabelList, PriorityFla
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
 import { PROJECT_STATUS_META, TASK_STATUS_META, useT } from "../lib/i18n";
 import { packageName } from "../lib/packages";
-import { TASK_STATUSES, isDone, type Task, type TaskStatus } from "../lib/types";
+import { TASK_STATUSES, byPriority, isDone, type Task, type TaskStatus } from "../lib/types";
 import { ClientResults } from "@/components/home/ClientResults";
 import { clientGroupFor, progressPct } from "@/lib/apps";
 
 type Mode = "board" | "list" | "calendar";
+type SortBy = "manual" | "priority";
+
+const byPosition = (a: Task, b: Task) => a.position - b.position;
 
 export function ProjectScreen({
   projectId,
@@ -37,6 +40,8 @@ export function ProjectScreen({
   const [mode, setMode] = useState<Mode>("board");
   const [onlyMine, setOnlyMine] = useState(false);
   const [labelFilter, setLabelFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<SortBy>("manual");
+  const compare = sortBy === "priority" ? byPriority : byPosition;
   const [editing, setEditing] = useState(false);
 
   const move = useMutation((api, id: string, patch: { status?: TaskStatus; stageId?: string | null; position?: number }) => api.updateTask(id, patch), {
@@ -66,8 +71,8 @@ export function ProjectScreen({
         .filter((task) => task.parentId === null)
         .filter((task) => !onlyMine || task.assigneeIds.includes(meId))
         .filter((task) => !labelFilter || (task.labels ?? []).includes(labelFilter))
-        .sort((a, b) => a.position - b.position),
-    [allTasks, onlyMine, meId, labelFilter]
+        .sort(compare),
+    [allTasks, onlyMine, meId, labelFilter, compare]
   );
 
   // Weekly burn-up from the tasks themselves: done by that date against tasks that existed by that date.
@@ -239,6 +244,18 @@ export function ProjectScreen({
               {t("Asignadas a mí", "Assigned to me")}
             </button>
           </nav>
+          {mode !== "calendar" ? (
+            <select
+              className="ec-field-input"
+              style={{ width: 190, padding: "6px 10px", fontSize: 12.5 }}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              aria-label={t("Ordenar tareas", "Sort tasks")}
+            >
+              <option value="manual">{t("Orden: manual", "Sort: manual")}</option>
+              <option value="priority">{t("Orden: prioridad", "Sort: priority")}</option>
+            </select>
+          ) : null}
           {projectLabels.length ? (
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
               <select
@@ -321,6 +338,7 @@ export function ProjectScreen({
         <ListView
           tasks={topLevel}
           allTasks={allTasks}
+          compare={compare}
           onOpenTask={onOpenTask}
           onToggle={(task) => void move.run(task.id, { status: isDone(task.status) ? "todo" : "done" })}
           onCreate={(title, s, linkUrl) => create.run({ title, status: s, linkUrl })}
@@ -496,12 +514,14 @@ function QuickAdd({
 function ListView({
   tasks,
   allTasks,
+  compare,
   onOpenTask,
   onToggle,
   onCreate,
 }: {
   tasks: Task[];
   allTasks: Task[];
+  compare: (a: Task, b: Task) => number;
   onOpenTask: (id: string) => void;
   onToggle: (task: Task) => void;
   onCreate: (title: string, status: TaskStatus, linkUrl?: string | null) => Promise<unknown>;
@@ -518,7 +538,7 @@ function ListView({
     });
 
   const row = (task: Task, depth: number) => {
-    const subs = depth === 0 ? allTasks.filter((x) => x.parentId === task.id).sort((a, b) => a.position - b.position) : [];
+    const subs = depth === 0 ? allTasks.filter((x) => x.parentId === task.id).sort(compare) : [];
     const isOpen = expanded.has(task.id);
     return (
       <div key={task.id}>
