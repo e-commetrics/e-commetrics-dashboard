@@ -315,7 +315,7 @@ function SidebarNav() {
   const tools = TOOL_APPS.map(appBySlug).filter((a): a is AppDef => Boolean(a)).filter(canOpen);
 
   const admin: [Item, boolean][] = [
-    [{ key: "clients", href: "/dashboard/clients", es: "Clientes", en: "Clients", icon: Users }, pathname.startsWith("/dashboard/clients")],
+    [{ key: "clients", href: "/dashboard/clients", es: "Gestionar clientes", en: "Manage clients", icon: Users }, pathname.startsWith("/dashboard/clients")],
     [{ key: "perms", href: "/dashboard/access-app", es: "Permisos", en: "Permissions", icon: Shield }, pathname.startsWith("/dashboard/access-app")],
   ];
 
