@@ -14,7 +14,6 @@ import {
   LayoutGrid,
   Megaphone,
   Pin,
-  PinOff,
   QrCode,
   CreditCard,
   Shield,
@@ -289,7 +288,8 @@ function SidebarNav() {
     .map((client, index) => ({
       key: `client-${client.id}`,
       pinKey: `client-${client.id}`,
-      name: client.name,
+      // Nombre del proyecto (pagina del cliente o proyecto de Workspace): se reconoce mejor que la cuenta.
+      name: client.pages[0]?.title?.trim() || client.projects[0]?.name?.trim() || client.name,
       color: CLIENT_COLORS[(CLIENT_GROUPS.length + index) % CLIENT_COLORS.length],
       apps: appsFromComponents(client.apps.filter((app) => app.canView).map((app) => app.component)),
       pages: client.pages.map((page) => ({ id: page.id, title: page.title, projectName: page.projectName })),
@@ -469,7 +469,7 @@ function ClientEntry({
             aria-pressed={!!pinned}
             title={pinLabel}
           >
-            {pinned ? <PinOff /> : <Pin />}
+            {pinned ? <Pin fill="currentColor" /> : <Pin />}
           </SidebarMenuAction>
         ) : null}
         <CollapsibleContent>
