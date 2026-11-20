@@ -270,9 +270,14 @@ export default function ProjectContent({ project: initialProject }: { project: P
     return () => clearInterval(timer);
   }, [pct]);
 
-  const filteredContents = activeType
-    ? contents.filter((item) => item.type === activeType)
-    : contents;
+  // Orden por fase (Business → MVP → Strategy → Growth → Apps); dentro de cada fase, por creación.
+  const phaseRank = (type: string) => {
+    const i = CONTENT_TYPES_EN.indexOf(type);
+    return i < 0 ? CONTENT_TYPES_EN.length : i;
+  };
+  const filteredContents = (activeType ? contents.filter((item) => item.type === activeType) : contents)
+    .slice()
+    .sort((a, b) => phaseRank(a.type) - phaseRank(b.type));
 
   if (authLoading || !currentProject) {
     return (
