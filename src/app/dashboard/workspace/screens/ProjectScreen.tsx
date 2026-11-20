@@ -14,9 +14,11 @@ import { ProjectFormModal } from "../components/ProjectFormModal";
 import { TaskCard } from "../components/TaskCard";
 import { AvatarStack, CompleteToggle, DueDate, LabelChip, LabelList, PriorityFlag, StatusDot } from "../components/shared";
 import { useMutation, useResource, useWorkspace } from "../lib/hooks";
-import { PROJECT_STATUS_META, TASK_STATUS_META, useT } from "../lib/i18n";
+import { PRIORITY_META, PROJECT_STATUS_META, TASK_STATUS_META, useT } from "../lib/i18n";
+import { activeShortcut, fold, parseQuickAdd, type QuickParse } from "../lib/quickadd";
+import { employeesOf } from "../components/shared";
 import { packageName } from "../lib/packages";
-import { TASK_STATUSES, byPriority, isDone, type Task, type TaskStatus } from "../lib/types";
+import { TASK_STATUSES, byPriority, isDone, type Task, type TaskInput, type TaskStatus } from "../lib/types";
 import { ClientResults } from "@/components/home/ClientResults";
 import { clientGroupFor, progressPct } from "@/lib/apps";
 
@@ -50,9 +52,10 @@ export function ProjectScreen({
   const reschedule = useMutation((api, id: string, dueDate: string) => api.updateTask(id, { dueDate }), {
     onError: (m) => toast.error(m),
   });
+  // Sin "+persona" en el título, la tarea queda asignada a quien la crea.
   const create = useMutation(
-    (api, input: { title: string; status?: TaskStatus; stageId?: string | null; linkUrl?: string | null }) =>
-      api.createTask(projectId, { ...input, assigneeIds: [meId] }),
+    (api, input: TaskInput) =>
+      api.createTask(projectId, { ...input, assigneeIds: input.assigneeIds?.length ? input.assigneeIds : [meId] }),
     { onError: (m) => toast.error(m) }
   );
   const removeProject = useMutation((api) => api.deleteProject(projectId), {
@@ -311,7 +314,7 @@ export function ProjectScreen({
                   ...c,
                   match: (task: Task) => (c.stageId ? task.stageId === c.stageId : !stages.some((st) => st.id === task.stageId)),
                   onDrop: (task: Task) => void move.run(task.id, { stageId: c.stageId }),
-                  onCreate: (title: string, linkUrl?: string | null) => create.run({ title, stageId: c.stageId, linkUrl }),
+                  onCreate: (draft: QuickDraft) => create.run({ ...draft, stageId: c.stageId }),
                 }))
               : TASK_STATUSES.map((s) => ({
                   key: s,
@@ -319,7 +322,7 @@ export function ProjectScreen({
                   color: TASK_STATUS_META[s].color,
                   match: (task: Task) => task.status === s,
                   onDrop: (task: Task) => void move.run(task.id, { status: s }),
-                  onCreate: (title: string, linkUrl?: string | null) => create.run({ title, status: s, linkUrl }),
+                  onCreate: (draft: QuickDraft) => create.run({ ...draft, status: s }),
                 }))
           }
         />
@@ -341,7 +344,7 @@ export function ProjectScreen({
           compare={compare}
           onOpenTask={onOpenTask}
           onToggle={(task) => void move.run(task.id, { status: isDone(task.status) ? "todo" : "done" })}
-          onCreate={(title, s, linkUrl) => create.run({ title, status: s, linkUrl })}
+          onCreate={(draft, s) => create.run({ ...draft, status: s })}
         />
       )}
 
@@ -358,7 +361,7 @@ type BoardColumn = {
   color: string;
   match: (task: Task) => boolean;
   onDrop: (task: Task) => void;
-  onCreate: (title: string, linkUrl?: string | null) => Promise<unknown>;
+  onCreate: (draft: QuickDraft) => Promise<unknown>;
 };
 
 /** Columnas por estado (por defecto) o por etapa del proyecto; ProjectScreen decide cuáles. */
@@ -428,18 +431,47 @@ function Board({ tasks, columns, onOpenTask }: { tasks: Task[]; columns: BoardCo
   );
 }
 
+/** Lo que sale de "Agregar tarea": el título ya sin atajos, más lo que estos indicaron. */
+type QuickDraft = Omit<QuickParse, "dueDate"> & { dueDate?: string; linkUrl: string | null };
+
 function QuickAdd({
   onCreate,
   inline,
 }: {
-  onCreate: (title: string, linkUrl?: string | null) => Promise<unknown>;
+  onCreate: (draft: QuickDraft) => Promise<unknown>;
   inline?: boolean;
 }) {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const { members, memberById } = useWorkspace();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [caret, setCaret] = useState(0);
   const [linkUrl, setLinkUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const labelList = useResource("labels", (api) => api.listLabels());
+  const staff = employeesOf(members);
+  const labels = labelList.data ?? [];
+  // Atajos estilo Todoist (lib/quickadd.ts): p1..p4, fechas, @label, +persona.
+  const parsed = parseQuickAdd(title, { today: new Date(), labels, members: staff });
+  const shortcut = activeShortcut(title, caret);
+  const suggestions = !shortcut
+    ? []
+    : shortcut.sigil === "@"
+      ? labels.filter((l) => !/\s/.test(l) && fold(l).startsWith(fold(shortcut.query))).slice(0, 5)
+      : staff.filter((m) => fold(m.name).startsWith(fold(shortcut.query))).map((m) => m.name.split(/\s+/)[0]).slice(0, 5);
+  const pick = (value: string) => {
+    if (!shortcut) return;
+    const token = `${shortcut.sigil}${value} `;
+    const next = title.slice(0, shortcut.start) + token + title.slice(caret);
+    setTitle(next);
+    setCaret(shortcut.start + token.length);
+  };
+  const chips = [
+    parsed.dueDate ? `📅 ${new Date(`${parsed.dueDate}T00:00:00`).toLocaleDateString(lang === "es" ? "es-MX" : "en-US", { weekday: "short", day: "numeric", month: "short" })}` : null,
+    parsed.priority ? `⚑ ${PRIORITY_META[parsed.priority][lang]}` : null,
+    ...parsed.labels.map((l) => `🏷 ${l}`),
+    ...parsed.assigneeIds.map((id) => `👤 ${memberById(id)?.name ?? id}`),
+  ].filter(Boolean) as string[];
   if (!open)
     return (
       <button
@@ -465,10 +497,9 @@ function QuickAdd({
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        const value = title.trim();
-        if (!value || saving) return;
+        if (!parsed.title.trim() || saving) return;
         setSaving(true);
-        const created = await onCreate(value, linkUrl.trim() || null);
+        const created = await onCreate({ ...parsed, title: parsed.title.trim(), linkUrl: linkUrl.trim() || null });
         setSaving(false);
         // useMutation devuelve null si falló: se conserva lo escrito.
         if (created === null) return;
@@ -482,10 +513,34 @@ function QuickAdd({
         className="ec-field-input"
         style={{ fontSize: 13, padding: "8px 10px" }}
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => {
+          setTitle(e.target.value);
+          setCaret(e.target.selectionStart ?? e.target.value.length);
+        }}
+        onSelect={(e) => setCaret(e.currentTarget.selectionStart ?? 0)}
         onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-        placeholder={t("Nombre de la tarea y Enter", "Task name, then Enter")}
+        placeholder={t("Tarea · p1 mañana @label +persona", "Task · p1 tomorrow @label +person")}
+        aria-describedby={chips.length ? "quickadd-preview" : undefined}
       />
+      {suggestions.length ? (
+        <div role="group" aria-label={t("Sugerencias", "Suggestions")} style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {suggestions.map((s) => (
+            <button key={s} type="button" className="ec-btn-secondary" style={{ padding: "2px 8px", fontSize: 12 }} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(s)}>
+              {shortcut?.sigil}
+              {s}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {chips.length ? (
+        <div id="quickadd-preview" aria-live="polite" style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: 12, color: "var(--ec-text)" }}>
+          {chips.map((c) => (
+            <span key={c} style={{ padding: "2px 8px", borderRadius: 99, background: "var(--ec-surface-2)", border: "1px solid var(--ec-hairline)" }}>
+              {c}
+            </span>
+          ))}
+        </div>
+      ) : null}
       <input
         type="text"
         inputMode="url"
@@ -499,7 +554,7 @@ function QuickAdd({
       />
       {/* Con dos campos el navegador no envía con Enter si no hay botón de envío. */}
       <div style={{ display: "flex", gap: 6 }}>
-        <button type="submit" className="ec-btn-primary" style={{ padding: "6px 12px", fontSize: 12.5 }} disabled={saving || !title.trim()}>
+        <button type="submit" className="ec-btn-primary" style={{ padding: "6px 12px", fontSize: 12.5 }} disabled={saving || !parsed.title.trim()}>
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
           {t("Agregar", "Add")}
         </button>
@@ -524,7 +579,7 @@ function ListView({
   compare: (a: Task, b: Task) => number;
   onOpenTask: (id: string) => void;
   onToggle: (task: Task) => void;
-  onCreate: (title: string, status: TaskStatus, linkUrl?: string | null) => Promise<unknown>;
+  onCreate: (draft: QuickDraft, status: TaskStatus) => Promise<unknown>;
 }) {
   const { t, lang } = useT();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -629,7 +684,7 @@ function ListView({
               <>
                 {group.map((task) => row(task, 0))}
                 <div style={{ borderTop: "1px solid var(--ec-hairline)" }}>
-                  <QuickAdd inline onCreate={(title, linkUrl) => onCreate(title, s, linkUrl)} />
+                  <QuickAdd inline onCreate={(draft) => onCreate(draft, s)} />
                 </div>
               </>
             ) : null}

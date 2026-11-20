@@ -13,6 +13,15 @@ Orden de prioridad: de arriba hacia abajo. No empezar un punto hasta cerrar el a
 > `ecommetrica@gmail.com` y los opcionales. Falta definir qué es "el documento". Ver
 > `docs/tarjeta-resguardo.md`.
 
+## Notas retiradas del Workspace (2026-11-20)
+
+Se quitó la vista «Notas» (frontend y las rutas `/api/pm/notes*` del backend): la información va en una card
+del cliente o en una tarea del proyecto. **Cambios: ambos.** Las tablas siguen en la base.
+
+- [ ] Revisar si alguien tenía notas (consulta de solo lectura sobre `pm_notes` / `pm_note_links`) y
+      pedirle que pase el contenido a cards o tareas.
+- [ ] Después, borrar las tablas: `DROP TABLE pm_note_links; DROP TABLE pm_notes;` (no se puede deshacer).
+
 ## ScanEat sale del dashboard (2026-11-20)
 
 ScanEat queda como proyecto aparte (`e-commetrics/ScanEat`). Se quitó del dashboard la app

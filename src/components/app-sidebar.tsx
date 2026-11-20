@@ -13,7 +13,6 @@ import {
   Inbox,
   LayoutGrid,
   Megaphone,
-  NotebookPen,
   Pin,
   QrCode,
   CreditCard,
@@ -232,7 +231,6 @@ function SidebarNav() {
   const workspace: [Item, boolean][] = [
     [{ key: "projects", href: ws("projects"), es: "Proyectos", en: "Projects", icon: FolderKanban }, wsActive("projects")],
     [{ key: "wall", href: ws("wall"), es: "Muro", en: "Wall", icon: Megaphone }, wsActive("wall")],
-    [{ key: "notes", href: ws("notes"), es: "Notas", en: "Notes", icon: NotebookPen }, wsActive("notes")],
   ];
 
   const appsFromComponents = (components: string[]) =>
