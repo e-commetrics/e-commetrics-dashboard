@@ -915,7 +915,7 @@ a.ec-hrow:hover { background: var(--ec-surface-2); }
 .ec-sheet-intro { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: var(--ec-text-muted); max-width: 80ch; }
 .ec-sheet-error { margin-bottom: 10px; font-size: 13px; color: var(--ec-danger); }
 .ec-sheet-scroll { overflow-x: auto; max-height: min(68vh, 720px); overflow-y: auto; border: 1px solid var(--ec-text-dim); }
-.ec-sheet { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: fixed; font-size: 13px; color: var(--ec-text); background: var(--ec-surface-1); }
+.ec-sheet { width: 100%; min-width: 920px; border-collapse: collapse; table-layout: fixed; font-size: 13px; color: var(--ec-text); background: var(--ec-surface-1); }
 .ec-sheet th, .ec-sheet td { border: 1px solid var(--ec-hairline-strong); padding: 0; vertical-align: middle; text-align: left; }
 .ec-sheet thead th { position: sticky; top: 0; z-index: 1; background: var(--ec-surface-2); font-weight: 700; padding: 7px 8px; box-shadow: inset 0 -1px 0 var(--ec-text-dim); }
 .ec-sheet tbody th[scope="row"] { font-weight: 500; padding: 7px 8px; }
@@ -926,12 +926,19 @@ a.ec-hrow:hover { background: var(--ec-surface-2); }
 .ec-sheet-cell:disabled { color: var(--ec-text-muted); cursor: not-allowed; }
 .ec-sheet-cell::placeholder { color: var(--ec-text-dim); }
 .ec-sheet td > .ec-badge { margin: 0 8px; }
-.ec-sheet-check { display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; }
-.ec-sheet-check input { width: 16px; height: 16px; accent-color: var(--ec-brand-fill); }
-.ec-sheet-check:focus-within { box-shadow: inset 0 0 0 2px var(--ec-brand); }
+.ec-sheet-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; }
+.ec-sheet-action { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--ec-hairline-strong); background: transparent; color: var(--ec-brand); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.ec-sheet-action:hover:not(:disabled) { background: var(--ec-surface-2); }
+.ec-sheet-action:disabled { color: var(--ec-text-dim); cursor: not-allowed; }
+.ec-sheet-action:focus-visible, .ec-sheet-icon:focus-visible { outline: 2px solid var(--ec-brand); outline-offset: 1px; }
+.ec-sheet-add td { padding: 5px 8px; background: var(--ec-surface-2); }
+.ec-sheet-add form { display: flex; align-items: center; gap: 6px; }
+.ec-sheet-add .ec-sheet-cell { flex: 1; min-height: 30px; background: var(--ec-surface-1); }
+.ec-sheet-label { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.ec-sheet-icon { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: none; border: 0; border-radius: 6px; background: transparent; color: var(--ec-text-muted); cursor: pointer; }
+.ec-sheet-icon:hover { color: var(--ec-danger); background: var(--ec-surface-2); }
 .ec-sheet-priority { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-size: 11px; font-weight: 600; color: var(--ec-text); }
 .ec-sheet-priority svg { color: var(--ec-warning); fill: currentColor; }
-.ec-sheet-na { display: block; padding: 7px 8px; font-size: 12px; color: var(--ec-text-muted); background: var(--ec-surface-2); }
 .ec-sheet-who { display: block; padding: 0 8px 5px; font-size: 11px; color: var(--ec-text-dim); }
 .ec-sheet tr[aria-busy] { opacity: 0.6; }
 

@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/api";
 
 /**
  * Tarjeta de resguardo: la hoja "Requerimientos" (Requerimientos TEMPLATE.xlsx) dentro del dashboard.
- * Solo registra qué accesos dio el cliente; nunca guarda contraseñas ni datos bancarios.
+ * Registra qué accesos y datos dio el cliente; nunca guarda contraseñas.
  * Las claves (`key`) deben coincidir con REQUIREMENT_KEYS en backend-actual.js.
  */
 
@@ -35,9 +35,12 @@ export type RequirementItem = {
   key: string;
   es: string;
   en: string;
-  /** Placeholder de la columna Información. Sin `info` la fila no lleva texto, solo estado. */
+  /** Placeholders de las dos columnas de Información (sin ellos se usan DEFAULT_INFO y DEFAULT_INFO2). */
   info?: { es: string; en: string };
+  info2?: { es: string; en: string };
   priority?: boolean;
+  /** Agregado por el admin o el cliente en esta página; no es parte de la plantilla. */
+  custom?: boolean;
 };
 
 export type RequirementSection = {
@@ -54,8 +57,32 @@ export type RequirementSection = {
 
 const ACCOUNT = { es: "Usuario o correo de la cuenta (sin contraseña)", en: "Account user or email (no password)" };
 const LINK = { es: "Link del perfil", en: "Profile link" };
+export const DEFAULT_INFO = { es: "Usuario, correo o link", en: "User, email or link" };
+export const DEFAULT_INFO2 = { es: "Dato adicional", en: "Additional info" };
 
 export const REQUIREMENT_SECTIONS: RequirementSection[] = [
+  {
+    id: "business",
+    es: "Datos del Negocio",
+    en: "Business details",
+    items: [
+      { key: "address", es: "Dirección completa del local", en: "Full store address", info: { es: "Calle, número, colonia, ciudad, CP", en: "Street, number, city, ZIP" } },
+      { key: "tax_data", es: "Datos fiscales", en: "Tax details", info: { es: "Razón social", en: "Legal name" }, info2: { es: "RFC", en: "Tax ID" } },
+      { key: "official_phone", es: "Teléfono oficial", en: "Official phone", info: { es: "Teléfono con lada", en: "Phone with area code" } },
+      { key: "bank_clabe", es: "CLABE banco", en: "Bank CLABE", info: { es: "CLABE interbancaria (18 dígitos)", en: "CLABE (18 digits)" }, info2: { es: "Banco y titular", en: "Bank and account holder" } },
+    ],
+  },
+  {
+    id: "tech",
+    es: "Requisitos Técnicos",
+    en: "Technical requirements",
+    items: [
+      { key: "official_email", es: "Email oficial", en: "Official email", info: { es: "correo@tuempresa.com", en: "name@yourcompany.com" } },
+      { key: "dns_domains", es: "DNS-Dominios", en: "DNS / domains", info: ACCOUNT },
+      { key: "paypal", es: "PayPal (accesos para configuración)", en: "PayPal (setup access)", info: ACCOUNT },
+      { key: "fedex", es: "FedEx", en: "FedEx", info: ACCOUNT },
+    ],
+  },
   {
     id: "meta",
     es: "Agregar como Partner en Meta",
@@ -71,6 +98,7 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
       { key: "meta_instagram", es: "Instagram", en: "Instagram" },
       { key: "meta_whatsapp", es: "WhatsApp", en: "WhatsApp" },
       { key: "meta_whatsapp_catalog", es: "Catálogo de WhatsApp", en: "WhatsApp catalog" },
+      { key: "meta_pixel", es: "Pixel / Dataset", en: "Pixel / Dataset" },
     ],
   },
   {
@@ -88,17 +116,7 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
       { key: "google_search_console", es: "Google Search Console", en: "Google Search Console" },
       { key: "google_ads", es: "Google Ads", en: "Google Ads" },
       { key: "google_merchant_center", es: "Merchant Center", en: "Merchant Center" },
-    ],
-  },
-  {
-    id: "tech",
-    es: "Requisitos Técnicos",
-    en: "Technical requirements",
-    items: [
-      { key: "official_email", es: "Email oficial", en: "Official email", info: { es: "correo@tuempresa.com", en: "name@yourcompany.com" } },
-      { key: "dns_domains", es: "DNS-Dominios (accesos a GoDaddy)", en: "DNS / domains (GoDaddy access)", info: ACCOUNT },
-      { key: "paypal", es: "PayPal (accesos para configuración)", en: "PayPal (setup access)", info: ACCOUNT },
-      { key: "fedex", es: "FedEx", en: "FedEx", info: ACCOUNT },
+      { key: "google_youtube", es: "YouTube", en: "YouTube" },
     ],
   },
   {
@@ -109,27 +127,6 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
       { key: "facebook", es: "Facebook (accesos)", en: "Facebook (access)", info: LINK },
       { key: "instagram", es: "Instagram (accesos)", en: "Instagram (access)", info: LINK },
       { key: "youtube", es: "Cuenta de YouTube (crear y accesos)", en: "YouTube account (create and access)", info: LINK },
-    ],
-  },
-  {
-    id: "business",
-    es: "Datos del Negocio",
-    en: "Business details",
-    items: [
-      { key: "address", es: "Dirección completa del local", en: "Full store address", info: { es: "Calle, número, colonia, ciudad, CP", en: "Street, number, city, ZIP" } },
-      { key: "tax_data", es: "Datos fiscales", en: "Tax details", info: { es: "Razón social y RFC", en: "Legal name and tax ID" } },
-    ],
-  },
-  {
-    id: "catalog",
-    es: "Requisitos de Catálogo",
-    en: "Catalog requirements",
-    note: {
-      es: "Por producto: título, descripción, imágenes, precio, precio a comparar, impuestos, colección/catálogo, SKU, código de barras, política, cantidad. Para envío: peso, origen, HS, servicio de logística y variantes.",
-      en: "Per product: title, description, images, price, compare-at price, taxes, collection/catalog, SKU, barcode, policy, quantity. For shipping: weight, origin, HS code, logistics service and variants.",
-    },
-    items: [
-      { key: "product_info", es: "Información de productos", en: "Product information", info: { es: "Link al archivo con los productos", en: "Link to the product file" } },
     ],
   },
   {
@@ -144,34 +141,69 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
       { key: "wordpress", es: "Accesos WordPress", en: "WordPress access", info: ACCOUNT },
     ],
   },
+  {
+    id: "catalog",
+    es: "Requisitos de Catálogo",
+    en: "Catalog requirements",
+    note: {
+      es: "Por producto: título, descripción, imágenes, precio, precio a comparar, impuestos, colección/catálogo, SKU, código de barras, política, cantidad. Para envío: peso, origen, HS, servicio de logística y variantes.",
+      en: "Per product: title, description, images, price, compare-at price, taxes, collection/catalog, SKU, barcode, policy, quantity. For shipping: weight, origin, HS code, logistics service and variants.",
+    },
+    items: [
+      { key: "product_info", es: "Información de productos", en: "Product information", info: { es: "Link al archivo con los productos", en: "Link to the product file" } },
+    ],
+  },
 ];
 
-export const REQUIRED_KEYS = REQUIREMENT_SECTIONS.filter((s) => !s.optional).flatMap((s) => s.items.map((i) => i.key));
+/** Requisito que el admin o el cliente agregó a una sección de su página. Clave: `custom_<id>`. */
+export type CustomRequirement = { key: string; section: string; label: string };
+
+/** Plantilla más los requisitos propios de la página, cada uno al final de su sección. */
+export function withCustom(custom: CustomRequirement[]): RequirementSection[] {
+  return REQUIREMENT_SECTIONS.map((s) => ({
+    ...s,
+    items: [
+      ...s.items,
+      ...custom.filter((c) => c.section === s.id).map((c) => ({ key: c.key, es: c.label, en: c.label, custom: true })),
+    ],
+  }));
+}
+
+export const requiredKeys = (sections: RequirementSection[]) =>
+  sections.filter((s) => !s.optional).flatMap((s) => s.items.map((i) => i.key));
+
+export const REQUIRED_KEYS = requiredKeys(REQUIREMENT_SECTIONS);
 
 export type RequirementRow = {
   key: string;
   status: RequirementStatus;
   info: string | null;
+  info2: string | null;
   comment: string | null;
   updatedBy: string | null;
   updatedAt: string | null;
 };
 
-/** El equipo pone cualquier estado; el cliente solo marca o desmarca "enviado", y no toca lo ya verificado. */
-export function canSetStatus(isTeam: boolean, current: RequirementStatus, next: RequirementStatus): boolean {
-  if (isTeam) return true;
-  return current !== "verified" && next !== "verified";
+/** Pendiente y Enviado los decide la información: con algún dato pasa a Enviado. Verificado no cambia. */
+export function statusAfterInfo(current: RequirementStatus, hasInfo: boolean): RequirementStatus {
+  if (current === "verified") return current;
+  return hasInfo ? "sent" : "pending";
 }
 
-export function requirementProgress(rows: Record<string, RequirementRow>) {
+/** Solo el equipo cambia el estado a mano: Enviado → Verificado, o Verificado → Enviado para deshacer. */
+export function canSetStatus(isTeam: boolean, current: RequirementStatus, next: RequirementStatus): boolean {
+  return isTeam && ((current === "sent" && next === "verified") || (current === "verified" && next === "sent"));
+}
+
+export function requirementProgress(rows: Record<string, RequirementRow>, keys: string[] = REQUIRED_KEYS) {
   let sent = 0;
   let verified = 0;
-  for (const key of REQUIRED_KEYS) {
+  for (const key of keys) {
     const s = rows[key]?.status;
     if (s === "verified") verified++;
     else if (s === "sent") sent++;
   }
-  return { total: REQUIRED_KEYS.length, sent, verified };
+  return { total: keys.length, sent, verified };
 }
 
 async function readError(res: Response): Promise<never> {
@@ -179,17 +211,19 @@ async function readError(res: Response): Promise<never> {
   throw new Error(data?.error ?? data?.message ?? `${res.status}`);
 }
 
-export async function listRequirements(projectId: number): Promise<Record<string, RequirementRow>> {
+export async function listRequirements(
+  projectId: number
+): Promise<{ rows: Record<string, RequirementRow>; custom: CustomRequirement[] }> {
   const res = await apiFetch(`/api/projects/${projectId}/requirements`);
   if (!res.ok) await readError(res);
-  const data = (await res.json()) as { requirements: RequirementRow[] };
-  return Object.fromEntries(data.requirements.map((r) => [r.key, r]));
+  const data = (await res.json()) as { requirements: RequirementRow[]; custom?: CustomRequirement[] };
+  return { rows: Object.fromEntries(data.requirements.map((r) => [r.key, r])), custom: data.custom ?? [] };
 }
 
 export async function saveRequirement(
   projectId: number,
   key: string,
-  patch: Partial<Pick<RequirementRow, "status" | "info" | "comment">>
+  patch: Partial<Pick<RequirementRow, "status" | "info" | "info2" | "comment">>
 ): Promise<RequirementRow> {
   const res = await apiFetch(`/api/projects/${projectId}/requirements/${encodeURIComponent(key)}`, {
     method: "PUT",
@@ -198,6 +232,22 @@ export async function saveRequirement(
   });
   if (!res.ok) await readError(res);
   return ((await res.json()) as { requirement: RequirementRow }).requirement;
+}
+
+export async function addCustomRequirement(projectId: number, section: string, label: string): Promise<CustomRequirement> {
+  const res = await apiFetch(`/api/projects/${projectId}/requirements`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ section, label }),
+  });
+  if (!res.ok) await readError(res);
+  return ((await res.json()) as { item: CustomRequirement }).item;
+}
+
+/** Solo admin. Borra el requisito propio y lo que se haya llenado en él. */
+export async function deleteCustomRequirement(projectId: number, key: string): Promise<void> {
+  const res = await apiFetch(`/api/projects/${projectId}/requirements/${encodeURIComponent(key)}`, { method: "DELETE" });
+  if (!res.ok) await readError(res);
 }
 
 export async function getVaultSettings(): Promise<VaultSettings> {

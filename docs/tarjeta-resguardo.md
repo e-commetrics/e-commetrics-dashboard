@@ -100,3 +100,17 @@ Además debe incluir "el documento", que todavía no está identificado (ver dud
   `/api/requirements-settings`. Sin filas guardadas se usan los valores por defecto.
 - Etiquetas nuevas: "Agréganos como Partner en Meta con este Business ID" y "Agrega este correo como usuario en Google".
 - Filas sin campo de información (Meta y Google) muestran "Solo dar acceso" en vez de una celda vacía.
+
+## Cambios del 2026-11-19 (ticket de Juan González, sin commit)
+
+- **Secciones en este orden:** Datos del Negocio, Técnicos, Meta, Google, Social Media (se mantiene), Opcionales y Catálogo.
+- **Nuevos requisitos:** Teléfono oficial y CLABE banco (Negocio), Pixel / Dataset (Meta), YouTube (Google).
+  "DNS-Dominios" ya no dice "(accesos a GoDaddy)".
+- **CLABE:** se decidió guardarla. El aviso de la hoja ahora solo prohíbe contraseñas.
+- **Información en dos columnas** (`info` e `info2`) en todas las filas, y la pueden llenar el admin y el cliente.
+- **Estado automático:** con algún dato pasa a Enviado y sin datos regresa a Pendiente. El equipo pasa
+  Enviado → Verificado y puede deshacerlo (Verificado → Enviado). Ya no hay casilla para el cliente. Lo verificado
+  queda fijo para el cliente; solo puede comentar.
+- **Agregar requisito** al final de cada sección (cliente y equipo). Solo el admin los borra.
+- **Despliegue, en este orden:** `docs/migrations/2026-11-19-requirements-custom.sql`, luego `backend-actual.js`,
+  luego el frontend. El backend nuevo falla sin la columna `info2`.

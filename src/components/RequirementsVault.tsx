@@ -1,19 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Loader2, Settings2, ShieldCheck, Star } from "lucide-react";
+import { Check, Copy, Loader2, Plus, Settings2, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { Modal } from "@/app/dashboard/webapp/crm/components/ui";
 import {
+  DEFAULT_INFO,
+  DEFAULT_INFO2,
   DEFAULT_VAULT_SETTINGS,
-  REQUIREMENT_SECTIONS,
-  canSetStatus,
+  addCustomRequirement,
+  deleteCustomRequirement,
   getVaultSettings,
   listRequirements,
+  requiredKeys,
   requirementProgress,
   saveRequirement,
   saveVaultSettings,
   vaultSettingsError,
+  withCustom,
+  type CustomRequirement,
   type RequirementItem,
+  type RequirementSection,
   type RequirementRow,
   type RequirementStatus,
   type VaultSettings,
@@ -54,7 +60,7 @@ function CopyValue({ value, copiedLabel }: { value: string; copiedLabel: string 
 
 /**
  * Tarjeta de resguardo en la portada del cliente: resumen arriba a la derecha y, al abrirla,
- * la hoja "Requerimientos" con el estado de cada acceso. El cliente marca "Enviado";
+ * la hoja "Requerimientos" con el estado de cada acceso. Al llenar información pasa a "Enviado";
  * el equipo verifica. Nunca guarda contraseñas.
  */
 export function RequirementsVault({
@@ -70,6 +76,7 @@ export function RequirementsVault({
 }) {
   const es = lang === "es";
   const [rows, setRows] = useState<Rows | null>(null);
+  const [custom, setCustom] = useState<CustomRequirement[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<VaultSettings>(DEFAULT_VAULT_SETTINGS);
@@ -78,7 +85,11 @@ export function RequirementsVault({
   useEffect(() => {
     let alive = true;
     listRequirements(projectId)
-      .then((r) => alive && setRows(r))
+      .then((r) => {
+        if (!alive) return;
+        setRows(r.rows);
+        setCustom(r.custom);
+      })
       .catch(() => alive && setLoadError(true));
     // Sin ajustes guardados (o si falla) se quedan los valores por defecto.
     getVaultSettings()
@@ -89,10 +100,11 @@ export function RequirementsVault({
     };
   }, [projectId]);
 
-  const progress = requirementProgress(rows ?? {});
+  const sections = withCustom(custom);
+  const progress = requirementProgress(rows ?? {}, requiredKeys(sections));
   const statusOf = (key: string): RequirementStatus => rows?.[key]?.status ?? "pending";
   const adStatus = statusOf("meta_ad_account");
-  const nextUp = REQUIREMENT_SECTIONS.filter((s) => !s.optional)
+  const nextUp = sections.filter((s) => !s.optional)
     .flatMap((s) => s.items)
     .filter((i) => statusOf(i.key) === "pending")
     .slice(0, 3);
@@ -186,10 +198,13 @@ export function RequirementsVault({
           <RequirementsSheet
             projectId={projectId}
             isTeam={isTeam}
+            isAdmin={isAdmin}
             es={es}
             rows={rows}
+            sections={sections}
             settings={settings}
             onRow={(r) => setRows((p) => ({ ...p, [r.key]: r }))}
+            onCustom={setCustom}
           />
         </Modal>
       ) : null}
@@ -314,26 +329,33 @@ function VaultSettingsModal({
 function RequirementsSheet({
   projectId,
   isTeam,
+  isAdmin,
   es,
   rows,
+  sections,
   settings,
   onRow,
+  onCustom,
 }: {
   projectId: number;
   isTeam: boolean;
+  isAdmin: boolean;
   es: boolean;
   rows: Rows;
+  sections: RequirementSection[];
   settings: VaultSettings;
   onRow: (row: RequirementRow) => void;
+  onCustom: (update: (c: CustomRequirement[]) => CustomRequirement[]) => void;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [toDelete, setToDelete] = useState<RequirementItem | null>(null);
 
-  const save = async (key: string, patch: Parameters<typeof saveRequirement>[2]) => {
+  const run = async (key: string, task: () => Promise<void>) => {
     setBusy(key);
     setError("");
     try {
-      onRow(await saveRequirement(projectId, key, patch));
+      await task();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
@@ -341,12 +363,28 @@ function RequirementsSheet({
     }
   };
 
+  const save = (key: string, patch: Parameters<typeof saveRequirement>[2]) =>
+    run(key, async () => onRow(await saveRequirement(projectId, key, patch)));
+
+  const add = (section: string, label: string) =>
+    run(`add:${section}`, async () => {
+      const item = await addCustomRequirement(projectId, section, label);
+      onCustom((c) => [...c, item]);
+    });
+
+  const remove = (key: string) =>
+    run(key, async () => {
+      await deleteCustomRequirement(projectId, key);
+      onCustom((c) => c.filter((i) => i.key !== key));
+      setToDelete(null);
+    });
+
   return (
     <div>
       <p className="ec-sheet-intro">
         {es
-          ? "Marca cada acceso cuando ya lo hayas dado; el equipo de Ecommetrica lo verifica. No escribas contraseñas ni datos bancarios en esta hoja."
-          : "Mark each item once you have granted it; the Ecommetrica team verifies it. Do not write passwords or bank details in this sheet."}
+          ? "Llena la información de cada requisito y pasará a Enviado; el equipo de Ecommetrica lo verifica. No escribas contraseñas en esta hoja."
+          : "Fill in each requirement and it moves to Sent; the Ecommetrica team verifies it. Do not write passwords in this sheet."}
       </p>
       {settings.clientNote ? <p className="ec-vault-note">{settings.clientNote}</p> : null}
       {error ? (
@@ -358,23 +396,24 @@ function RequirementsSheet({
       <div className="ec-sheet-scroll">
         <table className="ec-sheet">
           <colgroup>
-            <col style={{ width: "27%" }} />
-            <col style={{ width: "30%" }} />
-            <col style={{ width: "17%" }} />
-            <col style={{ width: "26%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "19%" }} />
+            <col style={{ width: "19%" }} />
+            <col style={{ width: "16%" }} />
+            <col style={{ width: "24%" }} />
           </colgroup>
           <thead>
             <tr>
               <th scope="col">{es ? "Requisito" : "Requirement"}</th>
-              <th scope="col">{es ? "Información" : "Information"}</th>
+              <th scope="colgroup" colSpan={2}>{es ? "Información" : "Information"}</th>
               <th scope="col">{es ? "Estado" : "Status"}</th>
               <th scope="col">{es ? "Comentarios" : "Comments"}</th>
             </tr>
           </thead>
-          {REQUIREMENT_SECTIONS.map((section) => (
+          {sections.map((section) => (
             <tbody key={section.id}>
               <tr className="ec-sheet-section">
-                <th colSpan={4} scope="colgroup">
+                <th colSpan={5} scope="colgroup">
                   {es ? section.es : section.en}
                   {section.note ? (
                     <small>
@@ -393,13 +432,85 @@ function RequirementsSheet({
                   isTeam={isTeam}
                   busy={busy === item.key}
                   onSave={(patch) => save(item.key, patch)}
+                  onDelete={isAdmin && item.custom ? () => setToDelete(item) : undefined}
                 />
               ))}
+              <AddRow es={es} busy={busy === `add:${section.id}`} onAdd={(label) => add(section.id, label)} />
             </tbody>
           ))}
         </table>
       </div>
+
+      <Modal
+        open={!!toDelete}
+        onOpenChange={(o) => !o && setToDelete(null)}
+        title={es ? "Borrar requisito" : "Delete requirement"}
+        width={440}
+        footer={
+          <>
+            <button type="button" className="ec-btn-secondary" onClick={() => setToDelete(null)}>
+              {es ? "Cancelar" : "Cancel"}
+            </button>
+            <button type="button" className="ec-btn-primary" disabled={!!busy} onClick={() => toDelete && remove(toDelete.key)}>
+              {busy ? <Loader2 size={14} className="animate-spin" /> : null}
+              {es ? "Borrar" : "Delete"}
+            </button>
+          </>
+        }
+      >
+        <p className="ec-vault-muted">
+          {es
+            ? `Se borra "${toDelete?.es}" y la información que tenga. No se puede deshacer.`
+            : `"${toDelete?.en}" and its information will be deleted. This cannot be undone.`}
+        </p>
+      </Modal>
     </div>
+  );
+}
+
+/** Última fila de cada sección: agrega un requisito propio de esta página. */
+function AddRow({ es, busy, onAdd }: { es: boolean; busy: boolean; onAdd: (label: string) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [label, setLabel] = useState("");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!label.trim()) return;
+    await onAdd(label.trim());
+    setLabel("");
+    setOpen(false);
+  };
+
+  return (
+    <tr className="ec-sheet-add">
+      <td colSpan={5}>
+        {open ? (
+          <form onSubmit={submit}>
+            <input
+              className="ec-sheet-cell"
+              value={label}
+              maxLength={120}
+              autoFocus
+              placeholder={es ? "Nombre del requisito" : "Requirement name"}
+              aria-label={es ? "Nombre del requisito nuevo" : "New requirement name"}
+              onChange={(e) => setLabel(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+            />
+            <button type="submit" className="ec-sheet-action" disabled={busy || !label.trim()}>
+              {busy ? <Loader2 size={13} className="animate-spin" aria-hidden /> : null}
+              {es ? "Agregar" : "Add"}
+            </button>
+            <button type="button" className="ec-sheet-action" onClick={() => setOpen(false)}>
+              {es ? "Cancelar" : "Cancel"}
+            </button>
+          </form>
+        ) : (
+          <button type="button" className="ec-sheet-action" onClick={() => setOpen(true)}>
+            <Plus size={13} aria-hidden /> {es ? "Agregar requisito" : "Add requirement"}
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }
 
@@ -410,6 +521,7 @@ function SheetRow({
   isTeam,
   busy,
   onSave,
+  onDelete,
 }: {
   item: RequirementItem;
   row: RequirementRow | undefined;
@@ -417,73 +529,68 @@ function SheetRow({
   isTeam: boolean;
   busy: boolean;
   onSave: (patch: Parameters<typeof saveRequirement>[2]) => void;
+  onDelete?: () => void;
 }) {
   const status = row?.status ?? "pending";
-  const locked = !canSetStatus(isTeam, status, "pending");
+  // Un acceso verificado queda fijo para el cliente; solo puede comentar.
+  const locked = !isTeam && status === "verified";
   const [info, setInfo] = useState(row?.info ?? "");
+  const [info2, setInfo2] = useState(row?.info2 ?? "");
   const [comment, setComment] = useState(row?.comment ?? "");
   const label = es ? item.es : item.en;
+  const next: RequirementStatus | null = status === "sent" ? "verified" : status === "verified" ? "sent" : null;
 
   // Guarda al salir de la celda, solo si cambió (como una celda de Excel).
-  const commit = (field: "info" | "comment", value: string) => {
-    if (value.trim() !== ((field === "info" ? row?.info : row?.comment) ?? "")) onSave({ [field]: value });
+  const commit = (field: "info" | "info2" | "comment", value: string) => {
+    if (value.trim() !== (row?.[field] ?? "")) onSave({ [field]: value });
   };
+
+  const infoCell = (field: "info" | "info2", value: string, set: (v: string) => void, ph: { es: string; en: string }) => (
+    <td>
+      <input
+        className="ec-sheet-cell"
+        value={value}
+        maxLength={255}
+        placeholder={es ? ph.es : ph.en}
+        aria-label={`${label}: ${es ? "información" : "information"} ${field === "info" ? 1 : 2}`}
+        disabled={locked}
+        autoComplete="off"
+        onChange={(e) => set(e.target.value)}
+        onBlur={() => commit(field, value)}
+      />
+    </td>
+  );
 
   return (
     <tr aria-busy={busy || undefined}>
       <th scope="row">
-        {label}
-        {item.priority ? (
-          <span className="ec-sheet-priority">
-            <Star size={11} aria-hidden /> {es ? "Prioritario" : "Priority"}
+        <span className="ec-sheet-label">
+          <span>
+            {label}
+            {item.priority ? (
+              <span className="ec-sheet-priority">
+                <Star size={11} aria-hidden /> {es ? "Prioritario" : "Priority"}
+              </span>
+            ) : null}
           </span>
-        ) : null}
+          {onDelete ? (
+            <button type="button" className="ec-sheet-icon" onClick={onDelete} aria-label={`${es ? "Borrar" : "Delete"} ${label}`}>
+              <Trash2 size={13} aria-hidden />
+            </button>
+          ) : null}
+        </span>
       </th>
+      {infoCell("info", info, setInfo, item.info ?? DEFAULT_INFO)}
+      {infoCell("info2", info2, setInfo2, item.info2 ?? DEFAULT_INFO2)}
       <td>
-        {item.info ? (
-          <input
-            className="ec-sheet-cell"
-            value={info}
-            maxLength={255}
-            placeholder={es ? item.info.es : item.info.en}
-            aria-label={`${label}: ${es ? "información" : "information"}`}
-            disabled={locked}
-            autoComplete="off"
-            onChange={(e) => setInfo(e.target.value)}
-            onBlur={() => commit("info", info)}
-          />
-        ) : (
-          <span className="ec-sheet-na">{es ? "Solo dar acceso" : "Access only"}</span>
-        )}
-      </td>
-      <td>
-        {isTeam ? (
-          <select
-            className="ec-sheet-cell"
-            value={status}
-            disabled={busy}
-            aria-label={`${label}: ${es ? "estado" : "status"}`}
-            onChange={(e) => onSave({ status: e.target.value as RequirementStatus })}
-          >
-            {(Object.keys(STATUS_META) as RequirementStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {es ? STATUS_META[s].es : STATUS_META[s].en}
-              </option>
-            ))}
-          </select>
-        ) : locked ? (
+        <div className="ec-sheet-status">
           <StatusBadge status={status} es={es} />
-        ) : (
-          <label className="ec-sheet-check">
-            <input
-              type="checkbox"
-              checked={status === "sent"}
-              disabled={busy}
-              onChange={(e) => onSave({ status: e.target.checked ? "sent" : "pending" })}
-            />
-            <StatusBadge status={status} es={es} />
-          </label>
-        )}
+          {isTeam && next ? (
+            <button type="button" className="ec-sheet-action" disabled={busy} onClick={() => onSave({ status: next })}>
+              {next === "verified" ? (es ? "Verificar" : "Verify") : es ? "Quitar verificación" : "Unverify"}
+            </button>
+          ) : null}
+        </div>
       </td>
       <td>
         <input
