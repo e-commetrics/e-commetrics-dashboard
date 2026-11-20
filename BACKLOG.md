@@ -64,9 +64,8 @@ con fecha. No hay otras labels.
 3. **Workspace:** quitar selector de tipo y editor de etapas de `ProjectFormModal.tsx`, vista por
    etapas de `ProjectScreen.tsx`, conteo de etapas de `ProjectCard.tsx`, y `stages`/`stageId` del
    mock y los tipos donde ya no se usen.
-4. **`/dashboard/settings`:** sección «Labels» con conteo de uso, renombrar y borrar. Backend:
-   `PATCH /api/pm/labels` (renombrar; si el nombre nuevo ya existe se fusionan sin duplicar) y
-   `DELETE /api/pm/labels/:label`. Agregar la ruta a `ADMIN_ONLY_ROUTES` y al menú lateral.
+4. **Labels:** ya resuelto el 2026-11-20 en Ajustes (`/dashboard/settings` → Labels). Al migrar el
+   CRM solo hay que borrar las 6 labels de etapa (desde ahí o en el SQL de migración).
 
 5. **Quitar la cuenta cliente duplicada de Juan (agregado 2026-11-20).** La cuenta cliente 16
    «juanmanuel» (`juanmanuel@ecommetrica.com`) la creó Juan, que es del equipo (su cuenta real es

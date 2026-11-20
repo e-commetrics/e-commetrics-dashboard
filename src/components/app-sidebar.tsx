@@ -17,7 +17,7 @@ import {
   Pin,
   QrCode,
   CreditCard,
-  Shield,
+  SlidersHorizontal,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -228,7 +228,6 @@ function SidebarNav() {
     [{ key: "inbox", href: ws("inbox"), es: "Bandeja", en: "Inbox", icon: Inbox, badge: unread }, wsActive("inbox")],
     [{ key: "my-tasks", href: ws("my-tasks"), es: "Mis tareas", en: "My tasks", icon: CheckSquare }, wsActive("my-tasks")],
     [{ key: "calendar", href: ws("calendar"), es: "Calendario", en: "Calendar", icon: CalendarDays }, wsActive("calendar")],
-    [{ key: "team", href: "/dashboard/team", es: "Equipo", en: "Team", icon: Users }, pathname.startsWith("/dashboard/team")],
   ];
   const workspace: [Item, boolean][] = [
     [{ key: "projects", href: ws("projects"), es: "Proyectos", en: "Projects", icon: FolderKanban }, wsActive("projects")],
@@ -318,7 +317,8 @@ function SidebarNav() {
 
   const admin: [Item, boolean][] = [
     [{ key: "clients", href: "/dashboard/clients", es: "Gestionar clientes", en: "Manage clients", icon: Users }, pathname.startsWith("/dashboard/clients")],
-    [{ key: "perms", href: "/dashboard/access-app", es: "Permisos", en: "Permissions", icon: Shield }, pathname.startsWith("/dashboard/access-app")],
+    // Equipo y Permisos viven ahora dentro de Ajustes (sus rutas siguen funcionando).
+    [{ key: "settings", href: "/dashboard/settings", es: "Ajustes", en: "Settings", icon: SlidersHorizontal }, pathname.startsWith("/dashboard/settings")],
   ];
 
   return (

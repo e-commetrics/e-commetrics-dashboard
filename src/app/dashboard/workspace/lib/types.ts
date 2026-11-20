@@ -25,6 +25,11 @@ export type PackageId = "simple" | "advanced" | "grower" | "high-profile" | "cus
 
 export const PROJECT_STATUSES = ["planning", "active", "on_hold", "completed", "archived"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+/** Ajuste del admin: orden y nombre propio de cada estado ("" = nombre por defecto). */
+export type ProjectStatusSetting = { id: ProjectStatus; name: string };
+export type LabelUsage = { label: string; count: number };
+/** Tarea precargada de un paquete. */
+export type TemplateTask = { title: string; description: string | null };
 
 export type ProjectStage = { id: string; name: string };
 

@@ -10,6 +10,9 @@ import type {
   NoteKind,
   NoteLink,
   NoteLinkInput,
+  LabelUsage,
+  ProjectStatusSetting,
+  TemplateTask,
   ProjectDetail,
   ProjectInput,
   Task,
@@ -81,6 +84,19 @@ export interface WorkspaceApi {
   addNoteLink(noteId: string, input: NoteLinkInput): Promise<NoteLink>;
   updateNoteLink(noteId: string, linkId: string, patch: Partial<NoteLinkInput>): Promise<NoteLink>;
   deleteNoteLink(noteId: string, linkId: string): Promise<void>;
+
+  // Ajustes del dashboard (/dashboard/settings). Escribir es solo de admin.
+  labelUsage(): Promise<LabelUsage[]>;
+  /** Renombra en todas las tareas; si `to` ya existe, se fusionan. */
+  renameLabel(from: string, to: string): Promise<void>;
+  deleteLabel(label: string): Promise<void>;
+  /** null = sin ajustes (orden y nombres por defecto). */
+  getProjectStatuses(): Promise<ProjectStatusSetting[] | null>;
+  setProjectStatuses(statuses: ProjectStatusSetting[]): Promise<ProjectStatusSetting[]>;
+  /** Solo los paquetes editados; los demás usan las inclusiones de pricing.ts. */
+  getPackageTemplates(): Promise<Record<string, TemplateTask[]>>;
+  setPackageTemplate(packageId: string, tasks: TemplateTask[]): Promise<TemplateTask[]>;
+  resetPackageTemplate(packageId: string): Promise<void>;
 }
 
 export const IS_MOCK = process.env.NEXT_PUBLIC_PM_API !== "live";
@@ -154,6 +170,19 @@ export const httpApi: WorkspaceApi = {
   updateNoteLink: (noteId, linkId, patch) =>
     call<{ link: NoteLink }>("PATCH", `/notes/${enc(noteId)}/links/${enc(linkId)}`, patch).then((d) => d.link),
   deleteNoteLink: (noteId, linkId) => call<void>("DELETE", `/notes/${enc(noteId)}/links/${enc(linkId)}`),
+
+  labelUsage: () => call<{ labels: LabelUsage[] }>("GET", "/labels/usage").then((d) => d.labels),
+  renameLabel: (from, to) => call<void>("PATCH", "/labels", { from, to }),
+  deleteLabel: (label) => call<void>("DELETE", `/labels?label=${enc(label)}`),
+  getProjectStatuses: () =>
+    call<{ statuses: ProjectStatusSetting[] | null }>("GET", "/project-statuses").then((d) => d.statuses),
+  setProjectStatuses: (statuses) =>
+    call<{ statuses: ProjectStatusSetting[] }>("PUT", "/project-statuses", { statuses }).then((d) => d.statuses),
+  getPackageTemplates: () =>
+    call<{ templates: Record<string, TemplateTask[]> }>("GET", "/package-templates").then((d) => d.templates),
+  setPackageTemplate: (packageId, tasks) =>
+    call<{ tasks: TemplateTask[] }>("PUT", `/package-templates/${enc(packageId)}`, { tasks }).then((d) => d.tasks),
+  resetPackageTemplate: (packageId) => call<void>("DELETE", `/package-templates/${enc(packageId)}`),
 };
 
 let mockSingleton: WorkspaceApi | null = null;

@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { errorMessage, getApi, type WorkspaceApi } from "./api";
-import type { Member } from "./types";
+import { PROJECT_STATUS_META } from "./i18n";
+import { PROJECT_STATUSES, type Member, type ProjectStatus, type ProjectStatusSetting } from "./types";
 
 // Capa de datos del espacio de trabajo. Mismo patron que el CRM
 // (webapp/crm/lib/hooks.tsx): un `revision` que las mutaciones incrementan y
@@ -19,6 +20,10 @@ type Ctx = {
   /** Id del usuario conectado tal como lo conoce la API. */
   meId: string;
   isAdmin: boolean;
+  /** Estados de proyecto en el orden que fijó el admin en Ajustes. */
+  statusOrder: ProjectStatus[];
+  /** Nombre del estado: el que puso el admin en Ajustes o el de siempre. */
+  statusName: (id: ProjectStatus, lang: "es" | "en") => string;
 };
 
 const WorkspaceContext = createContext<Ctx | null>(null);
@@ -30,6 +35,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const api = useMemo(() => getApi(user ?? null), [user]);
   const [members, setMembers] = useState<Member[]>([]);
   const [meId, setMeId] = useState<string>(user?.id ?? "");
+  const [statusSettings, setStatusSettings] = useState<ProjectStatusSetting[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +45,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setMembers(list);
         setMeId(me.id);
       })
+      .catch(() => undefined);
+    // Sin ajustes (o si falla) se usan el orden y los nombres de siempre.
+    api
+      .getProjectStatuses()
+      .then((s) => !cancelled && setStatusSettings(s))
       .catch(() => undefined);
     return () => {
       cancelled = true;
@@ -55,8 +66,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       memberById: (id) => (id ? map.get(id) : undefined),
       meId,
       isAdmin: user?.role === "admin",
+      statusOrder: statusSettings?.map((s) => s.id) ?? [...PROJECT_STATUSES],
+      statusName: (id, lang) => statusSettings?.find((s) => s.id === id)?.name || PROJECT_STATUS_META[id][lang],
     };
-  }, [revision, bump, api, members, meId, user?.role]);
+  }, [revision, bump, api, members, meId, user?.role, statusSettings]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

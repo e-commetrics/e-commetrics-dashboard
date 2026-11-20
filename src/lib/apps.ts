@@ -18,6 +18,7 @@ export const APP_ROUTES: Record<string, string> = {
 export const ADMIN_ONLY_ROUTES = [
   "/dashboard/access-app",
   "/dashboard/clients",
+  "/dashboard/settings",
   "/dashboard/create-project",
   "/dashboard/update-project",
   "/dashboard/create-project-content",

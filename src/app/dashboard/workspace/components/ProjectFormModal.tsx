@@ -5,10 +5,10 @@ import { ArrowDown, ArrowUp, Loader2, Plus, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/app/context/AuthContext";
 import { Modal } from "../../webapp/crm/components/ui";
-import { useMutation, useWorkspace } from "../lib/hooks";
-import { PROJECT_COLORS, PROJECT_STATUS_META, useT } from "../lib/i18n";
+import { useMutation, useResource, useWorkspace } from "../lib/hooks";
+import { PROJECT_COLORS, useT } from "../lib/i18n";
 import { packageOptions, packageTemplateTasks } from "../lib/packages";
-import { PROJECT_STATUSES, type PackageId, type ProjectInput, type WorkProject } from "../lib/types";
+import { type PackageId, type ProjectInput, type WorkProject } from "../lib/types";
 import { MemberPicker, clientsOf, employeesOf } from "./shared";
 
 function pageSlugFromName(value: string) {
@@ -34,7 +34,7 @@ export function ProjectFormModal({
   onSaved?: (project: WorkProject) => void;
 }) {
   const { t, lang } = useT();
-  const { members, meId } = useWorkspace();
+  const { members, meId, statusOrder, statusName } = useWorkspace();
   const { projects: clientProjects, fetchProjects } = useAuth();
   const editing = Boolean(project);
   // Las páginas de AuthContext se cargan al iniciar sesión; se recargan para ver las creadas después en Clientes.
@@ -74,9 +74,11 @@ export function ProjectFormModal({
     if (!pageSlugManual) setPageSlug(pageSlugFromName(name));
   };
 
+  // Tareas del paquete: las que editó el admin en Ajustes o, si no, las inclusiones de pricing.ts.
+  const custom = useResource("package-templates", (api) => api.getPackageTemplates());
   const template = useMemo(
-    () => (form.packageId ? packageTemplateTasks(form.packageId, lang) : []),
-    [form.packageId, lang]
+    () => (form.packageId ? custom.data?.[form.packageId] ?? packageTemplateTasks(form.packageId, lang) : []),
+    [form.packageId, lang, custom.data]
   );
 
   const save = useMutation(
@@ -207,9 +209,9 @@ export function ProjectFormModal({
         </Field>
         <Field label={t("Estado", "Status")}>
           <select className="ec-field-input" value={form.status} onChange={(e) => set("status", e.target.value as ProjectInput["status"])}>
-            {PROJECT_STATUSES.map((s) => (
+            {statusOrder.map((s) => (
               <option key={s} value={s}>
-                {PROJECT_STATUS_META[s][lang]}
+                {statusName(s, lang)}
               </option>
             ))}
           </select>

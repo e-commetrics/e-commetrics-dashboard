@@ -6,7 +6,7 @@ import { EmptyState, ErrorNotice, Loading, PageHeader, StatTile } from "../../we
 import { ProjectFormModal } from "../components/ProjectFormModal";
 import { ProjectCard, ProjectMini } from "../components/ProjectCard";
 import { useResource, useWorkspace } from "../lib/hooks";
-import { PROJECT_STATUS_META, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 import { packageOptions } from "../lib/packages";
 import type { ProjectStatus } from "../lib/types";
 
@@ -14,7 +14,7 @@ type Filter = "all" | "mine" | ProjectStatus;
 
 export function ProjectsScreen({ onOpen }: { onOpen: (id: string) => void }) {
   const { t, lang } = useT();
-  const { isAdmin, meId } = useWorkspace();
+  const { isAdmin, meId, statusOrder, statusName } = useWorkspace();
   const projects = useResource("projects", (api) => api.listProjects());
   const [filter, setFilter] = useState<Filter>("all");
   const [pkg, setPkg] = useState("");
@@ -39,11 +39,7 @@ export function ProjectsScreen({ onOpen }: { onOpen: (id: string) => void }) {
   const filters: { id: Filter; label: string }[] = [
     { id: "all", label: t("Todos", "All") },
     { id: "mine", label: t("Míos", "Mine") },
-    { id: "active", label: PROJECT_STATUS_META.active[lang] },
-    { id: "planning", label: PROJECT_STATUS_META.planning[lang] },
-    { id: "on_hold", label: PROJECT_STATUS_META.on_hold[lang] },
-    { id: "completed", label: PROJECT_STATUS_META.completed[lang] },
-    { id: "archived", label: PROJECT_STATUS_META.archived[lang] },
+    ...statusOrder.map((s) => ({ id: s as Filter, label: statusName(s, lang) })),
   ];
 
   return (
@@ -118,12 +114,12 @@ export function ProjectsScreen({ onOpen }: { onOpen: (id: string) => void }) {
         </div>
       ) : (
         <div className="ec-pboard">
-          {(["planning", "active", "on_hold", "completed"] as ProjectStatus[]).map((status) => {
+          {statusOrder.filter((s) => s !== "archived").map((status) => {
             const list = visible.filter((p) => p.status === status);
             return (
               <section key={status} className="ec-pboard-col">
                 <h3>
-                  <span>{PROJECT_STATUS_META[status][lang]}</span>
+                  <span>{statusName(status, lang)}</span>
                   <span className="ec-num">{list.length}</span>
                 </h3>
                 {list.map((p) => (

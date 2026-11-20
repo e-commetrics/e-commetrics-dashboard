@@ -22,9 +22,11 @@ import type {
   PackageId,
   Priority,
   ProjectInput,
+  ProjectStatusSetting,
   Task,
   TaskComment,
   TaskStatus,
+  TemplateTask,
   WallComment,
   WallPost,
   WorkProject,
@@ -177,6 +179,8 @@ function notFound(what: string): never {
 
 export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; name: string; email: string; role: string } | null) => void } {
   let viewer: Member | null = null;
+  let mockStatuses: ProjectStatusSetting[] | null = null;
+  const mockTemplates: Record<string, TemplateTask[]> = {};
 
   function load(): Db {
     if (typeof window === "undefined") return seed();
@@ -620,6 +624,46 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
       note.links = note.links.filter((l) => l.id !== linkId);
       note.updatedAt = now();
       save(db);
+      return delay(undefined);
+    },
+
+    // Ajustes: el mock solo los guarda en memoria, para poder ver la pantalla sin backend.
+    async labelUsage() {
+      const counts = new Map<string, number>();
+      load().tasks.forEach((t) => (t.labels ?? []).forEach((l) => counts.set(l, (counts.get(l) ?? 0) + 1)));
+      return delay(Array.from(counts, ([label, count]) => ({ label, count })).sort((a, b) => a.label.localeCompare(b.label)));
+    },
+    async renameLabel(from: string, to: string) {
+      const db = load();
+      db.tasks.forEach((t) => {
+        if (!(t.labels ?? []).includes(from)) return;
+        t.labels = Array.from(new Set((t.labels ?? []).map((l) => (l === from ? to : l))));
+      });
+      save(db);
+      return delay(undefined);
+    },
+    async deleteLabel(label: string) {
+      const db = load();
+      db.tasks.forEach((t) => (t.labels = (t.labels ?? []).filter((l) => l !== label)));
+      save(db);
+      return delay(undefined);
+    },
+    async getProjectStatuses() {
+      return delay(mockStatuses);
+    },
+    async setProjectStatuses(statuses: ProjectStatusSetting[]) {
+      mockStatuses = statuses;
+      return delay(statuses);
+    },
+    async getPackageTemplates() {
+      return delay({ ...mockTemplates });
+    },
+    async setPackageTemplate(packageId: string, tasks: TemplateTask[]) {
+      mockTemplates[packageId] = tasks;
+      return delay(tasks);
+    },
+    async resetPackageTemplate(packageId: string) {
+      delete mockTemplates[packageId];
       return delay(undefined);
     },
   };

@@ -35,7 +35,7 @@ export function ProjectScreen({
   onOpenTask: (id: string) => void;
 }) {
   const { t, lang } = useT();
-  const { isAdmin, meId, memberById } = useWorkspace();
+  const { isAdmin, meId, memberById, statusName } = useWorkspace();
   const detail = useResource(`project:${projectId}`, (api) => api.getProject(projectId));
   const [mode, setMode] = useState<Mode>("board");
   const [onlyMine, setOnlyMine] = useState(false);
@@ -139,7 +139,7 @@ export function ProjectScreen({
           <div style={{ minWidth: 0, flex: "1 1 280px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <h1 className="ec-wb-title">{project.name}</h1>
-              <span className={`ec-badge ${status.badge}`}>{status[lang]}</span>
+              <span className={`ec-badge ${status.badge}`}>{statusName(project.status, lang)}</span>
               {pkg ? <span className="ec-badge ec-badge-neutral">{pkg}</span> : null}
             </div>
             <div className="ec-wb-meta">
