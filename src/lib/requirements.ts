@@ -6,8 +6,28 @@ import { apiFetch } from "@/lib/api";
  * Las claves (`key`) deben coincidir con REQUIREMENT_KEYS en backend-actual.js.
  */
 
-export const META_BUSINESS_ID = "140581703333742";
-export const GOOGLE_ACCESS_EMAIL = "ecommetrica@gmail.com";
+/** Datos que el admin configura desde la tarjeta (tabla app_settings); iguales para todos los clientes. */
+export type VaultSettings = {
+  metaBusinessId: string;
+  googleEmail: string;
+  /** Mensaje opcional para el cliente, visible en la tarjeta y arriba de la hoja. */
+  clientNote: string;
+};
+
+// Respaldo mientras carga o si nunca se configuró; el backend usa los mismos valores.
+export const DEFAULT_VAULT_SETTINGS: VaultSettings = {
+  metaBusinessId: "140581703333742",
+  googleEmail: "ecommetrica@gmail.com",
+  clientNote: "",
+};
+
+/** Mismas reglas que el backend. Devuelve el campo con error, o null si todo está bien. */
+export function vaultSettingsError(s: VaultSettings): keyof VaultSettings | null {
+  if (!/^\d{5,30}$/.test(s.metaBusinessId.trim())) return "metaBusinessId";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.googleEmail.trim()) || s.googleEmail.trim().length > 160) return "googleEmail";
+  if (s.clientNote.trim().length > 300) return "clientNote";
+  return null;
+}
 
 export type RequirementStatus = "pending" | "sent" | "verified";
 
@@ -26,6 +46,8 @@ export type RequirementSection = {
   en: string;
   /** Instrucción bajo el título de la sección (a quién dar el acceso). */
   note?: { es: string; en: string };
+  /** Dato configurable que se muestra después de la nota (ID de Meta o correo de Google). */
+  setting?: "metaBusinessId" | "googleEmail";
   optional?: boolean;
   items: RequirementItem[];
 };
@@ -39,9 +61,10 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
     es: "Agregar como Partner en Meta",
     en: "Add as Partner on Meta",
     note: {
-      es: `Business portfolio ID de Ecommetrica: ${META_BUSINESS_ID}. Comparte estos activos:`,
-      en: `Ecommetrica business portfolio ID: ${META_BUSINESS_ID}. Share these assets:`,
+      es: "Comparte estos activos con el Business portfolio ID de Ecommetrica:",
+      en: "Share these assets with the Ecommetrica business portfolio ID:",
     },
+    setting: "metaBusinessId",
     items: [
       { key: "meta_ad_account", es: "Cuenta publicitaria (Ad Account)", en: "Ad Account", priority: true },
       { key: "meta_page", es: "Página de Facebook", en: "Facebook Page" },
@@ -55,9 +78,10 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
     es: "Accesos de Google",
     en: "Google access",
     note: {
-      es: `Da acceso a ${GOOGLE_ACCESS_EMAIL} en:`,
-      en: `Give access to ${GOOGLE_ACCESS_EMAIL} in:`,
+      es: "Agrega este correo como usuario en cada herramienta:",
+      en: "Add this email as a user in each tool:",
     },
+    setting: "googleEmail",
     items: [
       { key: "google_business", es: "Google Business Profile", en: "Google Business Profile" },
       { key: "google_analytics", es: "Google Analytics", en: "Google Analytics" },
@@ -174,4 +198,20 @@ export async function saveRequirement(
   });
   if (!res.ok) await readError(res);
   return ((await res.json()) as { requirement: RequirementRow }).requirement;
+}
+
+export async function getVaultSettings(): Promise<VaultSettings> {
+  const res = await apiFetch("/api/requirements-settings");
+  if (!res.ok) await readError(res);
+  return { ...DEFAULT_VAULT_SETTINGS, ...((await res.json()) as { settings: Partial<VaultSettings> }).settings };
+}
+
+export async function saveVaultSettings(settings: VaultSettings): Promise<VaultSettings> {
+  const res = await apiFetch("/api/requirements-settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+  if (!res.ok) await readError(res);
+  return ((await res.json()) as { settings: VaultSettings }).settings;
 }

@@ -393,7 +393,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
         </div>
       </div>
       {/* Tarjeta de resguardo: arriba a la derecha, junto al resumen del cliente. */}
-      <RequirementsVault projectId={currentProject.id} isTeam={isAdmin || user?.role === "employee"} lang={lang} />
+      <RequirementsVault projectId={currentProject.id} isTeam={isAdmin || user?.role === "employee"} isAdmin={isAdmin} lang={lang} />
       </div>
 
       <div className="ec-creport fade-in-up">

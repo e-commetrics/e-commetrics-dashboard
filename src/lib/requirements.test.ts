@@ -21,3 +21,11 @@ test("claves únicas y los opcionales no cuentan en el avance", () => {
     verified: 1,
   });
 });
+
+test("valida los ajustes del vault", async () => {
+  const { DEFAULT_VAULT_SETTINGS, vaultSettingsError } = await import("./requirements");
+  expect(vaultSettingsError(DEFAULT_VAULT_SETTINGS)).toBeNull();
+  expect(vaultSettingsError({ ...DEFAULT_VAULT_SETTINGS, metaBusinessId: "12a45" })).toBe("metaBusinessId");
+  expect(vaultSettingsError({ ...DEFAULT_VAULT_SETTINGS, googleEmail: "sin-arroba" })).toBe("googleEmail");
+  expect(vaultSettingsError({ ...DEFAULT_VAULT_SETTINGS, clientNote: "x".repeat(301) })).toBe("clientNote");
+});

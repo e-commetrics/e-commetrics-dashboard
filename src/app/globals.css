@@ -901,7 +901,15 @@ a.ec-hrow:hover { background: var(--ec-surface-2); }
 .ec-vault-priority { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ec-text); }
 .ec-vault-priority svg { color: var(--ec-warning); fill: currentColor; flex-shrink: 0; }
 .ec-vault-sub { font-size: 12px; color: var(--ec-text-muted); margin-bottom: 4px; }
-.ec-vault-next { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ec-text); display: flex; flex-direction: column; gap: 2px; }
+.ec-vault-config { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 7px; border: 1px solid var(--ec-hairline-strong); background: transparent; color: var(--ec-text); font-size: 12px; font-weight: 600; cursor: pointer; }
+.ec-vault-config:hover { background: var(--ec-surface-2); }
+.ec-vault-config:focus-visible { outline: 2px solid var(--ec-brand); outline-offset: 2px; }
+.ec-vault-note { margin: 0 0 4px; padding: 9px 11px; border-left: 3px solid var(--ec-brand-fill); background: var(--ec-surface-2); border-radius: 0 8px 8px 0; font-size: 13px; line-height: 1.45; color: var(--ec-text); white-space: pre-line; }
+.ec-vault-form { display: flex; flex-direction: column; gap: 16px; }
+.ec-vault-form small { display: block; margin-top: 5px; font-size: 12px; color: var(--ec-text-muted); }
+.ec-vault-form small.is-error { color: var(--ec-danger); }
+.ec-vault-form textarea.ec-field-input { resize: vertical; min-height: 72px; }
+.ec-vault-next {margin: 0; padding-left: 18px; font-size: 13px; color: var(--ec-text); display: flex; flex-direction: column; gap: 2px; }
 
 /* Hoja de requerimientos: misma retícula que la pestaña "Requerimientos" del Excel. */
 .ec-sheet-intro { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: var(--ec-text-muted); max-width: 80ch; }
@@ -923,6 +931,7 @@ a.ec-hrow:hover { background: var(--ec-surface-2); }
 .ec-sheet-check:focus-within { box-shadow: inset 0 0 0 2px var(--ec-brand); }
 .ec-sheet-priority { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-size: 11px; font-weight: 600; color: var(--ec-text); }
 .ec-sheet-priority svg { color: var(--ec-warning); fill: currentColor; }
+.ec-sheet-na { display: block; padding: 7px 8px; font-size: 12px; color: var(--ec-text-muted); background: var(--ec-surface-2); }
 .ec-sheet-who { display: block; padding: 0 8px 5px; font-size: 11px; color: var(--ec-text-dim); }
 .ec-sheet tr[aria-busy] { opacity: 0.6; }
 

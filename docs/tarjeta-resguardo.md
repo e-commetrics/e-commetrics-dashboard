@@ -91,3 +91,12 @@ Además debe incluir "el documento", que todavía no está identificado (ver dud
 - **Ubicación:** a la derecha del resumen del cliente (`.ec-chero-row`); debajo en pantallas de menos de 1100px.
   La tarjeta muestra el avance, el Business ID y el correo para copiar, el aviso de Ad Account prioritaria y los
   siguientes pendientes; el botón abre la hoja completa.
+
+## Ajustes configurables (2026-11-19)
+
+- Global, solo datos, solo admin: Business ID de Meta, correo para accesos de Google y un mensaje opcional
+  para el cliente. Botón "Configurar" en la tarjeta (solo admin). Tabla `app_settings`
+  (`docs/migrations/2026-11-19-app-settings.sql`); rutas `GET` (cualquier sesión) y `PUT` (admin)
+  `/api/requirements-settings`. Sin filas guardadas se usan los valores por defecto.
+- Etiquetas nuevas: "Agréganos como Partner en Meta con este Business ID" y "Agrega este correo como usuario en Google".
+- Filas sin campo de información (Meta y Google) muestran "Solo dar acceso" en vez de una celda vacía.

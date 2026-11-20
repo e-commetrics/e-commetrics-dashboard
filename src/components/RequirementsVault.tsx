@@ -1,19 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Loader2, ShieldCheck, Star } from "lucide-react";
+import { Check, Copy, Loader2, Settings2, ShieldCheck, Star } from "lucide-react";
 import { Modal } from "@/app/dashboard/webapp/crm/components/ui";
 import {
-  GOOGLE_ACCESS_EMAIL,
-  META_BUSINESS_ID,
+  DEFAULT_VAULT_SETTINGS,
   REQUIREMENT_SECTIONS,
   canSetStatus,
+  getVaultSettings,
   listRequirements,
   requirementProgress,
   saveRequirement,
+  saveVaultSettings,
+  vaultSettingsError,
   type RequirementItem,
   type RequirementRow,
   type RequirementStatus,
+  type VaultSettings,
 } from "@/lib/requirements";
 
 type Rows = Record<string, RequirementRow>;
@@ -54,17 +57,33 @@ function CopyValue({ value, copiedLabel }: { value: string; copiedLabel: string 
  * la hoja "Requerimientos" con el estado de cada acceso. El cliente marca "Enviado";
  * el equipo verifica. Nunca guarda contraseñas.
  */
-export function RequirementsVault({ projectId, isTeam, lang }: { projectId: number; isTeam: boolean; lang: string }) {
+export function RequirementsVault({
+  projectId,
+  isTeam,
+  isAdmin,
+  lang,
+}: {
+  projectId: number;
+  isTeam: boolean;
+  isAdmin: boolean;
+  lang: string;
+}) {
   const es = lang === "es";
   const [rows, setRows] = useState<Rows | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [open, setOpen] = useState(false);
+  const [settings, setSettings] = useState<VaultSettings>(DEFAULT_VAULT_SETTINGS);
+  const [configOpen, setConfigOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
     listRequirements(projectId)
       .then((r) => alive && setRows(r))
       .catch(() => alive && setLoadError(true));
+    // Sin ajustes guardados (o si falla) se quedan los valores por defecto.
+    getVaultSettings()
+      .then((s) => alive && setSettings(s))
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -86,7 +105,13 @@ export function RequirementsVault({ projectId, isTeam, lang }: { projectId: numb
         <h2 id="ec-vault-title">
           <ShieldCheck size={15} aria-hidden /> {es ? "Tarjeta de resguardo" : "Safekeeping card"}
         </h2>
-        <span>Smart&amp;Safe</span>
+        {isAdmin ? (
+          <button type="button" className="ec-vault-config" onClick={() => setConfigOpen(true)}>
+            <Settings2 size={14} aria-hidden /> {es ? "Configurar" : "Settings"}
+          </button>
+        ) : (
+          <span>Smart&amp;Safe</span>
+        )}
       </header>
 
       <div className="ec-vault-body">
@@ -118,14 +143,16 @@ export function RequirementsVault({ projectId, isTeam, lang }: { projectId: numb
               </div>
             </div>
 
+            {settings.clientNote ? <p className="ec-vault-note">{settings.clientNote}</p> : null}
+
             <dl className="ec-vault-ids">
               <div>
-                <dt>{es ? "Partner en Meta (Business ID)" : "Meta partner (Business ID)"}</dt>
-                <dd><CopyValue value={META_BUSINESS_ID} copiedLabel={es ? "ID copiado" : "ID copied"} /></dd>
+                <dt>{es ? "Agréganos como Partner en Meta con este Business ID" : "Add us as a Meta partner with this Business ID"}</dt>
+                <dd><CopyValue value={settings.metaBusinessId} copiedLabel={es ? "ID copiado" : "ID copied"} /></dd>
               </div>
               <div>
-                <dt>{es ? "Acceso de Google" : "Google access"}</dt>
-                <dd><CopyValue value={GOOGLE_ACCESS_EMAIL} copiedLabel={es ? "Correo copiado" : "Email copied"} /></dd>
+                <dt>{es ? "Agrega este correo como usuario en Google" : "Add this email as a user in Google"}</dt>
+                <dd><CopyValue value={settings.googleEmail} copiedLabel={es ? "Correo copiado" : "Email copied"} /></dd>
               </div>
             </dl>
 
@@ -156,10 +183,131 @@ export function RequirementsVault({ projectId, isTeam, lang }: { projectId: numb
 
       {rows ? (
         <Modal open={open} onOpenChange={setOpen} title={es ? "Requerimientos" : "Requirements"} width={1080}>
-          <RequirementsSheet projectId={projectId} isTeam={isTeam} es={es} rows={rows} onRow={(r) => setRows((p) => ({ ...p, [r.key]: r }))} />
+          <RequirementsSheet
+            projectId={projectId}
+            isTeam={isTeam}
+            es={es}
+            rows={rows}
+            settings={settings}
+            onRow={(r) => setRows((p) => ({ ...p, [r.key]: r }))}
+          />
         </Modal>
       ) : null}
+
+      {/* Se monta solo abierto: cada apertura parte de lo guardado. */}
+      {isAdmin && configOpen ? (
+        <VaultSettingsModal
+          open={configOpen}
+          onClose={() => setConfigOpen(false)}
+          es={es}
+          current={settings}
+          onSaved={setSettings}
+        />
+      ) : null}
     </section>
+  );
+}
+
+/** Admin: datos globales que ven todos los clientes en su tarjeta y en la hoja. */
+function VaultSettingsModal({
+  open,
+  onClose,
+  es,
+  current,
+  onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  es: boolean;
+  current: VaultSettings;
+  onSaved: (s: VaultSettings) => void;
+}) {
+  const [draft, setDraft] = useState(current);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const invalid = vaultSettingsError(draft);
+
+  const save = async () => {
+    if (invalid) return;
+    setSaving(true);
+    setError("");
+    try {
+      onSaved(await saveVaultSettings(draft));
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const field = (name: keyof VaultSettings) => ({
+    value: draft[name],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft((d) => ({ ...d, [name]: e.target.value })),
+    "aria-invalid": invalid === name || undefined,
+    "aria-describedby": `vault-${name}-hint`,
+    id: `vault-${name}`,
+    className: "ec-field-input",
+  });
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title={es ? "Configurar tarjeta de resguardo" : "Safekeeping card settings"}
+      width={520}
+      footer={
+        <>
+          <button type="button" className="ec-btn-secondary" onClick={onClose}>
+            {es ? "Cancelar" : "Cancel"}
+          </button>
+          <button type="button" className="ec-btn-primary" onClick={save} disabled={saving || !!invalid}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+            {es ? "Guardar ajustes" : "Save settings"}
+          </button>
+        </>
+      }
+    >
+      <div className="ec-vault-form">
+        <p className="ec-vault-muted">
+          {es
+            ? "Estos datos se muestran a todos los clientes en su tarjeta y en la hoja de requerimientos."
+            : "Every client sees these details on their card and requirements sheet."}
+        </p>
+        <div>
+          <label className="ec-field-label" htmlFor="vault-metaBusinessId">
+            {es ? "Business portfolio ID de Meta" : "Meta business portfolio ID"}
+          </label>
+          <input {...field("metaBusinessId")} inputMode="numeric" autoComplete="off" />
+          <small id="vault-metaBusinessId-hint" className={invalid === "metaBusinessId" ? "is-error" : undefined}>
+            {es ? "Solo números, de 5 a 30 dígitos." : "Digits only, 5 to 30."}
+          </small>
+        </div>
+        <div>
+          <label className="ec-field-label" htmlFor="vault-googleEmail">
+            {es ? "Correo para accesos de Google" : "Email for Google access"}
+          </label>
+          <input {...field("googleEmail")} type="email" autoComplete="off" />
+          <small id="vault-googleEmail-hint" className={invalid === "googleEmail" ? "is-error" : undefined}>
+            {es ? "El cliente lo agrega como usuario en Business, Analytics, Search Console, Ads y Merchant Center." : "The client adds it as a user in Business, Analytics, Search Console, Ads and Merchant Center."}
+          </small>
+        </div>
+        <div>
+          <label className="ec-field-label" htmlFor="vault-clientNote">
+            {es ? "Mensaje para el cliente (opcional)" : "Message for the client (optional)"}
+          </label>
+          <textarea {...field("clientNote")} rows={3} maxLength={300} />
+          <small id="vault-clientNote-hint" className={invalid === "clientNote" ? "is-error" : undefined}>
+            {es ? `Aparece arriba de la tarjeta. ${draft.clientNote.length}/300` : `Shown at the top of the card. ${draft.clientNote.length}/300`}
+          </small>
+        </div>
+        {error ? (
+          <div role="alert" className="ec-sheet-error">
+            {error}
+          </div>
+        ) : null}
+      </div>
+    </Modal>
   );
 }
 
@@ -168,12 +316,14 @@ function RequirementsSheet({
   isTeam,
   es,
   rows,
+  settings,
   onRow,
 }: {
   projectId: number;
   isTeam: boolean;
   es: boolean;
   rows: Rows;
+  settings: VaultSettings;
   onRow: (row: RequirementRow) => void;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -198,6 +348,7 @@ function RequirementsSheet({
           ? "Marca cada acceso cuando ya lo hayas dado; el equipo de Ecommetrica lo verifica. No escribas contraseñas ni datos bancarios en esta hoja."
           : "Mark each item once you have granted it; the Ecommetrica team verifies it. Do not write passwords or bank details in this sheet."}
       </p>
+      {settings.clientNote ? <p className="ec-vault-note">{settings.clientNote}</p> : null}
       {error ? (
         <div role="alert" className="ec-sheet-error">
           {error}
@@ -225,7 +376,12 @@ function RequirementsSheet({
               <tr className="ec-sheet-section">
                 <th colSpan={4} scope="colgroup">
                   {es ? section.es : section.en}
-                  {section.note ? <small>{es ? section.note.es : section.note.en}</small> : null}
+                  {section.note ? (
+                    <small>
+                      {es ? section.note.es : section.note.en}
+                      {section.setting ? <b> {settings[section.setting]}</b> : null}
+                    </small>
+                  ) : null}
                 </th>
               </tr>
               {section.items.map((item) => (
@@ -296,7 +452,9 @@ function SheetRow({
             onChange={(e) => setInfo(e.target.value)}
             onBlur={() => commit("info", info)}
           />
-        ) : null}
+        ) : (
+          <span className="ec-sheet-na">{es ? "Solo dar acceso" : "Access only"}</span>
+        )}
       </td>
       <td>
         {isTeam ? (
