@@ -264,3 +264,30 @@ export type InboxItem = {
   /** Leida por quien consulta. */
   read: boolean;
 };
+
+// ── Notas privadas del equipo (vista "Notas") ────────────────────────────────
+
+/** Tipo de nota. Agregar uno nuevo = valor aquí, en pm_notes.kind y en NotesScreen. */
+export type NoteKind = "links" | "text";
+
+export type NoteLink = {
+  id: string;
+  title: string;
+  url: string;
+  description: string | null;
+  createdAt: string;
+};
+
+/** Siempre del usuario conectado: el backend nunca devuelve notas de otra persona. */
+export type Note = {
+  id: string;
+  kind: NoteKind;
+  title: string;
+  /** Contenido de las notas de texto; null en las de links. */
+  body: string | null;
+  links: NoteLink[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NoteLinkInput = { title: string; url: string; description?: string | null };

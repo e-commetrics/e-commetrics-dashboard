@@ -6,6 +6,10 @@ import type {
   ClientProjectSummary,
   InboxItem,
   Member,
+  Note,
+  NoteKind,
+  NoteLink,
+  NoteLinkInput,
   ProjectDetail,
   ProjectInput,
   Task,
@@ -68,6 +72,15 @@ export interface WorkspaceApi {
   setPinned(id: string, pinned: boolean): Promise<WallPost>;
   toggleLike(id: string): Promise<WallPost>;
   addPostComment(postId: string, body: string, mentionIds?: string[]): Promise<WallComment>;
+
+  /** Notas privadas del usuario conectado (nunca las de otra persona). */
+  listNotes(): Promise<Note[]>;
+  createNote(input: { kind: NoteKind; title: string }): Promise<Note>;
+  updateNote(id: string, patch: { title?: string; body?: string | null }): Promise<Note>;
+  deleteNote(id: string): Promise<void>;
+  addNoteLink(noteId: string, input: NoteLinkInput): Promise<NoteLink>;
+  updateNoteLink(noteId: string, linkId: string, patch: Partial<NoteLinkInput>): Promise<NoteLink>;
+  deleteNoteLink(noteId: string, linkId: string): Promise<void>;
 }
 
 export const IS_MOCK = process.env.NEXT_PUBLIC_PM_API !== "live";
@@ -131,6 +144,16 @@ export const httpApi: WorkspaceApi = {
   toggleLike: (id) => call<{ post: WallPost }>("POST", `/wall/${enc(id)}/like`).then((d) => d.post),
   addPostComment: (postId, body, mentionIds) =>
     call<{ comment: WallComment }>("POST", `/wall/${enc(postId)}/comments`, { body, mentionIds }).then((d) => d.comment),
+
+  listNotes: () => call<{ notes: Note[] }>("GET", "/notes").then((d) => d.notes),
+  createNote: (input) => call<{ note: Note }>("POST", "/notes", input).then((d) => d.note),
+  updateNote: (id, patch) => call<{ note: Note }>("PATCH", `/notes/${enc(id)}`, patch).then((d) => d.note),
+  deleteNote: (id) => call<void>("DELETE", `/notes/${enc(id)}`),
+  addNoteLink: (noteId, input) =>
+    call<{ link: NoteLink }>("POST", `/notes/${enc(noteId)}/links`, input).then((d) => d.link),
+  updateNoteLink: (noteId, linkId, patch) =>
+    call<{ link: NoteLink }>("PATCH", `/notes/${enc(noteId)}/links/${enc(linkId)}`, patch).then((d) => d.link),
+  deleteNoteLink: (noteId, linkId) => call<void>("DELETE", `/notes/${enc(noteId)}/links/${enc(linkId)}`),
 };
 
 let mockSingleton: WorkspaceApi | null = null;

@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 import { useSidebar } from "@/components/ui/sidebar";
-import { CalendarDays, CheckSquare, FlaskConical, Inbox, FolderKanban, Megaphone, Users } from "lucide-react";
+import { CalendarDays, CheckSquare, FlaskConical, Inbox, FolderKanban, Megaphone, NotebookPen, Users } from "lucide-react";
 import { Loading } from "../webapp/crm/components/ui";
 import { TaskDetailModal } from "./components/TaskDetailModal";
 import { IS_MOCK } from "./lib/api";
@@ -13,6 +13,7 @@ import { useWorkspaceNav, type WorkspaceView } from "./lib/nav";
 import { CalendarScreen } from "./screens/CalendarScreen";
 import { InboxScreen } from "./screens/InboxScreen";
 import { MyTasksScreen } from "./screens/MyTasksScreen";
+import { NotesScreen } from "./screens/NotesScreen";
 import { ProjectScreen } from "./screens/ProjectScreen";
 import { ProjectsScreen } from "./screens/ProjectsScreen";
 import { TeamScreen } from "./screens/TeamScreen";
@@ -51,6 +52,7 @@ function Workspace() {
     { view: "calendar", label: t("Calendario", "Calendar"), icon: CalendarDays },
     { view: "my-tasks", label: t("Mis tareas", "My tasks"), icon: CheckSquare },
     { view: "wall", label: t("Muro", "Wall"), icon: Megaphone },
+    { view: "notes", label: t("Notas", "Notes"), icon: NotebookPen },
     { view: "team", label: t("Equipo", "Team"), icon: Users },
   ];
 
@@ -133,6 +135,7 @@ function Workspace() {
         {nav.view === "my-tasks" ? <MyTasksScreen onOpenTask={nav.openTask} onOpenProject={nav.goProject} /> : null}
         {nav.view === "wall" ? <WallScreen onOpenProject={nav.goProject} /> : null}
         {nav.view === "team" ? <TeamScreen onOpenProject={nav.goProject} /> : null}
+        {nav.view === "notes" ? <NotesScreen noteId={nav.noteId} onOpen={nav.goNote} /> : null}
       </main>
 
       {nav.taskId ? <TaskDetailModal key={nav.taskId} taskId={nav.taskId} onClose={nav.closeTask} /> : null}

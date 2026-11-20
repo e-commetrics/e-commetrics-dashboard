@@ -15,6 +15,10 @@ import type {
   ClientProjectSummary,
   InboxItem,
   Member,
+  Note,
+  NoteKind,
+  NoteLink,
+  NoteLinkInput,
   PackageId,
   Priority,
   ProjectInput,
@@ -41,6 +45,8 @@ type Db = {
   tasks: StoredTask[];
   comments: TaskComment[];
   posts: WallPost[];
+  /** Notas privadas; `ownerId` no sale de la API. Opcional: datos guardados antes de las notas. */
+  notes?: (Note & { ownerId: string })[];
   seq: number;
 };
 
@@ -560,6 +566,75 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
       save(db);
       return delay(comment);
     },
+
+    async listNotes() {
+      const db = load();
+      return delay(mine(db).map(publicNote).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+    },
+    async createNote(input: { kind: NoteKind; title: string }) {
+      const db = load();
+      const note = { id: `n-${db.seq++}`, ownerId: meId(), kind: input.kind, title: input.title.trim(), body: input.kind === "text" ? "" : null, links: [], createdAt: now(), updatedAt: now() };
+      (db.notes ??= []).push(note);
+      save(db);
+      return delay(publicNote(note));
+    },
+    async updateNote(id: string, patch: { title?: string; body?: string | null }) {
+      const db = load();
+      const note = ownNote(db, id);
+      if (patch.title !== undefined) note.title = patch.title.trim();
+      if (patch.body !== undefined && note.kind === "text") note.body = patch.body;
+      note.updatedAt = now();
+      save(db);
+      return delay(publicNote(note));
+    },
+    async deleteNote(id: string) {
+      const db = load();
+      ownNote(db, id);
+      db.notes = (db.notes ?? []).filter((n) => n.id !== id);
+      save(db);
+      return delay(undefined);
+    },
+    async addNoteLink(noteId: string, input: NoteLinkInput) {
+      const db = load();
+      const note = ownNote(db, noteId);
+      const link: NoteLink = { id: `nl-${db.seq++}`, title: input.title.trim(), url: input.url, description: input.description?.trim() || null, createdAt: now() };
+      note.links.push(link);
+      note.updatedAt = now();
+      save(db);
+      return delay(link);
+    },
+    async updateNoteLink(noteId: string, linkId: string, patch: Partial<NoteLinkInput>) {
+      const db = load();
+      const note = ownNote(db, noteId);
+      const link = note.links.find((l) => l.id === linkId) ?? notFound("Link");
+      if (patch.title !== undefined) link.title = patch.title.trim();
+      if (patch.url !== undefined) link.url = patch.url;
+      if (patch.description !== undefined) link.description = patch.description?.trim() || null;
+      note.updatedAt = now();
+      save(db);
+      return delay(link);
+    },
+    async deleteNoteLink(noteId: string, linkId: string) {
+      const db = load();
+      const note = ownNote(db, noteId);
+      note.links = note.links.filter((l) => l.id !== linkId);
+      note.updatedAt = now();
+      save(db);
+      return delay(undefined);
+    },
   };
+
+  // Igual que el backend: solo las notas propias; las ajenas responden "no encontrada".
+  function mine(db: Db) {
+    return (db.notes ?? []).filter((n) => n.ownerId === meId());
+  }
+  function ownNote(db: Db, id: string) {
+    return mine(db).find((n) => n.id === id) ?? notFound("Note");
+  }
+  function publicNote(stored: Note & { ownerId: string }): Note {
+    const note: Note & { ownerId?: string } = { ...stored };
+    delete note.ownerId;
+    return note;
+  }
   return api;
 }
