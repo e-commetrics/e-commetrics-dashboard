@@ -14,6 +14,16 @@ test("llenar información pasa a enviado, vaciarla regresa a pendiente, verifica
   expect(statusAfterInfo("pending", true)).toBe("sent");
   expect(statusAfterInfo("sent", false)).toBe("pending");
   expect(statusAfterInfo("verified", false)).toBe("verified");
+  expect(statusAfterInfo("skipped", true)).toBe("skipped");
+});
+
+test("un requisito quitado no cuenta en el total del avance", () => {
+  const row = (status: "skipped" | "verified") => ({ key: "", status, info: null, info2: null, comment: null, updatedBy: null, updatedAt: null });
+  expect(requirementProgress({ meta_page: row("skipped"), google_ads: row("verified") })).toEqual({
+    total: REQUIRED_KEYS.length - 1,
+    sent: 0,
+    verified: 1,
+  });
 });
 
 test("claves únicas y los opcionales no cuentan en el avance", () => {

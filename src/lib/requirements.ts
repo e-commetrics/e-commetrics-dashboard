@@ -29,7 +29,8 @@ export function vaultSettingsError(s: VaultSettings): keyof VaultSettings | null
   return null;
 }
 
-export type RequirementStatus = "pending" | "sent" | "verified";
+/** skipped: un admin quitó el requisito de la hoja porque no se usará; se puede restaurar. */
+export type RequirementStatus = "pending" | "sent" | "verified" | "skipped";
 
 export type RequirementItem = {
   key: string;
@@ -85,8 +86,8 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
   },
   {
     id: "meta",
-    es: "Agregar como Partner en Meta",
-    en: "Add as Partner on Meta",
+    es: "Meta Partner",
+    en: "Meta Partner",
     note: {
       es: "Comparte estos activos con el Business portfolio ID de Ecommetrica:",
       en: "Share these assets with the Ecommetrica business portfolio ID:",
@@ -121,12 +122,13 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
   },
   {
     id: "social",
-    es: "Links de Social Media",
-    en: "Social media links",
+    // Facebook, Instagram y YouTube ya están en Meta Partner y Accesos de Google.
+    es: "Otras redes sociales",
+    en: "Other social media",
     items: [
-      { key: "facebook", es: "Facebook (accesos)", en: "Facebook (access)", info: LINK },
-      { key: "instagram", es: "Instagram (accesos)", en: "Instagram (access)", info: LINK },
-      { key: "youtube", es: "Cuenta de YouTube (crear y accesos)", en: "YouTube account (create and access)", info: LINK },
+      { key: "tiktok", es: "TikTok", en: "TikTok", info: LINK },
+      { key: "linkedin", es: "LinkedIn", en: "LinkedIn", info: LINK },
+      { key: "x_social", es: "X (Twitter)", en: "X (Twitter)", info: LINK },
     ],
   },
   {
@@ -152,6 +154,13 @@ export const REQUIREMENT_SECTIONS: RequirementSection[] = [
     items: [
       { key: "product_info", es: "Información de productos", en: "Product information", info: { es: "Link al archivo con los productos", en: "Link to the product file" } },
     ],
+  },
+  {
+    // Aquí caen los requisitos nuevos; se arrastran a la sección que corresponda.
+    id: "other",
+    es: "Otros",
+    en: "Other",
+    items: [],
   },
 ];
 
@@ -186,7 +195,7 @@ export type RequirementRow = {
 
 /** Pendiente y Enviado los decide la información: con algún dato pasa a Enviado. Verificado no cambia. */
 export function statusAfterInfo(current: RequirementStatus, hasInfo: boolean): RequirementStatus {
-  if (current === "verified") return current;
+  if (current === "verified" || current === "skipped") return current;
   return hasInfo ? "sent" : "pending";
 }
 
@@ -198,6 +207,8 @@ export function canSetStatus(isTeam: boolean, current: RequirementStatus, next: 
 export function requirementProgress(rows: Record<string, RequirementRow>, keys: string[] = REQUIRED_KEYS) {
   let sent = 0;
   let verified = 0;
+  // Los quitados (skipped) no cuentan en el total.
+  keys = keys.filter((key) => rows[key]?.status !== "skipped");
   for (const key of keys) {
     const s = rows[key]?.status;
     if (s === "verified") verified++;
@@ -242,6 +253,22 @@ export async function addCustomRequirement(projectId: number, section: string, l
   });
   if (!res.ok) await readError(res);
   return ((await res.json()) as { item: CustomRequirement }).item;
+}
+
+/** Mueve un requisito propio a `section`, antes de `before` (o al final). Devuelve la lista ya ordenada. */
+export async function moveCustomRequirement(
+  projectId: number,
+  key: string,
+  section: string,
+  before: string | null
+): Promise<CustomRequirement[]> {
+  const res = await apiFetch(`/api/projects/${projectId}/requirements/${encodeURIComponent(key)}/move`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ section, before }),
+  });
+  if (!res.ok) await readError(res);
+  return ((await res.json()) as { custom: CustomRequirement[] }).custom;
 }
 
 /** Solo admin. Borra el requisito propio y lo que se haya llenado en él. */

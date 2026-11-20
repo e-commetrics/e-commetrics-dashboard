@@ -114,3 +114,17 @@ Además debe incluir "el documento", que todavía no está identificado (ver dud
 - **Agregar requisito** al final de cada sección (cliente y equipo). Solo el admin los borra.
 - **Despliegue, en este orden:** `docs/migrations/2026-11-19-requirements-custom.sql`, luego `backend-actual.js`,
   luego el frontend. El backend nuevo falla sin la columna `info2`.
+
+## Tercera versión (2026-11-20)
+
+- **Quitar requisitos que no se usan** (solo admin): la papelera de un requisito de plantilla lo pone en estado
+  `skipped`. Sale de la hoja, no cuenta en el avance y se restaura desde «N quitados · restaurar», abajo de la
+  hoja. Un requisito propio se sigue borrando de verdad, con confirmación.
+- **«Otras redes sociales»** reemplaza a «Links de Social Media»: TikTok, LinkedIn y X (`tiktok`, `linkedin`,
+  `x_social`). Facebook, Instagram y YouTube ya están en Meta Partner y Accesos de Google; lo que se haya llenado
+  en `facebook`, `instagram` y `youtube` queda en la tabla pero ya no se muestra.
+- «Agregar como Partner en Meta» se llama ahora **«Meta Partner»**.
+- **Un solo «Agregar requisito», al final de la hoja.** El requisito nuevo cae en la sección «Otros» (`other`)
+  y se arrastra a la sección y posición que corresponda. Con teclado se usa el selector de sección de la fila.
+  Ruta nueva: `PATCH /api/projects/:id/requirements/:key/move` con `{ section, before }`.
+- Orden: SQL `docs/migrations/2026-11-20-requirements-v3.sql`, luego `backend-actual.js`, luego el frontend.

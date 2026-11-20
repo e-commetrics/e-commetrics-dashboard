@@ -941,6 +941,15 @@ a.ec-hrow:hover { background: var(--ec-surface-2); }
 .ec-sheet-priority svg { color: var(--ec-warning); fill: currentColor; }
 .ec-sheet-who { display: block; padding: 0 8px 5px; font-size: 11px; color: var(--ec-text-dim); }
 .ec-sheet tr[aria-busy] { opacity: 0.6; }
+.ec-sheet tr[draggable] th[scope="row"] { cursor: grab; }
+.ec-sheet-grip { flex: none; color: var(--ec-text-dim); }
+.ec-sheet tbody.is-drop { outline: 2px dashed var(--ec-brand); outline-offset: -2px; }
+.ec-sheet-move { max-width: 92px; flex: none; padding: 2px 4px; border: 1px solid var(--ec-hairline-strong); border-radius: 6px; background: var(--ec-surface-1); color: var(--ec-text-muted); font: inherit; font-size: 11px; }
+.ec-sheet-icon:disabled { cursor: not-allowed; opacity: 0.5; }
+.ec-sheet-skipped { margin-top: 10px; font-size: 12.5px; color: var(--ec-text-muted); }
+.ec-sheet-skipped summary { cursor: pointer; width: fit-content; }
+.ec-sheet-skipped ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.ec-sheet-skipped li { display: flex; align-items: center; gap: 8px; color: var(--ec-text); }
 
 /* Team home analytics: delivery, not client results (those live inside each client). */
 .ec-analytics { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px 28px; padding: 16px; border-top: 1px solid var(--ec-hairline); }

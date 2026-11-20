@@ -13,6 +13,44 @@ Orden de prioridad: de arriba hacia abajo. No empezar un punto hasta cerrar el a
 > `ecommetrica@gmail.com` y los opcionales. Falta definir qué es "el documento". Ver
 > `docs/tarjeta-resguardo.md`.
 
+## Pendiente por aplicar: app CRM para «CRM Leads&Negotiate» (definido 2026-11-20)
+
+Diseño acordado con el usuario el 2026-11-20. Falta su visto bueno final antes de programar; quedó
+en espera mientras se resuelven features más cortas de Workspace. **Cambios: ambos** (SQL, backend
+y frontend). No toca el CRM de Reforma (`webapp/crm/`), que es exclusivo de Reforma.
+
+**Problema actual.** La importación de ClickUp dejó el proyecto 5 «CRM Leads&Negotiate» (cliente 16)
+con 91 tareas. Cada tarea tiene su etapa en `stage_id` (`pm_project_stages`, 6 etapas: Open Lead,
+Presentation/Quotation, Negotiation, Client, Partner (<1yr), Complete Old CX (>1yr)) **y además** la
+misma etapa repetida como label en `pm_task_labels`. Datos de las tareas: 0 subtareas, 0 comentarios,
+0 responsables, 40 con descripción, 91 con link de ClickUp, prioridades urgent/high/normal/low y 1
+con fecha. No hay otras labels.
+
+**Decisiones del usuario:**
+- Mover las 91 tareas a la app CRM como leads y quitarlas del tablero del proyecto.
+- Todos los tableros de proyecto son iguales: quitar el tipo de tablero Normal/CRM al crear y las
+  «Etapas del tablero» al editar. Las etapas editables viven solo en la app CRM.
+- Gestión de labels (editar y borrar) en una página nueva `/dashboard/settings`, solo para admin.
+
+**Diseño:**
+1. **App CRM** en `/dashboard/webapp/pipeline?project=<id>`, en el menú lateral bajo el cliente,
+   igual que el CRM de Reforma aparece bajo Reforma (`APPS` y `CLIENT_GROUPS` en `src/lib/apps.ts`).
+   El CRM pertenece a un proyecto y, por medio de él, a su cliente. Etapas editables desde la app
+   (agregar, renombrar, reordenar, borrar; de 2 a N) reutilizando `pm_project_stages` y la ruta
+   `PUT /api/pm/projects/:id/stages`. Leads en tabla nueva `pm_crm_leads` (project_id, stage_id,
+   name, description, priority, due_date, link_url, owner_id, position, timestamps). Tablero kanban
+   por etapa con arrastrar, alta de lead por columna y modal de edición. Acceso solo del equipo.
+2. **Migración SQL** (la corre el usuario, con respaldo antes, porque borra): copiar las tareas del
+   proyecto 5 a `pm_crm_leads`, borrar esas tareas y las 6 labels de etapa.
+3. **Workspace:** quitar selector de tipo y editor de etapas de `ProjectFormModal.tsx`, vista por
+   etapas de `ProjectScreen.tsx`, conteo de etapas de `ProjectCard.tsx`, y `stages`/`stageId` del
+   mock y los tipos donde ya no se usen.
+4. **`/dashboard/settings`:** sección «Labels» con conteo de uso, renombrar y borrar. Backend:
+   `PATCH /api/pm/labels` (renombrar; si el nombre nuevo ya existe se fusionan sin duplicar) y
+   `DELETE /api/pm/labels/:label`. Agregar la ruta a `ADMIN_ONLY_ROUTES` y al menú lateral.
+
+**Fuera de alcance:** WhatsApp, correo, Facebook, automatizaciones y acceso del cliente al CRM.
+
 ## 1. Cerrar el módulo CRM (en curso)
 
 El frontend del CRM (`src/app/dashboard/webapp/crm/`) está **desplegado y en uso** (validado

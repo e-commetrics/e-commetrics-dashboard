@@ -5,7 +5,9 @@ import { clientIdentity } from "@/lib/client-identity";
 import { API_URL } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, FileText, Loader2, Pencil, Plus, Search, Shield, Trash2, UserRound } from "lucide-react";
+import { FileText, FolderKanban, Loader2, Pencil, Plus, Search, Shield, Trash2, UserRound } from "lucide-react";
+import { ProjectFormModal } from "@/app/dashboard/workspace/components/ProjectFormModal";
+import { WorkspaceProvider } from "@/app/dashboard/workspace/lib/hooks";
 import { toast, Toaster } from "react-hot-toast";
 import { useLang } from "@/app/context/LangContext";
 import { useAuth } from "@/app/context/AuthContext";
@@ -72,6 +74,7 @@ export default function ClientsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [orphans, setOrphans] = useState<UnassignedPage[]>([]);
+  const [projectFor, setProjectFor] = useState<ClientAccount | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -330,17 +333,37 @@ export default function ClientsPage() {
                   </button>
                 </div>
 
+                <div style={{ padding: "13px 18px", borderTop: "1px solid var(--ec-hairline)" }}>
+                  <div className="h-eyebrow" style={{ marginBottom: 8 }}>
+                    {es ? "Proyectos" : "Projects"} <span className="font-mono-ec" style={{ color: "var(--ec-text-dim)" }}>{client.projects.length}</span>
+                  </div>
+                  {client.projects.length === 0 ? (
+                    <div style={{ fontSize: 12.5, color: "var(--ec-text-muted)", marginBottom: 10 }}>{es ? "Sin proyectos en Workspace." : "No Workspace projects yet."}</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
+                      {client.projects.map((project) => (
+                        <div key={project.id} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          <FolderKanban size={13} style={{ color: "var(--ec-text-dim)", flexShrink: 0 }} />
+                          <Link href={`/dashboard/workspace?view=project&id=${project.id}`} style={{ flex: 1, minWidth: 0, fontSize: 13, color: "var(--ec-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {project.name}
+                          </Link>
+                          <span className="font-mono-ec" style={{ fontSize: 10, color: "var(--ec-text-dim)" }}>
+                            {project.clientProjectName ? `/${project.clientProjectName}` : es ? "sin pagina" : "no page"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Crear proyectos es solo para admin (pmAdmin en el backend). */}
+                  {isAdmin ? (
+                    <button type="button" className="ec-btn-secondary" onClick={() => setProjectFor(client)} style={{ padding: "6px 10px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <Plus size={12} /> {es ? "Agregar proyecto" : "Add project"}
+                    </button>
+                  ) : null}
+                </div>
+
                 <div style={{ padding: "11px 18px", borderTop: "1px solid var(--ec-hairline)", display: "flex", alignItems: "center", gap: 10 }}>
                   <span className="font-mono-ec" style={{ fontSize: 10.5, color: "var(--ec-text-muted)" }}>{activeApps} APPS</span>
-                  {client.projects.length ? (
-                    <span className="font-mono-ec" style={{ fontSize: 10.5, color: "var(--ec-text-dim)" }}>{client.projects.length} PROYECTOS</span>
-                  ) : null}
-                  <span style={{ flex: 1 }} />
-                  {client.projects.map((project) => (
-                    <Link key={project.id} href={`/dashboard/workspace?view=project&id=${project.id}`} title={project.name} style={{ color: "var(--ec-brand)", display: "inline-flex" }}>
-                      <ExternalLink size={12} />
-                    </Link>
-                  ))}
                 </div>
               </div>
             );
@@ -459,6 +482,12 @@ export default function ClientsPage() {
           </Field>
         </div>
       </Modal>
+
+      {projectFor ? (
+        <WorkspaceProvider>
+          <ProjectFormModal initialClientId={projectFor.id} onClose={() => setProjectFor(null)} onSaved={load} />
+        </WorkspaceProvider>
+      ) : null}
 
       <Modal
         open={Boolean(permissionsFor)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Loader2, Plus, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/app/context/AuthContext";
@@ -23,10 +23,13 @@ function pageSlugFromName(value: string) {
 /** Alta y edicion de proyecto. Solo admins. */
 export function ProjectFormModal({
   project,
+  initialClientId,
   onClose,
   onSaved,
 }: {
   project?: WorkProject;
+  /** Cliente preseleccionado al crear (p. ej. desde la página Clientes). */
+  initialClientId?: string;
   onClose: () => void;
   onSaved?: (project: WorkProject) => void;
 }) {
@@ -34,6 +37,11 @@ export function ProjectFormModal({
   const { members, meId } = useWorkspace();
   const { projects: clientProjects, fetchProjects } = useAuth();
   const editing = Boolean(project);
+  // Las páginas de AuthContext se cargan al iniciar sesión; se recargan para ver las creadas después en Clientes.
+  useEffect(() => {
+    void fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [creatingClient, setCreatingClient] = useState(false);
   const [newClient, setNewClient] = useState({ userName: "", email: "", jobTitle: "", password: "" });
   const [createClientPage, setCreateClientPage] = useState(false);
@@ -44,7 +52,7 @@ export function ProjectFormModal({
     name: project?.name ?? "",
     description: project?.description ?? "",
     packageId: project?.packageId ?? "simple",
-    clientId: project?.clientId ?? null,
+    clientId: project?.clientId ?? initialClientId ?? null,
     clientProjectName: project?.clientProjectName ?? null,
     status: project?.status ?? "planning",
     color: project?.color ?? PROJECT_COLORS[0],
@@ -210,7 +218,6 @@ export function ProjectFormModal({
           <select
             className="ec-field-input"
             value={creatingClient ? "__new__" : form.clientId ?? ""}
-            disabled={editing}
             onChange={(e) => {
               const value = e.target.value;
               if (value === "__new__") {
@@ -277,7 +284,7 @@ export function ProjectFormModal({
             </Field>
           </div>
         ) : null}
-        {!editing && !creatingClient && form.clientId ? (
+        {!creatingClient && form.clientId ? (
           <div style={{ gridColumn: "1 / -1" }}>
             <Field label={t("Página del cliente", "Client project page")}>
               <select
@@ -304,9 +311,17 @@ export function ProjectFormModal({
                 {form.clientProjectName && !selectedClientPages.some((p) => p.project_name === form.clientProjectName) ? (
                   <option value={form.clientProjectName}>{form.clientProjectName}</option>
                 ) : null}
-                <option value="__new_page__">{t("+ Crear página con el nombre del proyecto", "+ Create page using project name")}</option>
+                {/* El PATCH no crea páginas: al editar, la página nueva se crea en Clientes. */}
+                {!editing ? (
+                  <option value="__new_page__">{t("+ Crear página con el nombre del proyecto", "+ Create page using project name")}</option>
+                ) : null}
               </select>
             </Field>
+            {editing && selectedClientPages.length === 0 ? (
+              <div style={{ fontSize: 12, color: "var(--ec-text-muted)", marginTop: 6 }}>
+                {t("Este cliente no tiene páginas. Créala en Clientes con «Agregar página».", "This client has no pages. Create one in Clients with “Add page”.")}
+              </div>
+            ) : null}
             {createClientPage ? (
               <div style={{ marginTop: 10 }}>
                 <Field label={t("Identificador de la página *", "Page identifier *")}>

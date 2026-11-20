@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Loader2, Plus, Settings2, ShieldCheck, Star, Trash2 } from "lucide-react";
+import { Check, Copy, GripVertical, Loader2, Plus, RotateCcw, Settings2, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { Modal } from "@/app/dashboard/webapp/crm/components/ui";
 import {
   DEFAULT_INFO,
@@ -11,6 +11,7 @@ import {
   deleteCustomRequirement,
   getVaultSettings,
   listRequirements,
+  moveCustomRequirement,
   requiredKeys,
   requirementProgress,
   saveRequirement,
@@ -31,6 +32,7 @@ const STATUS_META: Record<RequirementStatus, { badge: string; glyph: string; es:
   pending: { badge: "ec-badge-neutral", glyph: "ec-glyph-idle", es: "Pendiente", en: "Pending" },
   sent: { badge: "ec-badge-warning", glyph: "ec-glyph-warn", es: "Enviado", en: "Sent" },
   verified: { badge: "ec-badge-success", glyph: "ec-glyph-ok", es: "Verificado", en: "Verified" },
+  skipped: { badge: "ec-badge-neutral", glyph: "ec-glyph-idle", es: "Quitado", en: "Removed" },
 };
 
 function StatusBadge({ status, es }: { status: RequirementStatus; es: boolean }) {
@@ -108,8 +110,8 @@ export function RequirementsVault({
     .flatMap((s) => s.items)
     .filter((i) => statusOf(i.key) === "pending")
     .slice(0, 3);
-  const verifiedPct = (progress.verified / progress.total) * 100;
-  const sentPct = (progress.sent / progress.total) * 100;
+  const verifiedPct = progress.total ? (progress.verified / progress.total) * 100 : 0;
+  const sentPct = progress.total ? (progress.sent / progress.total) * 100 : 0;
 
   return (
     <section className="ec-hcard ec-vault" aria-labelledby="ec-vault-title">
@@ -168,7 +170,7 @@ export function RequirementsVault({
               </div>
             </dl>
 
-            {adStatus !== "verified" ? (
+            {adStatus !== "verified" && adStatus !== "skipped" ? (
               <p className="ec-vault-priority">
                 <Star size={13} aria-hidden />
                 {es ? "Prioritario: compartir la cuenta publicitaria de Meta." : "Priority: share the Meta ad account."}
@@ -350,6 +352,10 @@ function RequirementsSheet({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [toDelete, setToDelete] = useState<RequirementItem | null>(null);
+  const [dragKey, setDragKey] = useState<string | null>(null);
+  const [dropSection, setDropSection] = useState<string | null>(null);
+  const isSkipped = (key: string) => rows[key]?.status === "skipped";
+  const skipped = sections.flatMap((s) => s.items).filter((i) => isSkipped(i.key));
 
   const run = async (key: string, task: () => Promise<void>) => {
     setBusy(key);
@@ -371,6 +377,24 @@ function RequirementsSheet({
       const item = await addCustomRequirement(projectId, section, label);
       onCustom((c) => [...c, item]);
     });
+
+  const move = (key: string, section: string, before: string | null) =>
+    run(key, async () => {
+      const list = await moveCustomRequirement(projectId, key, section, before);
+      onCustom(() => list);
+    });
+
+  // Suelta sobre una fila propia: queda antes de ella; sobre cualquier otra parte de la sección: al final.
+  const drop = (e: React.DragEvent, section: string) => {
+    e.preventDefault();
+    setDropSection(null);
+    const key = dragKey ?? e.dataTransfer.getData("text/plain");
+    setDragKey(null);
+    if (!key) return;
+    const target = (e.target as HTMLElement).closest<HTMLElement>("tr[data-custom]")?.dataset.custom ?? null;
+    if (target === key) return;
+    void move(key, section, target);
+  };
 
   const remove = (key: string) =>
     run(key, async () => {
@@ -410,8 +434,20 @@ function RequirementsSheet({
               <th scope="col">{es ? "Comentarios" : "Comments"}</th>
             </tr>
           </thead>
-          {sections.map((section) => (
-            <tbody key={section.id}>
+          {sections.map((section) => {
+            const items = section.items.filter((i) => !isSkipped(i.key));
+            // "Otros" solo aparece cuando tiene algo (o mientras se arrastra, para poder soltar ahí).
+            if (section.id === "other" && !items.length && !dragKey) return null;
+            return (
+            <tbody
+              key={section.id}
+              className={dropSection === section.id ? "is-drop" : undefined}
+              onDragOver={dragKey ? (e) => {
+                e.preventDefault();
+                if (dropSection !== section.id) setDropSection(section.id);
+              } : undefined}
+              onDrop={dragKey ? (e) => drop(e, section.id) : undefined}
+            >
               <tr className="ec-sheet-section">
                 <th colSpan={5} scope="colgroup">
                   {es ? section.es : section.en}
@@ -423,7 +459,7 @@ function RequirementsSheet({
                   ) : null}
                 </th>
               </tr>
-              {section.items.map((item) => (
+              {items.map((item) => (
                 <SheetRow
                   key={item.key}
                   item={item}
@@ -432,14 +468,55 @@ function RequirementsSheet({
                   isTeam={isTeam}
                   busy={busy === item.key}
                   onSave={(patch) => save(item.key, patch)}
-                  onDelete={isAdmin && item.custom ? () => setToDelete(item) : undefined}
+                  // Admin: el propio se borra (con confirmación); el de plantilla se quita y se puede restaurar.
+                  onDelete={isAdmin ? () => (item.custom ? setToDelete(item) : save(item.key, { status: "skipped" })) : undefined}
+                  drag={
+                    item.custom
+                      ? {
+                          sections: sections.map((s) => ({ id: s.id, label: es ? s.es : s.en })),
+                          current: section.id,
+                          onStart: () => setDragKey(item.key),
+                          onEnd: () => {
+                            setDragKey(null);
+                            setDropSection(null);
+                          },
+                          onMoveTo: (to) => move(item.key, to, null),
+                        }
+                      : undefined
+                  }
                 />
               ))}
-              <AddRow es={es} busy={busy === `add:${section.id}`} onAdd={(label) => add(section.id, label)} />
             </tbody>
-          ))}
+            );
+          })}
+          <tbody>
+            <AddRow es={es} busy={busy === "add:other"} onAdd={(label) => add("other", label)} />
+          </tbody>
         </table>
       </div>
+
+      {isAdmin && skipped.length ? (
+        <details className="ec-sheet-skipped">
+          <summary>
+            {es ? `${skipped.length} quitados · restaurar` : `${skipped.length} removed · restore`}
+          </summary>
+          <ul>
+            {skipped.map((item) => (
+              <li key={item.key}>
+                <span>{es ? item.es : item.en}</span>
+                <button
+                  type="button"
+                  className="ec-sheet-action"
+                  disabled={busy === item.key}
+                  onClick={() => save(item.key, { status: "pending" })}
+                >
+                  <RotateCcw size={12} aria-hidden /> {es ? "Restaurar" : "Restore"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       <Modal
         open={!!toDelete}
@@ -468,7 +545,7 @@ function RequirementsSheet({
   );
 }
 
-/** Última fila de cada sección: agrega un requisito propio de esta página. */
+/** Última fila de la hoja: agrega un requisito propio a "Otros"; de ahí se arrastra a su sección. */
 function AddRow({ es, busy, onAdd }: { es: boolean; busy: boolean; onAdd: (label: string) => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
@@ -522,6 +599,7 @@ function SheetRow({
   busy,
   onSave,
   onDelete,
+  drag,
 }: {
   item: RequirementItem;
   row: RequirementRow | undefined;
@@ -530,6 +608,14 @@ function SheetRow({
   busy: boolean;
   onSave: (patch: Parameters<typeof saveRequirement>[2]) => void;
   onDelete?: () => void;
+  /** Solo requisitos propios: se arrastran entre secciones; el select es la alternativa con teclado. */
+  drag?: {
+    sections: { id: string; label: string }[];
+    current: string;
+    onStart: () => void;
+    onEnd: () => void;
+    onMoveTo: (section: string) => void;
+  };
 }) {
   const status = row?.status ?? "pending";
   // Un acceso verificado queda fijo para el cliente; solo puede comentar.
@@ -562,10 +648,21 @@ function SheetRow({
   );
 
   return (
-    <tr aria-busy={busy || undefined}>
+    <tr
+      aria-busy={busy || undefined}
+      data-custom={drag ? item.key : undefined}
+      draggable={drag ? true : undefined}
+      onDragStart={drag ? (e) => {
+        e.dataTransfer.setData("text/plain", item.key);
+        e.dataTransfer.effectAllowed = "move";
+        drag.onStart();
+      } : undefined}
+      onDragEnd={drag?.onEnd}
+    >
       <th scope="row">
         <span className="ec-sheet-label">
-          <span>
+          {drag ? <GripVertical size={13} aria-hidden className="ec-sheet-grip" /> : null}
+          <span style={{ flex: 1 }}>
             {label}
             {item.priority ? (
               <span className="ec-sheet-priority">
@@ -573,8 +670,31 @@ function SheetRow({
               </span>
             ) : null}
           </span>
+          {drag ? (
+            <select
+              className="ec-sheet-move"
+              value={drag.current}
+              disabled={busy}
+              aria-label={`${es ? "Mover" : "Move"} ${label} ${es ? "a la sección" : "to section"}`}
+              title={es ? "Mover a otra sección" : "Move to another section"}
+              onChange={(e) => drag.onMoveTo(e.target.value)}
+            >
+              {drag.sections.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          ) : null}
           {onDelete ? (
-            <button type="button" className="ec-sheet-icon" onClick={onDelete} aria-label={`${es ? "Borrar" : "Delete"} ${label}`}>
+            <button
+              type="button"
+              className="ec-sheet-icon"
+              disabled={busy}
+              onClick={onDelete}
+              aria-label={`${item.custom ? (es ? "Borrar" : "Delete") : es ? "Quitar" : "Remove"} ${label}`}
+              title={item.custom ? (es ? "Borrar" : "Delete") : es ? "Quitar (no se usará)" : "Remove (not used)"}
+            >
               <Trash2 size={13} aria-hidden />
             </button>
           ) : null}
