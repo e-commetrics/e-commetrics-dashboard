@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, Copy, ExternalLink, FileText, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
-import { ErrorNotice, Loading, PageHeader } from "../../webapp/crm/components/ui";
+import { ArrowLeft, Check, Copy, ExternalLink, FileText, Link2, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ErrorNotice, Loading, Modal, PageHeader } from "../../webapp/crm/components/ui";
 import { errorMessage } from "../lib/api";
 import { useWorkspace } from "../lib/hooks";
 import { useT } from "../lib/i18n";
@@ -10,6 +10,59 @@ import { hostOf, normalizeUrl } from "../lib/notes";
 import type { Note, NoteKind, NoteLink } from "../lib/types";
 
 const KIND_ICON: Record<NoteKind, typeof Link2> = { links: Link2, text: FileText };
+
+/** Confirmación de borrado (en vez de window.confirm). Se monta solo abierta; el error se muestra dentro. */
+function ConfirmDeleteModal({
+  title,
+  message,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => Promise<void>;
+}) {
+  const { t } = useT();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const confirm = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await onConfirm();
+    } catch (e) {
+      setError(errorMessage(e));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onOpenChange={(o) => !o && !busy && onCancel()}
+      title={title}
+      width={440}
+      footer={
+        <>
+          <button type="button" className="ec-btn-secondary" onClick={onCancel} disabled={busy}>
+            {t("Cancelar", "Cancel")}
+          </button>
+          <button type="button" className="ec-btn-danger" onClick={confirm} disabled={busy}>
+            {busy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Trash2 size={14} aria-hidden />}
+            {confirmLabel}
+          </button>
+        </>
+      }
+    >
+      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "var(--ec-text)" }}>{message}</p>
+      {error ? <p role="alert" className="ec-notes-error">{error}</p> : null}
+    </Modal>
+  );
+}
 
 /**
  * Notas privadas de cada persona del equipo, estilo Notion: páginas de links o de texto.
@@ -52,15 +105,12 @@ export function NotesScreen({ noteId, onOpen }: { noteId: string | null; onOpen:
     }
   };
 
+  const [toDelete, setToDelete] = useState<Note | null>(null);
   const remove = async (note: Note) => {
-    if (!window.confirm(t(`¿Borrar "${note.title}"? No se puede deshacer.`, `Delete "${note.title}"? This cannot be undone.`))) return;
-    try {
-      await api.deleteNote(note.id);
-      setNotes((prev) => (prev ?? []).filter((n) => n.id !== note.id));
-      onOpen(null);
-    } catch (e) {
-      setError(errorMessage(e));
-    }
+    await api.deleteNote(note.id);
+    setNotes((prev) => (prev ?? []).filter((n) => n.id !== note.id));
+    setToDelete(null);
+    onOpen(null);
   };
 
   const open = notes?.find((n) => n.id === noteId) ?? null;
@@ -123,7 +173,7 @@ export function NotesScreen({ noteId, onOpen }: { noteId: string | null; onOpen:
                 onBack={() => onOpen(null)}
                 onChange={upsert}
                 onPatch={(fn) => patchLocal(open.id, fn)}
-                onDelete={() => remove(open)}
+                onDelete={() => setToDelete(open)}
               />
             ) : (
               <div className="ec-notes-placeholder">
@@ -134,6 +184,20 @@ export function NotesScreen({ noteId, onOpen }: { noteId: string | null; onOpen:
             )}
           </section>
         </div>
+      ) : null}
+
+      {toDelete ? (
+        <ConfirmDeleteModal
+          title={t("Borrar nota", "Delete note")}
+          message={
+            toDelete.kind === "links" && toDelete.links.length
+              ? t(`Se borra "${toDelete.title}" con sus ${toDelete.links.length} links. No se puede deshacer.`, `"${toDelete.title}" and its ${toDelete.links.length} links will be deleted. This cannot be undone.`)
+              : t(`Se borra "${toDelete.title}". No se puede deshacer.`, `"${toDelete.title}" will be deleted. This cannot be undone.`)
+          }
+          confirmLabel={t("Borrar nota", "Delete note")}
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => remove(toDelete)}
+        />
       ) : null}
     </div>
   );
@@ -234,13 +298,11 @@ function LinksEditor({ note, onPatch }: { note: Note; onPatch: (fn: (n: Note) =>
     }
   };
 
+  const [toDelete, setToDelete] = useState<NoteLink | null>(null);
   const remove = async (link: NoteLink) => {
-    try {
-      await api.deleteNoteLink(note.id, link.id);
-      onPatch((n) => ({ ...n, links: n.links.filter((l) => l.id !== link.id) }));
-    } catch (err) {
-      setError(errorMessage(err));
-    }
+    await api.deleteNoteLink(note.id, link.id);
+    onPatch((n) => ({ ...n, links: n.links.filter((l) => l.id !== link.id) }));
+    setToDelete(null);
   };
 
   return (
@@ -283,10 +345,20 @@ function LinksEditor({ note, onPatch }: { note: Note; onPatch: (fn: (n: Note) =>
       ) : (
         <ul className="ec-links-list">
           {note.links.map((link) => (
-            <LinkRow key={link.id} noteId={note.id} link={link} onSaved={(l) => onPatch((n) => ({ ...n, links: n.links.map((x) => (x.id === l.id ? l : x)) }))} onDelete={() => remove(link)} />
+            <LinkRow key={link.id} noteId={note.id} link={link} onSaved={(l) => onPatch((n) => ({ ...n, links: n.links.map((x) => (x.id === l.id ? l : x)) }))} onDelete={() => setToDelete(link)} />
           ))}
         </ul>
       )}
+
+      {toDelete ? (
+        <ConfirmDeleteModal
+          title={t("Borrar link", "Delete link")}
+          message={t(`Se borra "${toDelete.title}" de esta nota. No se puede deshacer.`, `"${toDelete.title}" will be removed from this note. This cannot be undone.`)}
+          confirmLabel={t("Borrar link", "Delete link")}
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => remove(toDelete)}
+        />
+      ) : null}
     </div>
   );
 }
