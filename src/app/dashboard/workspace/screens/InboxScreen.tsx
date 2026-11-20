@@ -30,7 +30,11 @@ export function InboxScreen({ onOpenTask, onOpenWall }: { onOpenTask: (id: strin
   // Tareas asignadas a mi, para el filtro "Solo mis tareas" del admin.
   const myTasks = useResource(isAdmin ? "inbox:my-tasks" : "inbox:none", (api) => (isAdmin ? api.listMyTasks() : Promise.resolve([])));
 
-  const markRead = useMutation((api, ids: string[] | "all") => api.markInboxRead(ids), { onError: (m) => toast.error(m) });
+  const markRead = useMutation((api, ids: string[] | "all") => api.markInboxRead(ids), {
+    // La barra lateral vive fuera del WorkspaceProvider: se le avisa para que recuente el badge.
+    onSuccess: () => window.dispatchEvent(new Event("ec:inbox-read")),
+    onError: (m) => toast.error(m),
+  });
 
   const mineIds = useMemo(() => new Set((myTasks.data ?? []).map((x) => x.id)), [myTasks.data]);
 

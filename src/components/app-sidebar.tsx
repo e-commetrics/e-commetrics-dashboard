@@ -504,7 +504,7 @@ function SubLink({ href, active, onClick, children }: { href: string; active: bo
   );
 }
 
-/** Unread inbox count for the badge. Re-read on navigation and every minute. */
+/** Unread inbox count for the badge. Re-read on navigation, every minute and on "ec:inbox-read". */
 function useUnreadInbox(enabled: boolean): number {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -523,9 +523,11 @@ function useUnreadInbox(enabled: boolean): number {
         .catch(() => undefined);
     load();
     const id = setInterval(load, 60_000);
+    window.addEventListener("ec:inbox-read", load);
     return () => {
       cancelled = true;
       clearInterval(id);
+      window.removeEventListener("ec:inbox-read", load);
     };
   }, [enabled, user, pathname, view]);
 
