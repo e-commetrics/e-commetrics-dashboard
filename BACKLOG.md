@@ -43,7 +43,7 @@ Pendiente:
 
 ## Pendiente por aplicar: app CRM para «CRM Leads&Negotiate» (definido 2026-11-20)
 
-**Estado (2026-11-20): programado, sin desplegar.** App en Workspace → CRM (`?view=crm[&id=P]`,
+**Estado (2026-11-20): en producción.** SQL, backend, frontend y migración aplicados (91 leads en 6 etapas, labels de etapa borradas). Solo queda el punto 5, **en espera de comentarios de Juan**. Antes: App en Workspace → CRM (`?view=crm[&id=P]`,
 `screens/CrmScreen.tsx`), rutas `/api/pm/crm*` en el backend, tabla `pm_crm_leads`. Workspace ya no tiene
 tipo de tablero ni etapas (el proyecto con CRM muestra «Abrir CRM»). Orden para aplicar:
 `docs/migrations/2026-11-20-crm-leads.sql` → subir backend → desplegar frontend → respaldo →
