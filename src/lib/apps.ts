@@ -11,7 +11,6 @@ export const APP_ROUTES: Record<string, string> = {
   "calendar-monge": "Monge",
   "promo-palmas": "PromoPalmas",
   "calendario-palmas": "CalendarioPalmas",
-  "scan-eat": "ScanEat",
   crm: "CRM",
 };
 
@@ -66,7 +65,6 @@ export const APPS: AppDef[] = [
   { slug: "crm", es: "CRM", en: "CRM", component: "CRM" },
   { slug: "calendar-monge", es: "Citas", en: "Appointments", component: "Monge" },
   { slug: "blogs", es: "Blog y comentarios", en: "Blog and comments", component: "blogs" },
-  { slug: "scan-eat", es: "Solicitudes de demo", en: "Demo requests", component: "ScanEat" },
   { slug: "qr", es: "Códigos QR", en: "QR codes", component: "QR" },
   { slug: "vcard", es: "vCards", en: "vCards", component: "Vcard" },
 ];
@@ -87,7 +85,6 @@ export const CLIENT_GROUPS: ClientGroup[] = [
   { id: "palmas", name: "Palmas Recovery", color: "#1BAF7A", match: /palmas/i, apps: ["calendario-palmas", "promo-palmas"] },
   { id: "reforma", name: "Reforma Dental", color: "#9CCC0C", match: /reforma/i, apps: ["calendar-reforma", "crm"] },
   { id: "monge", name: "Monge Ortopedia", color: "#2A78D6", match: /monge/i, apps: ["calendar-monge", "blogs"] },
-  { id: "scaneat", name: "Scan & Eat", color: "#6250D6", match: /scan\s*&?\s*-?\s*eat|scaneat/i, apps: ["scan-eat"] },
 ];
 
 /** Apps that belong to no client in particular. */

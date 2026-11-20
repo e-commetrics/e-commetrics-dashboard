@@ -13,6 +13,25 @@ Orden de prioridad: de arriba hacia abajo. No empezar un punto hasta cerrar el a
 > `ecommetrica@gmail.com` y los opcionales. Falta definir qué es "el documento". Ver
 > `docs/tarjeta-resguardo.md`.
 
+## ScanEat sale del dashboard (2026-11-20)
+
+ScanEat queda como proyecto aparte (`e-commetrics/ScanEat`). Se quitó del dashboard la app
+«Solicitudes de demo» (`webapp/scan-eat/`), su permiso `ScanEat`, el grupo «Scan & Eat» del menú
+lateral y `"ScanEat"` de `allComponents` en el backend. El caso de portafolio en el sitio público
+(`src/site/content/work.ts`) se queda. **Cambios: ambos** (frontend y `backend-actual.js`).
+
+Pendiente:
+- [ ] Borrar `NEXT_PUBLIC_SCANEAT_ADMIN_KEY` de Vercel.
+- [ ] **Rotar `ADMIN_API_KEY` en el servidor de ScanEat:** estuvo publicada en el JavaScript del
+      dashboard (`NEXT_PUBLIC_`), así que cualquiera pudo leerla y usar
+      `GET /api/demo/requests` (nombres y correos de solicitantes) y el `PATCH` de estado.
+- [ ] Opcional: `DELETE FROM users_apps WHERE component = 'ScanEat';` (filas sin uso).
+- [ ] Consolidar el modelo completo de ScanEat en su propio repo. Hoy no tiene panel para ver las
+      solicitudes de demo: solo llega el correo al admin. Estado en `ScanEat/PROGRESS.md` (Fase 2
+      bloqueada por Supabase Pro) y cambios sin commit en ese repo (`server/index.js`,
+      `PROGRESS.md`, `package.json`, `DEMO_PROVISIONING_RESEARCH.md`). El código de la página
+      quitada queda en el historial de git del dashboard.
+
 ## Pendiente por aplicar: app CRM para «CRM Leads&Negotiate» (definido 2026-11-20)
 
 Diseño acordado con el usuario el 2026-11-20. Falta su visto bueno final antes de programar; quedó
@@ -194,8 +213,8 @@ Al retomar, empezar por "Backend en el mismo dominio" y luego el paso 1.
   - No tocar MX. Borrar AAAA de `@` y `www` si existen (mandan tráfico al servidor viejo).
 - **Variables de entorno del frontend:** no hay variables nuevas. El código usa solo
   `NEXT_PUBLIC_URL` (obligatoria; hay que cargarla en Vercel) y
-  `NEXT_PUBLIC_SCANEAT_ADMIN_KEY` (solo `webapp/scan-eat/page.tsx`; al ser `NEXT_PUBLIC_`
-  queda visible en el navegador, así que no es secreta).
+  `NEXT_PUBLIC_SCANEAT_ADMIN_KEY` (ya no se usa: la app de ScanEat salió del dashboard el
+  2026-11-20; borrarla de Vercel).
 - **`www`:** había un redirect `www` → `https://e-commetrics.com` en cPanel. **Dejará de
   funcionar** al apuntar `www` a Vercel (el tráfico ya no llega a cPanel). Decisión: se
   quita de cPanel y el redirect se define en Vercel (Domains → `www.e-commetrics.com` →
@@ -276,7 +295,7 @@ simple y de menos riesgo, pero implica CORS y cookies cross-site.
    |---|---|---|
    | `BACKEND_ORIGIN` | `https://origin.e-commetrics.com` | igual |
    | `NEXT_PUBLIC_URL` | sin definir | `https://e-commetrics.com` |
-   | `NEXT_PUBLIC_SCANEAT_ADMIN_KEY` | valor actual | valor actual |
+   | `NEXT_PUBLIC_SCANEAT_ADMIN_KEY` | borrar (2026-11-20) | borrar (2026-11-20) |
 
 6. **Probar en el preview `*.vercel.app` sin tocar el DNS**: login, proyectos, CRM, demás
    apps, chat, `send-package-email` y **subida de imágenes** (perfil y contenido) por el

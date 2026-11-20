@@ -8,7 +8,6 @@ export const APP_COMPONENTS = [
   "Monge",
   "PromoPalmas",
   "CalendarioPalmas",
-  "ScanEat",
   "CRM",
 ] as const;
 
@@ -27,7 +26,6 @@ export const APP_COMPONENT_LABELS: Record<string, string> = {
   Monge: "Cal. Monge",
   PromoPalmas: "Promo Palmas",
   CalendarioPalmas: "Cal. Palmas",
-  ScanEat: "ScanEat Demos",
   CRM: "CRM",
 };
 

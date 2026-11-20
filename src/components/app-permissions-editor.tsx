@@ -31,7 +31,6 @@ const ICONS: Record<string, LucideIcon> = {
   Monge: Calendar,
   PromoPalmas: Tag,
   CalendarioPalmas: Calendar,
-  ScanEat: FileText,
   CRM: KanbanSquare,
 };
 
