@@ -31,6 +31,36 @@ export type LabelUsage = { label: string; count: number };
 /** Tarea precargada de un paquete. */
 export type TemplateTask = { title: string; description: string | null };
 
+// ─── App CRM: un proyecto con etapas; sus leads no son tareas ────────────────
+
+export type CrmSummary = {
+  projectId: string;
+  name: string;
+  clientId: string | null;
+  clientName: string | null;
+  stageCount: number;
+  leadCount: number;
+};
+
+export type CrmLead = {
+  id: string;
+  projectId: string;
+  stageId: string | null;
+  name: string;
+  description: string | null;
+  linkUrl: string | null;
+  priority: Priority;
+  dueDate: string | null;
+  ownerId: string | null;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CrmLeadInput = Partial<Pick<CrmLead, "stageId" | "description" | "linkUrl" | "priority" | "dueDate" | "ownerId" | "position">> & {
+  name?: string;
+};
+
 export type ProjectStage = { id: string; name: string };
 
 export type WorkProject = {

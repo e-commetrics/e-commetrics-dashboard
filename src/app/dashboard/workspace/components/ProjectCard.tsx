@@ -51,8 +51,6 @@ export function ProjectCard({ project, onOpen }: { project: WorkProject; onOpen:
   const pkg = packageName(project.packageId, lang);
   const health = healthOf(project);
   const finished = project.status === "completed";
-  // CRM (proyecto con etapas): avance y salud no aplican; la lista no trae conteo por etapa, solo el total.
-  const crm = Boolean(project.stages?.length);
 
   return (
     <button type="button" onClick={onOpen} className="ec-pcard ec-client" style={identityVars(identity)}>
@@ -62,17 +60,9 @@ export function ProjectCard({ project, onOpen }: { project: WorkProject; onOpen:
           <div className="ec-pcard-name">{project.name}</div>
           <div className="ec-pcard-client">{client ? client.name : t("Interno", "Internal")}</div>
         </div>
-        {crm ? <span className="ec-badge ec-badge-neutral">CRM</span> : <HealthPill health={health} />}
+        <HealthPill health={health} />
       </div>
 
-      {crm ? (
-        <div className="ec-pcard-prog">
-          <span>Leads</span>
-          <b>
-            {total} · {project.stages?.length} {t("etapas", "stages")}
-          </b>
-        </div>
-      ) : (
       <div>
         <div className="ec-pcard-prog">
           <span>{t("Avance", "Progress")}</span>
@@ -84,7 +74,6 @@ export function ProjectCard({ project, onOpen }: { project: WorkProject; onOpen:
           <i style={{ width: `${pct}%` }} />
         </div>
       </div>
-      )}
 
       <div className="ec-pcard-next">
         {finished ? (
@@ -121,29 +110,20 @@ export function ProjectCard({ project, onOpen }: { project: WorkProject; onOpen:
 export function ProjectMini({ project, onOpen }: { project: WorkProject; onOpen: () => void }) {
   const { client } = useProjectIdentity(project);
   const pct = progressPct(project.taskCounts);
-  const crm = Boolean(project.stages?.length);
   return (
     <button type="button" className="ec-pmini" onClick={onOpen}>
       <span className="ec-pmini-name">
         <ClientDot name={`${client?.name ?? ""} ${project.name}`.trim()} color={project.color} size={10} square />
         {project.name}
       </span>
-      {crm ? null : (
-        <span className="ec-bar" role="img" aria-label={`${pct}%`} style={{ minWidth: 0, flex: "none" }}>
-          <i style={{ width: `${pct}%` }} />
-        </span>
-      )}
+      <span className="ec-bar" role="img" aria-label={`${pct}%`} style={{ minWidth: 0, flex: "none" }}>
+        <i style={{ width: `${pct}%` }} />
+      </span>
       <span className="ec-pmini-meta">
-        {crm ? (
-          <span>{project.taskCounts.total} leads · CRM</span>
-        ) : (
-          <>
-            <span>
-              {project.taskCounts.done} / {project.taskCounts.total}
-            </span>
-            <HealthPill health={healthOf(project)} />
-          </>
-        )}
+        <span>
+          {project.taskCounts.done} / {project.taskCounts.total}
+        </span>
+        <HealthPill health={healthOf(project)} />
       </span>
     </button>
   );

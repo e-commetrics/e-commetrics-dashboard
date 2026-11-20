@@ -7,6 +7,9 @@ import type {
   InboxItem,
   Member,
   LabelUsage,
+  CrmLead,
+  CrmLeadInput,
+  CrmSummary,
   ProjectStatusSetting,
   TemplateTask,
   ProjectDetail,
@@ -84,6 +87,13 @@ export interface WorkspaceApi {
   getPackageTemplates(): Promise<Record<string, TemplateTask[]>>;
   setPackageTemplate(packageId: string, tasks: TemplateTask[]): Promise<TemplateTask[]>;
   resetPackageTemplate(packageId: string): Promise<void>;
+
+  // App CRM. Las etapas se cambian con setProjectStages (solo admin).
+  listCrms(): Promise<CrmSummary[]>;
+  getCrm(projectId: string): Promise<{ project: WorkProject; leads: CrmLead[] }>;
+  createLead(projectId: string, input: CrmLeadInput & { name: string }): Promise<CrmLead>;
+  updateLead(id: string, patch: CrmLeadInput): Promise<CrmLead>;
+  deleteLead(id: string): Promise<void>;
 }
 
 export const IS_MOCK = process.env.NEXT_PUBLIC_PM_API !== "live";
@@ -160,6 +170,13 @@ export const httpApi: WorkspaceApi = {
   setPackageTemplate: (packageId, tasks) =>
     call<{ tasks: TemplateTask[] }>("PUT", `/package-templates/${enc(packageId)}`, { tasks }).then((d) => d.tasks),
   resetPackageTemplate: (packageId) => call<void>("DELETE", `/package-templates/${enc(packageId)}`),
+
+  listCrms: () => call<{ crms: CrmSummary[] }>("GET", "/crm").then((d) => d.crms),
+  getCrm: (projectId) => call<{ project: WorkProject; leads: CrmLead[] }>("GET", `/crm/${enc(projectId)}`),
+  createLead: (projectId, input) =>
+    call<{ lead: CrmLead }>("POST", `/crm/${enc(projectId)}/leads`, input).then((d) => d.lead),
+  updateLead: (id, patch) => call<{ lead: CrmLead }>("PATCH", `/crm/leads/${enc(id)}`, patch).then((d) => d.lead),
+  deleteLead: (id) => call<void>("DELETE", `/crm/leads/${enc(id)}`),
 };
 
 let mockSingleton: WorkspaceApi | null = null;

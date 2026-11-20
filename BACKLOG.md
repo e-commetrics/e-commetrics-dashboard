@@ -43,9 +43,13 @@ Pendiente:
 
 ## Pendiente por aplicar: app CRM para «CRM Leads&Negotiate» (definido 2026-11-20)
 
-Diseño acordado con el usuario el 2026-11-20. Falta su visto bueno final antes de programar; quedó
-en espera mientras se resuelven features más cortas de Workspace. **Cambios: ambos** (SQL, backend
-y frontend). No toca el CRM de Reforma (`webapp/crm/`), que es exclusivo de Reforma.
+**Estado (2026-11-20): programado, sin desplegar.** App en Workspace → CRM (`?view=crm[&id=P]`,
+`screens/CrmScreen.tsx`), rutas `/api/pm/crm*` en el backend, tabla `pm_crm_leads`. Workspace ya no tiene
+tipo de tablero ni etapas (el proyecto con CRM muestra «Abrir CRM»). Orden para aplicar:
+`docs/migrations/2026-11-20-crm-leads.sql` → subir backend → desplegar frontend → respaldo →
+`docs/migrations/2026-11-20-crm-leads-migrar.sql` (bloque por bloque) → punto 5.
+**Cambios: ambos** (SQL, backend y frontend). No toca el CRM de Reforma (`webapp/crm/`), que es
+exclusivo de Reforma.
 
 **Problema actual.** La importación de ClickUp dejó el proyecto 5 «CRM Leads&Negotiate» (cliente 16)
 con 91 tareas. Cada tarea tiene su etapa en `stage_id` (`pm_project_stages`, 6 etapas: Open Lead,

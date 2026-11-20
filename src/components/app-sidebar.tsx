@@ -9,6 +9,7 @@ import {
   ChevronRight,
   FileText,
   FolderKanban,
+  KanbanSquare,
   Home,
   Inbox,
   LayoutGrid,
@@ -231,6 +232,7 @@ function SidebarNav() {
   const workspace: [Item, boolean][] = [
     [{ key: "projects", href: ws("projects"), es: "Proyectos", en: "Projects", icon: FolderKanban }, wsActive("projects")],
     [{ key: "wall", href: ws("wall"), es: "Muro", en: "Wall", icon: Megaphone }, wsActive("wall")],
+    [{ key: "crm", href: ws("crm"), es: "CRM", en: "CRM", icon: KanbanSquare }, wsActive("crm")],
   ];
 
   const appsFromComponents = (components: string[]) =>

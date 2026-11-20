@@ -113,7 +113,6 @@ export function ProjectScreen({
   if (!project) return null;
 
   const status = PROJECT_STATUS_META[project.status];
-  const stages = project.stages ?? [];
   const owner = memberById(project.ownerId);
   const pkg = packageName(project.packageId, lang);
   const clientGroup = clientGroupFor(project.name, project.clientProjectName, client?.name);
@@ -159,6 +158,11 @@ export function ProjectScreen({
                   {t("Entrega", "Due")}: <DueDate date={project.dueDate} done={project.status === "completed"} />
                 </span>
               ) : null}
+              {project.stages?.length ? (
+                <Link href={`/dashboard/workspace?view=crm&id=${project.id}`} style={{ color: "var(--ec-brand)", display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 500 }}>
+                  {t("Abrir CRM", "Open CRM")} <KanbanSquare size={12} />
+                </Link>
+              ) : null}
               {project.clientProjectName ? (
                 <Link href={`/dashboard/${project.clientProjectName}`} style={{ color: "var(--ec-brand)", display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 500 }}>
                   {t("Página del cliente", "Client page")} <ExternalLink size={12} />
@@ -166,18 +170,6 @@ export function ProjectScreen({
               ) : null}
             </div>
           </div>
-          {stages.length ? (
-            // CRM: nadie "completa" leads, asi que en vez de avance y salud se ve cuantos hay por etapa.
-            <div className="ec-wb-pulse" style={{ flexWrap: "wrap" }}>
-              {stages.map((st, i) => (
-                <span key={st.id} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <span aria-hidden style={{ width: 9, height: 9, borderRadius: 3, background: STAGE_COLORS[i % STAGE_COLORS.length] }} />
-                  {st.name} <strong className="ec-num">{allTasks.filter((task) => task.parentId === null && task.stageId === st.id).length}</strong>
-                </span>
-              ))}
-              <AvatarStack ids={project.memberIds} max={5} size={26} />
-            </div>
-          ) : (
           <div className="ec-wb-pulse">
             <span className="ec-num">
               <strong>
@@ -196,7 +188,6 @@ export function ProjectScreen({
             ) : null}
             <AvatarStack ids={project.memberIds} max={5} size={26} />
           </div>
-          )}
         </div>
         {project.description ? <p style={{ fontSize: 13, color: "var(--ec-text-muted)", marginTop: 8, maxWidth: "80ch" }}>{project.description}</p> : null}
 
@@ -302,21 +293,8 @@ export function ProjectScreen({
         <Board
           tasks={topLevel}
           onOpenTask={onOpenTask}
-          columns={
-            stages.length
-              ? [
-                  ...stages.map((st, i) => ({ key: st.id, name: st.name, color: STAGE_COLORS[i % STAGE_COLORS.length], stageId: st.id as string | null })),
-                  // Tareas sin etapa (nuevas, o de una etapa borrada): solo aparece si hay alguna.
-                  ...(topLevel.some((task) => !stages.some((st) => st.id === task.stageId))
-                    ? [{ key: "none", name: t("Sin etapa", "No stage"), color: "var(--ec-text-faint)", stageId: null }]
-                    : []),
-                ].map((c) => ({
-                  ...c,
-                  match: (task: Task) => (c.stageId ? task.stageId === c.stageId : !stages.some((st) => st.id === task.stageId)),
-                  onDrop: (task: Task) => void move.run(task.id, { stageId: c.stageId }),
-                  onCreate: (draft: QuickDraft) => create.run({ ...draft, stageId: c.stageId }),
-                }))
-              : TASK_STATUSES.map((s) => ({
+          // Todos los tableros son por estado; las etapas viven en la app CRM.
+          columns={TASK_STATUSES.map((s) => ({
                   key: s,
                   name: TASK_STATUS_META[s][lang],
                   color: TASK_STATUS_META[s].color,
@@ -353,7 +331,6 @@ export function ProjectScreen({
   );
 }
 
-const STAGE_COLORS = ["var(--ec-d1)", "var(--ec-d2)", "var(--ec-d3)", "var(--ec-d4)", "var(--ec-d5)", "var(--ec-d6)"];
 
 type BoardColumn = {
   key: string;

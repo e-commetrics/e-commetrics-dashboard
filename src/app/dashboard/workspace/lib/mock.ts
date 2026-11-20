@@ -19,6 +19,8 @@ import type {
   Priority,
   ProjectInput,
   ProjectStatusSetting,
+  CrmLead,
+  CrmLeadInput,
   Task,
   TaskComment,
   TaskStatus,
@@ -176,6 +178,7 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
   let viewer: Member | null = null;
   let mockStatuses: ProjectStatusSetting[] | null = null;
   const mockTemplates: Record<string, TemplateTask[]> = {};
+  let mockLeads: CrmLead[] = [];
 
   function load(): Db {
     if (typeof window === "undefined") return seed();
@@ -603,6 +606,46 @@ export function createMockApi(): WorkspaceApi & { setViewer: (v: { id: string; n
     },
     async resetPackageTemplate(packageId: string) {
       delete mockTemplates[packageId];
+      return delay(undefined);
+    },
+
+    // App CRM en memoria: proyectos con etapas y sus leads.
+    async listCrms() {
+      const db = load();
+      return delay(
+        db.projects
+          .filter((p) => p.stages?.length && p.status !== "archived")
+          .map((p) => ({
+            projectId: p.id,
+            name: p.name,
+            clientId: p.clientId,
+            clientName: db.members.find((m) => m.id === p.clientId)?.name ?? null,
+            stageCount: p.stages?.length ?? 0,
+            leadCount: mockLeads.filter((l) => l.projectId === p.id).length,
+          }))
+      );
+    },
+    async getCrm(projectId: string) {
+      const { project } = await api.getProject(projectId);
+      return delay({ project, leads: mockLeads.filter((l) => l.projectId === projectId) });
+    },
+    async createLead(projectId: string, input: CrmLeadInput & { name: string }) {
+      const at = now();
+      const lead: CrmLead = {
+        id: `l-${Date.now()}`, projectId, stageId: input.stageId ?? null, name: input.name, description: input.description ?? null,
+        linkUrl: input.linkUrl ?? null, priority: input.priority ?? "normal", dueDate: input.dueDate ?? null,
+        ownerId: input.ownerId ?? null, position: mockLeads.length, createdAt: at, updatedAt: at,
+      };
+      mockLeads.push(lead);
+      return delay(lead);
+    },
+    async updateLead(id: string, patch: CrmLeadInput) {
+      const lead = mockLeads.find((l) => l.id === id) ?? notFound("Lead");
+      Object.assign(lead, patch, { updatedAt: now() });
+      return delay(lead);
+    },
+    async deleteLead(id: string) {
+      mockLeads = mockLeads.filter((l) => l.id !== id);
       return delay(undefined);
     },
   };
