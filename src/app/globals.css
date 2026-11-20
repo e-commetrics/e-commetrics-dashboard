@@ -875,6 +875,57 @@ a.ec-hrow:hover { background: var(--ec-surface-2); }
 .ec-creport { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 32px; align-items: start; }
 @media (max-width: 640px) { .ec-chero { padding: 18px; } .ec-chero-id { align-items: flex-start; } }
 
+/* Tarjeta de resguardo: comparte la fila del resumen del cliente (derecha); debajo en pantallas angostas. */
+.ec-chero-row { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; margin-bottom: 18px; align-items: stretch; }
+.ec-chero-row > .ec-chero { margin-bottom: 0; }
+@media (max-width: 1100px) { .ec-chero-row { grid-template-columns: minmax(0, 1fr); } }
+.ec-vault { display: flex; flex-direction: column; }
+.ec-vault > header h2 { display: inline-flex; align-items: center; gap: 7px; }
+.ec-vault > header h2 svg { color: var(--ec-brand); }
+.ec-vault-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.ec-vault-body > .ec-btn-primary { margin-top: auto; font-size: 13px; padding: 9px 14px; }
+.ec-vault-muted { margin: 0; font-size: 13px; color: var(--ec-text-muted); display: inline-flex; align-items: center; gap: 6px; }
+.ec-vault-count { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.ec-vault-count b { font-size: 30px; font-weight: 600; line-height: 1; color: var(--ec-text); }
+.ec-vault-count span { font-size: 12.5px; color: var(--ec-text-muted); }
+.ec-vault-bar { display: flex; height: 8px; border-radius: 99px; background: var(--ec-surface-2); overflow: hidden; }
+.ec-vault-bar i { display: block; height: 100%; background: var(--ec-success); transition: width 400ms ease; }
+.ec-vault-bar i.is-sent { background: repeating-linear-gradient(135deg, var(--ec-warning) 0 4px, transparent 4px 7px); }
+.ec-vault-ids { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.ec-vault-ids dt { font-size: 12px; color: var(--ec-text-muted); margin-bottom: 3px; }
+.ec-vault-ids dd { margin: 0; }
+.ec-vault-copy { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px dashed var(--ec-hairline-strong); background: var(--ec-surface-2); color: var(--ec-text); font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.ec-vault-copy span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.ec-vault-copy svg { color: var(--ec-text-muted); flex-shrink: 0; }
+.ec-vault-copy:hover { border-style: solid; }
+.ec-vault-priority { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ec-text); }
+.ec-vault-priority svg { color: var(--ec-warning); fill: currentColor; flex-shrink: 0; }
+.ec-vault-sub { font-size: 12px; color: var(--ec-text-muted); margin-bottom: 4px; }
+.ec-vault-next { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ec-text); display: flex; flex-direction: column; gap: 2px; }
+
+/* Hoja de requerimientos: misma retícula que la pestaña "Requerimientos" del Excel. */
+.ec-sheet-intro { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: var(--ec-text-muted); max-width: 80ch; }
+.ec-sheet-error { margin-bottom: 10px; font-size: 13px; color: var(--ec-danger); }
+.ec-sheet-scroll { overflow-x: auto; max-height: min(68vh, 720px); overflow-y: auto; border: 1px solid var(--ec-text-dim); }
+.ec-sheet { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: fixed; font-size: 13px; color: var(--ec-text); background: var(--ec-surface-1); }
+.ec-sheet th, .ec-sheet td { border: 1px solid var(--ec-hairline-strong); padding: 0; vertical-align: middle; text-align: left; }
+.ec-sheet thead th { position: sticky; top: 0; z-index: 1; background: var(--ec-surface-2); font-weight: 700; padding: 7px 8px; box-shadow: inset 0 -1px 0 var(--ec-text-dim); }
+.ec-sheet tbody th[scope="row"] { font-weight: 500; padding: 7px 8px; }
+.ec-sheet-section th { text-align: center !important; font-weight: 700; padding: 8px !important; background: var(--ec-surface-1); border-top: 1px solid var(--ec-text-dim) !important; }
+.ec-sheet-section small { display: block; margin-top: 2px; font-weight: 400; font-size: 12px; color: var(--ec-text-muted); }
+.ec-sheet-cell { width: 100%; min-height: 34px; padding: 7px 8px; border: 0; background: transparent; color: var(--ec-text); font: inherit; outline: none; }
+.ec-sheet-cell:focus { box-shadow: inset 0 0 0 2px var(--ec-brand); }
+.ec-sheet-cell:disabled { color: var(--ec-text-muted); cursor: not-allowed; }
+.ec-sheet-cell::placeholder { color: var(--ec-text-dim); }
+.ec-sheet td > .ec-badge { margin: 0 8px; }
+.ec-sheet-check { display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; }
+.ec-sheet-check input { width: 16px; height: 16px; accent-color: var(--ec-brand-fill); }
+.ec-sheet-check:focus-within { box-shadow: inset 0 0 0 2px var(--ec-brand); }
+.ec-sheet-priority { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-size: 11px; font-weight: 600; color: var(--ec-text); }
+.ec-sheet-priority svg { color: var(--ec-warning); fill: currentColor; }
+.ec-sheet-who { display: block; padding: 0 8px 5px; font-size: 11px; color: var(--ec-text-dim); }
+.ec-sheet tr[aria-busy] { opacity: 0.6; }
+
 /* Team home analytics: delivery, not client results (those live inside each client). */
 .ec-analytics { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px 28px; padding: 16px; border-top: 1px solid var(--ec-hairline); }
 .ec-analytics h3 { font-size: 13.5px; font-weight: 600; margin: 0; color: var(--ec-text); }

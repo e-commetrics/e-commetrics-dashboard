@@ -10,6 +10,7 @@ import { Target, Sparkles, Layers, TrendingUp, Zap, ExternalLink, Plus, MoreHori
 import { apiFetch } from "@/lib/api";
 import ContentModal from "@/components/ContentModal";
 import { BaseCardsModal } from "@/components/BaseCardsModal";
+import { RequirementsVault } from "@/components/RequirementsVault";
 import { clientGroupFor, progressPct } from "@/lib/apps";
 import { Chart } from "@/components/charts";
 import { ClientTile } from "@/components/client-identity";
@@ -331,6 +332,7 @@ export default function ProjectContent({ project: initialProject }: { project: P
       }}
     >
       {/* Client page = a report. The one screen that carries the brand gradient; results come before work. */}
+      <div className="ec-chero-row">
       <div className="ec-chero fade-in-up">
         <div className="ec-chero-top">
           <span>
@@ -389,6 +391,9 @@ export default function ProjectContent({ project: initialProject }: { project: P
             <span>{lang === "es" ? "Entregables publicados" : "Published deliverables"}</span>
           </div>
         </div>
+      </div>
+      {/* Tarjeta de resguardo: arriba a la derecha, junto al resumen del cliente. */}
+      <RequirementsVault projectId={currentProject.id} isTeam={isAdmin || user?.role === "employee"} lang={lang} />
       </div>
 
       <div className="ec-creport fade-in-up">

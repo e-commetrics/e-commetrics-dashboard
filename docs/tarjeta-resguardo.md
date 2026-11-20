@@ -72,3 +72,22 @@ Además debe incluir "el documento", que todavía no está identificado (ver dud
    tocar el backend.
 4. **"Compartiendo espacio con el dashboard":** confirmar a qué bloque de la página se refiere
    (resumen o avance del proyecto), para ubicar bien la tarjeta.
+
+## Decisiones del 2026-11-19 (implementado, sin commit)
+
+- **"El documento"** es la pestaña *Requerimientos* de `Requerimientos TEMPLATE.xlsx` (OneDrive). Se replica
+  su retícula (secciones centradas; columnas Requisito, Información, Comentarios) y se agrega la columna Estado.
+- **Solo se registran accesos.** No hay campo de contraseña; las filas `U: P:` guardan solo usuario o correo.
+- **Sin datos bancarios por ahora:** se quitaron Info tarjeta bancaria, Santander y BBVA. PayPal y FedEx se
+  quedan como accesos de configuración.
+- **Fusiones:** SEO-Google (Analytics, Ads, Merchant Center) entra en la sección de Google; "Accesos GoDaddy"
+  de los opcionales es la fila DNS-Dominios de Requisitos Técnicos.
+- **Flujo (opción A):** el cliente marca *Enviado*; el equipo (admin/employee) marca *Verificado* o regresa a
+  *Pendiente*. Un acceso verificado queda fijo para el cliente (solo puede comentar). Los opcionales no cuentan
+  en el avance.
+- **Guardado:** una fila por requisito en `project_requirements`
+  (`docs/migrations/2026-11-19-project-requirements.sql`); rutas `GET/PUT /api/projects/:id/requirements[/:key]`
+  en `backend-actual.js`. Catálogo de filas en `src/lib/requirements.ts`; UI en `src/components/RequirementsVault.tsx`.
+- **Ubicación:** a la derecha del resumen del cliente (`.ec-chero-row`); debajo en pantallas de menos de 1100px.
+  La tarjeta muestra el avance, el Business ID y el correo para copiar, el aviso de Ad Account prioritaria y los
+  siguientes pendientes; el botón abre la hoja completa.
