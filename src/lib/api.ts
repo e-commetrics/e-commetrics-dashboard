@@ -8,6 +8,11 @@
  */
 export const API_URL = process.env.NEXT_PUBLIC_URL ?? "";
 
-export function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(`${API_URL}${path}`, { credentials: "include", ...init });
+/** Se emite en `window` cuando el backend responde 401: la sesión venció o no existe. AuthContext lo escucha. */
+export const SESSION_EXPIRED_EVENT = "ec:session-expired";
+
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(`${API_URL}${path}`, { credentials: "include", ...init });
+  if (res.status === 401 && typeof window !== "undefined") window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  return res;
 }

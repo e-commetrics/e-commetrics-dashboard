@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/context/AuthContext";
+import { SESSION_EXPIRED_FLAG, useAuth } from "@/app/context/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
 import { useLang } from "@/app/context/LangContext";
 import { useTheme } from "next-themes";
@@ -21,6 +21,7 @@ const translations = {
     back: "Back to home",
     divider: "or go back",
     error: "Invalid credentials. Please try again.",
+    expired: "Your session expired. Sign in again; anything not saved was lost.",
     rights: "All rights reserved · 2026",
     loading: "Verifying…",
     tagline1: "Build, measure,",
@@ -45,6 +46,7 @@ const translations = {
     back: "Volver a la página principal",
     divider: "o vuelve",
     error: "Credenciales inválidas. Inténtalo de nuevo.",
+    expired: "Tu sesión expiró. Vuelve a iniciar sesión; lo que no se guardó se perdió.",
     rights: "Todos los derechos reservados · 2026",
     loading: "Verificando…",
     tagline1: "Construye, mide,",
@@ -83,6 +85,16 @@ export default function LoginPage({ goToLanding }: { goToLanding?: () => void })
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let expired = false;
+    try {
+      expired = sessionStorage.getItem(SESSION_EXPIRED_FLAG) === "1";
+      sessionStorage.removeItem(SESSION_EXPIRED_FLAG);
+    } catch {}
+    if (expired) toast.error(t.expired, { id: "session-expired", duration: 6000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (user) {

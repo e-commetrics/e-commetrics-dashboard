@@ -5,8 +5,13 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useRef,
   ReactNode,
 } from "react";
+import { SESSION_EXPIRED_EVENT } from "@/lib/api";
+
+/** Marca en sessionStorage para que el login avise que la sesión venció. */
+export const SESSION_EXPIRED_FLAG = "ec:session-expired";
 
 interface User {
   id: string;
@@ -119,6 +124,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     loadUser();
+  }, []);
+
+  // Si la sesión vence con la página abierta, cualquier 401 cierra la sesión local;
+  // RouteGuard manda a /login y el login avisa que expiró. Antes se quedaba "conectado" con errores 401.
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+  useEffect(() => {
+    const onExpired = () => {
+      if (!userRef.current) return;
+      try {
+        sessionStorage.setItem(SESSION_EXPIRED_FLAG, "1");
+      } catch {}
+      setUser(null);
+      setProjects([]);
+      setPermissions([]);
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
   }, []);
 
   async function login(email: string, password: string) {
