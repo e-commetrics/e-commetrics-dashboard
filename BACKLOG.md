@@ -49,6 +49,14 @@ con fecha. No hay otras labels.
    `PATCH /api/pm/labels` (renombrar; si el nombre nuevo ya existe se fusionan sin duplicar) y
    `DELETE /api/pm/labels/:label`. Agregar la ruta a `ADMIN_ONLY_ROUTES` y al menú lateral.
 
+5. **Quitar la cuenta cliente duplicada de Juan (agregado 2026-11-20).** La cuenta cliente 16
+   «juanmanuel» (`juanmanuel@ecommetrica.com`) la creó Juan, que es del equipo (su cuenta real es
+   «Juan González», id 28, admin), para ponerle dueño al CRM. Sale como cliente en el menú lateral
+   («Clients DOUBLE»). No tiene páginas ni apps; solo es el cliente del proyecto 5. Al aplicar el CRM:
+   primero editar el proyecto 5 con Cliente = «Interno / sin cliente» y después borrar la cuenta 16
+   desde Clientes (no se puede deshacer; confirmar con el usuario antes). La app CRM se vincula al
+   proyecto sin cliente.
+
 **Fuera de alcance:** WhatsApp, correo, Facebook, automatizaciones y acceso del cliente al CRM.
 
 ## 1. Cerrar el módulo CRM (en curso)
