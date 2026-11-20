@@ -182,11 +182,16 @@ export function InboxScreen({ onOpenTask, onOpenWall }: { onOpenTask: (id: strin
               {label} · {list.length}
             </div>
             <div style={{ border: "1px solid var(--ec-hairline)", borderRadius: 12, background: "var(--ec-surface-1)", overflow: "hidden" }}>
-              {list.map((i, idx) => (
+              {list.map((i, idx) => {
+                const openable = { cursor: i.kind === "deleted" ? "default" : "pointer" } as const;
+                return (
                 <button
                   key={i.id}
                   type="button"
-                  onClick={() => open(i)}
+                  // Clic sobre texto ([data-open]) o teclado (detail 0) abre; clic en espacio vacio solo marca como leida.
+                  onClick={(e) =>
+                    e.detail === 0 || (e.target as HTMLElement).closest("[data-open]") ? open(i) : !i.read && void markRead.run([i.id])
+                  }
                   style={{
                     display: "flex",
                     alignItems: "flex-start",
@@ -197,7 +202,7 @@ export function InboxScreen({ onOpenTask, onOpenWall }: { onOpenTask: (id: strin
                     borderTop: idx ? "1px solid var(--ec-hairline)" : "none",
                     background: i.read ? "transparent" : "var(--ec-brand-softer)",
                     textAlign: "left",
-                    cursor: i.kind === "deleted" ? "default" : "pointer",
+                    cursor: "default",
                     color: "var(--ec-text-muted)",
                   }}
                 >
@@ -205,19 +210,19 @@ export function InboxScreen({ onOpenTask, onOpenWall }: { onOpenTask: (id: strin
                     {!i.read ? <span style={{ display: "block", width: 8, height: 8, borderRadius: 99, background: "var(--ec-brand-fill)" }} /> : null}
                   </span>
                   <Avatar member={memberById(i.actorId)} size={30} />
-                  <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, color: "var(--ec-text)", fontWeight: 600, fontSize: 13.5 }}>
+                  <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                    <span data-open style={{ ...openable, display: "flex", alignItems: "center", gap: 6, minWidth: 0, maxWidth: "100%", color: "var(--ec-text)", fontWeight: 600, fontSize: 13.5 }}>
                       {i.parentTaskId ? <CornerDownRight size={12} style={{ flexShrink: 0, opacity: 0.6 }} /> : null}
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: i.kind === "deleted" ? "line-through" : "none" }}>
                         {i.taskTitle}
                       </span>
                     </span>
-                    <span style={{ fontSize: 13, lineHeight: 1.45 }}>
+                    <span data-open style={{ ...openable, fontSize: 13, lineHeight: 1.45 }}>
                       <strong style={{ fontWeight: 600, color: "var(--ec-text)" }}>{memberById(i.actorId)?.name ?? "—"}</strong>{" "}
                       {describe(i)}
                     </span>
                     {i.projectName ? (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                      <span data-open style={{ ...openable, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
                         <ClientDot name={i.projectName} color={i.projectColor} size={8} square />
                         {i.projectName}
                       </span>
@@ -225,7 +230,8 @@ export function InboxScreen({ onOpenTask, onOpenWall }: { onOpenTask: (id: strin
                   </span>
                   <span style={{ fontSize: 12, color: "var(--ec-text-faint)", whiteSpace: "nowrap", paddingTop: 2 }}>{ago(i.createdAt)}</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </section>
         ))}
